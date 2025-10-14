@@ -1,51 +1,57 @@
 import express from "express";
 import mongoose from "mongoose";
 import path from "path";
-import createAdmin from "./routes/admin/createAdmin.js";
 import dotenv from "dotenv";
-import cors from "cors"; // <-- add this
-import loginRoute from "./routes/admin/adminLogin.js";
-import meRoute from "./routes/admin/me.js";
+import cors from "cors";
 import cookieParser from "cookie-parser";
-import logoutRoute from "./routes/admin/logout.js";
-import usersRouter from "./routes/user/login.js";
-import productRoutes from "./routes/admin/products/productRoutes.js";
+
+// Admin routes
+import createAdminRoute from "./routes/admin/createAdmin.js";
+import adminLoginRoute from "./routes/admin/adminLogin.js";
+import adminMeRoute from "./routes/admin/me.js";
+import adminLogoutRoute from "./routes/admin/logout.js";
+import adminProductRoutes from "./routes/admin/products/productRoutes.js";
+
+// Public product routes
 import publicProductRoutes from "./routes/public/products.js";
 
-dotenv.config();
+// User routes (OTP + /me)
+import userRoutes from "./routes/user/userRoutes.js"; // renamed for clarity
 
+dotenv.config();
 const app = express();
 
 // --- Middleware ---
-app.use(express.json()); // parse JSON bodies
+app.use(express.json());
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(path.resolve(), "uploads")));
-// --- CORS ---
+
 app.use(
   cors({
-    origin: "http://localhost:5173", // your frontend URL
-    credentials: true, // if you want to send cookies/JWT
+    origin: "http://localhost:5173", // frontend URL
+    credentials: true, // send cookies automatically
   })
 );
 
-// --- Routes ---
-// Public products for users
+// --- Public routes ---
 app.use("/products", publicProductRoutes);
 
-app.use("/adminlogin", loginRoute);
-app.use("/create-admin", createAdmin);
-app.use("/adminlogout", logoutRoute);
-app.use("/admin", meRoute);
-app.use("/users", usersRouter);
-app.use("/admin/products", productRoutes);
+// --- User routes ---
+app.use("/users", userRoutes); // handles: /users/otp, /users/verify-otp, /users/logout, /users/me
 
-// --- MongoDB Connection ---
-const MONGO_URI = process.env.MONGO_URI;
+// --- Admin routes ---
+app.use("/admin/login", adminLoginRoute); // POST login
+app.use("/admin/logout", adminLogoutRoute); // POST logout
+app.use("/admin/me", adminMeRoute); // GET current admin
+app.use("/admin/create-admin", createAdminRoute); // POST create admin
+app.use("/admin/products", adminProductRoutes); // CRUD products
+
+// --- MongoDB connection ---
 mongoose
-  .connect(MONGO_URI)
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// --- Server Start ---
+// --- Server start ---
 const PORT = 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

@@ -1,40 +1,43 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../../api/api";
+import { AuthContext } from "../admin/Context/AuthContext.jsx";
 import "./css/UserLogin.css";
 
 const UserLogin = () => {
+  const { setUserLoggedIn, setUser } = useContext(AuthContext);
+  const navigate = useNavigate();
+
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState(Array(6).fill(""));
   const [step, setStep] = useState(1);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const inputsRef = useRef([]);
 
-  // Page-specific background
   useEffect(() => {
     document.body.classList.add("login-page-bg");
-    return () => {
-      document.body.classList.remove("login-page-bg");
-    };
+    return () => document.body.classList.remove("login-page-bg");
   }, []);
 
   const handlePhoneChange = (e) => {
-    const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-    setPhone(value);
+    setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
   };
 
   const requestOtp = async () => {
     if (phone.length !== 10) {
-      setMessage("Please enter a valid 10-digit mobile number");
+      setMessage("Enter a valid 10-digit mobile number");
       return;
     }
     setLoading(true);
     try {
-      const res = await API.post("/users", { phone });
-      setMessage(res.data.message || "OTP sent successfully!");
+      const res = await API.post("/users/otp", { phone });
+      setMessage(res.data.message);
       setStep(2);
-      setOtp(["", "", "", "", "", ""]);
-      setTimeout(() => inputsRef.current[0]?.focus(), 300);
+      setOtp(Array(6).fill(""));
+      setOtpSent(true);
+      setTimeout(() => inputsRef.current[0]?.focus(), 200);
     } catch (err) {
       setMessage(err.response?.data?.error || "Failed to send OTP");
     } finally {
@@ -42,35 +45,42 @@ const UserLogin = () => {
     }
   };
 
-  const handleOtpChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return;
+  const handleOtpChange = (idx, val) => {
+    if (!/^\d*$/.test(val)) return;
     const newOtp = [...otp];
-    newOtp[index] = value.slice(-1);
+    newOtp[idx] = val.slice(-1);
     setOtp(newOtp);
-    if (value && index < 5) {
-      inputsRef.current[index + 1]?.focus();
-    }
+    if (val && idx < 5) inputsRef.current[idx + 1]?.focus();
   };
 
-  const handleKeyDown = (index, e) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputsRef.current[index - 1]?.focus();
+  const handleKeyDown = (idx, e) => {
+    if (e.key === "Backspace" && !otp[idx] && idx > 0) {
+      inputsRef.current[idx - 1]?.focus();
     }
   };
 
   const verifyOtp = async () => {
     const otpValue = otp.join("");
     if (otpValue.length !== 6) {
-      setMessage("Please enter all 6 digits of the OTP");
+      setMessage("Enter all 6 digits");
       return;
     }
     setLoading(true);
     try {
       const res = await API.post("/users/verify-otp", { phone, otp: otpValue });
-      setMessage(`Welcome ${res.data.user?.name || "User"}!`);
+      setMessage(`Welcome ${res.data.user.name || "User"}!`);
+
+      setUserLoggedIn(true);
+      setUser(res.data.user);
+
+      // Redirect to homepage after login
+      navigate("/");
+
+      // Reset form
       setStep(1);
       setPhone("");
-      setOtp(["", "", "", "", "", ""]);
+      setOtp(Array(6).fill(""));
+      setOtpSent(false);
     } catch (err) {
       setMessage(err.response?.data?.error || "Invalid OTP");
     } finally {
@@ -78,10 +88,14 @@ const UserLogin = () => {
     }
   };
 
+  const handleResend = () => {
+    if (!phone) return setMessage("Enter phone first");
+    requestOtp();
+  };
+
   return (
     <div className="user-login">
       <h2>{step === 1 ? "Login with OTP" : "Enter OTP"}</h2>
-
       {message && <p className="inline-message">{message}</p>}
 
       {step === 1 ? (
@@ -93,44 +107,35 @@ const UserLogin = () => {
               placeholder="Enter mobile number"
               value={phone}
               onChange={handlePhoneChange}
-              maxLength="10"
+              maxLength={10}
               disabled={loading}
             />
           </div>
-          <button
-            className="get-otp"
-            onClick={requestOtp}
-            disabled={loading}
-          >
+          <button onClick={requestOtp} disabled={loading}>
             {loading ? "Sending..." : "Get OTP"}
           </button>
         </>
       ) : (
         <>
-          <p className="info-message">OTP sent to +91 {phone}</p>
+          <p>OTP sent to +91 {phone}</p>
           <div className="otp-container">
-            {otp.map((digit, idx) => (
+            {otp.map((d, i) => (
               <input
-                key={idx}
+                key={i}
                 type="text"
-                maxLength="1"
-                value={digit}
-                onChange={(e) => handleOtpChange(idx, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(idx, e)}
-                ref={(el) => (inputsRef.current[idx] = el)}
+                maxLength={1}
+                value={d}
+                onChange={(e) => handleOtpChange(i, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(i, e)}
+                ref={(el) => (inputsRef.current[i] = el)}
                 disabled={loading}
               />
             ))}
           </div>
-          <button className="verify-otp" onClick={verifyOtp} disabled={loading}>
+          <button onClick={verifyOtp} disabled={loading}>
             {loading ? "Verifying..." : "Verify OTP"}
           </button>
-
-          <button
-            className="resend-otp"
-            onClick={requestOtp}
-            disabled={loading}
-          >
+          <button onClick={handleResend} disabled={loading || !otpSent}>
             Resend OTP
           </button>
         </>

@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import React from "react";
+import React, { useState } from "react";
 import "./App.css";
 
 // Pages
@@ -11,26 +11,65 @@ import HomePage from "./pages/public/HomePage";
 import UserLogin from "./pages/public/UserLogin";
 import CreateProduct from "./pages/admin/pages/CreateProduct";
 import AdminProductsPage from "./pages/admin/pages/AdminProductsPage";
-import ProductDetails from "./pages/public/ProductDetails"; // ✅ NEW
+import ProductDetails from "./pages/public/ProductDetails";
 import EditProduct from "./pages/admin/pages/EditProduct";
+
 // Layout
 import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
+
+// Components
+import UserOnlyHeader from "./pages/public/UserOnlyHeader";
 
 // Protected route
 import ProtectedRoute from "./components/ProtectedRoutes";
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   return (
     <Router>
       <Routes>
-        {/* ---------- Public pages ---------- */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<UserLogin />} />
-        {/* ---------- Public Product Details ---------- */}
-        <Route path="/product/:id" element={<ProductDetails />} />{" "}
-        {/* ✅ NEW */}
+        {/* ---------- Public pages with UserOnlyHeader ---------- */}
+        <Route
+          path="/"
+          element={
+            <>
+              <UserOnlyHeader
+                isLoggedIn={isLoggedIn}
+                setIsLoggedIn={setIsLoggedIn}
+              />
+              <HomePage />
+            </>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <>
+              <UserOnlyHeader
+                isLoggedIn={isLoggedIn}
+                setIsLoggedIn={setIsLoggedIn}
+              />
+              <UserLogin setIsLoggedIn={setIsLoggedIn} />
+            </>
+          }
+        />
+        <Route
+          path="/product/:id"
+          element={
+            <>
+              <UserOnlyHeader
+                isLoggedIn={isLoggedIn}
+                setIsLoggedIn={setIsLoggedIn}
+              />
+              <ProductDetails />
+            </>
+          }
+        />
+
         {/* ---------- Admin login ---------- */}
         <Route path="/admin/login" element={<LoginAdmin />} />
+
         {/* ---------- Admin routes ---------- */}
         <Route
           path="/admin/dashboard"
@@ -52,7 +91,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* View all products (Admin only) */}
         <Route
           path="/admin/products"
           element={
@@ -63,6 +101,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         {/* ---------- SuperAdmin routes ---------- */}
         <Route
           path="/admin/superadmin-dashboard"
@@ -84,7 +123,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* View all products (SuperAdmin also) */}
         <Route
           path="/admin/superadmin-products"
           element={

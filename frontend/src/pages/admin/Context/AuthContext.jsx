@@ -4,33 +4,62 @@ import API from "../../../api/api.js";
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isSuper, setIsSuper] = useState(false);
+  const [userLoggedIn, setUserLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+  const [adminLoggedIn, setAdminLoggedIn] = useState(false);
   const [admin, setAdmin] = useState(null);
-  const [loading, setLoading] = useState(true); // new loading state
+  const [isSuper, setIsSuper] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Check user login
+  const fetchUser = async () => {
+    try {
+      const res = await API.get("/users/me");
+      setUserLoggedIn(true);
+      setUser(res.data.user);
+    } catch {
+      setUserLoggedIn(false);
+      setUser(null);
+    }
+  };
+
+  // Check admin login
+  const fetchAdmin = async () => {
+    try {
+      const res = await API.get("/admin/me");
+      setAdminLoggedIn(true);
+      setAdmin(res.data.admin);
+      setIsSuper(res.data.admin.isSuper);
+    } catch {
+      setAdminLoggedIn(false);
+      setAdmin(null);
+      setIsSuper(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await API.get("/admin/me");
-        setIsLoggedIn(true);
-        setIsSuper(res.data.admin.isSuper);
-        setAdmin(res.data.admin);
-      } catch {
-        setIsLoggedIn(false);
-        setIsSuper(false);
-        setAdmin(null);
-      } finally {
-        setLoading(false); // finished fetching
-      }
+    const fetchAll = async () => {
+      await Promise.all([fetchUser(), fetchAdmin()]);
+      setLoading(false);
     };
-
-    fetchUser();
+    fetchAll();
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ isLoggedIn, setIsLoggedIn, isSuper, setIsSuper, admin, setAdmin, loading }}
+      value={{
+        userLoggedIn,
+        setUserLoggedIn,
+        user,
+        setUser,
+        adminLoggedIn,
+        setAdminLoggedIn,
+        admin,
+        setAdmin,
+        isSuper,
+        setIsSuper,
+        loading,
+      }}
     >
       {children}
     </AuthContext.Provider>
