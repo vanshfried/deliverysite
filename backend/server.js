@@ -18,6 +18,9 @@ import publicProductRoutes from "./routes/public/products.js";
 // User routes (OTP + /me)
 import userRoutes from "./routes/user/userRoutes.js"; // renamed for clarity
 
+// Cart routes
+import cartRoutes from "./routes/user/cartRoutes.js";
+
 dotenv.config();
 const app = express();
 
@@ -39,6 +42,9 @@ app.use("/products", publicProductRoutes);
 // --- User routes ---
 app.use("/users", userRoutes); // handles: /users/otp, /users/verify-otp, /users/logout, /users/me
 
+// --- Cart routes (requires authentication) ---
+app.use("/api/cart", cartRoutes); // mounted at /api/cart
+
 // --- Admin routes ---
 app.use("/admin/login", adminLoginRoute); // POST login
 app.use("/admin/logout", adminLogoutRoute); // POST logout
@@ -53,5 +59,5 @@ mongoose
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 // --- Server start ---
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

@@ -1,16 +1,21 @@
 import React, { useState, useContext } from "react";
 import { NavLink } from "react-router-dom";
-import API from "../../api/api";
 import { AuthContext } from "../admin/Context/AuthContext.jsx";
+import { CartContext } from "../admin/Context/CartContext";
+import API from "../../api/api";
 import "./css/UserOnlyHeader.css";
 
 const UserOnlyHeader = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { userLoggedIn, setUserLoggedIn, setUser } = useContext(AuthContext);
+  const { cart } = useContext(CartContext); // live cart
+
+  // Count unique items in cart
+  const uniqueCartCount = cart?.items?.length || 0;
 
   const handleLogout = async () => {
     try {
-      await API.post("/users/logout"); // clear cookie on backend
+      await API.post("/users/logout", {}, { withCredentials: true }); // clear cookie on backend
       setUserLoggedIn(false);
       setUser(null);
       setMenuOpen(false);
@@ -30,7 +35,9 @@ const UserOnlyHeader = () => {
       <nav className={`nav-links ${menuOpen ? "open" : ""}`}>
         {userLoggedIn ? (
           <>
-            <NavLink to="/cart" onClick={closeMenu}>Cart</NavLink>
+            <NavLink to="/cart" onClick={closeMenu}>
+              Cart {uniqueCartCount > 0 && <span className="cart-count">{uniqueCartCount}</span>}
+            </NavLink>
             <NavLink to="/orders" onClick={closeMenu}>Orders</NavLink>
             <NavLink to="/settings" onClick={closeMenu}>Settings</NavLink>
             <button className="logout-btn" onClick={handleLogout}>Logout</button>
