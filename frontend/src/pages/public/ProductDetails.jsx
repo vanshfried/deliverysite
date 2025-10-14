@@ -36,7 +36,7 @@ const ProductDetails = () => {
   return (
     <div className="product-details-container">
       <div className="product-grid">
-        {/* Thumbnail Column */}
+        {/* Thumbnails */}
         <div className="thumbnail-column">
           {allImages.map((img, i) => (
             <img
@@ -51,7 +51,7 @@ const ProductDetails = () => {
 
         {/* Main Image */}
         <div className="main-image">
-          <img src={`${API.URL}/${currentImage}`} alt={name} />
+          <img src={`${API.URL}/${currentImage}`} alt={name} className="fade-in" />
         </div>
 
         {/* Product Info */}
@@ -99,7 +99,7 @@ const ProductDetails = () => {
         dangerouslySetInnerHTML={{ __html: description }}
       />
 
-      {/* Specifications */}
+      {/* Specifications moved BELOW description */}
       {specs && Object.keys(specs).length > 0 && (
         <div className="product-specs">
           <h3>Specifications</h3>
