@@ -1,0 +1,209 @@
+/* Container */
+.create-product-container {
+  max-width: 950px;
+  margin: 30px auto;
+  padding: 25px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  font-family: Arial, sans-serif;
+}
+
+.create-product-container h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #222;
+}
+
+.message {
+  text-align: center;
+  color: green;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+/* Form Sections */
+.product-form .form-section {
+  width: 100%;
+  clear: both;
+  margin-bottom: 30px;
+  box-sizing: border-box;
+}
+
+.product-form h3 {
+  margin-bottom: 12px;
+  color: #333;
+}
+
+/* Heading + In Stock */
+.heading-instock {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.instock-label {
+  font-size: 14px;
+  font-weight: normal;
+  margin-top: 5px;
+}
+
+/* Inputs */
+.product-form input,
+.product-form textarea,
+.product-form select {
+  width: 100%;
+  padding: 10px;
+  margin: 6px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+/* Price Fields */
+.price-fields {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.price-fields input {
+  flex: 1 1 200px;
+}
+
+/* Category */
+.category-wrapper {
+  margin-bottom: 12px;
+}
+
+.category-input {
+  width: 200px;
+  max-width: 100%;
+  padding: 8px;
+  font-size: 14px;
+}
+
+/* Tags */
+.tags-section {
+  margin-top: 15px;
+}
+
+.tags-section input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 5px;
+}
+
+.tags-preview {
+  font-size: 13px;
+  color: #555;
+  word-break: break-word;
+}
+
+/* ReactQuill Description */
+.ql-container {
+  width: 100%;
+  max-width: 100%;
+  height: 300px;
+  font-size: 14px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+/* File Inputs */
+.product-form label {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+  font-weight: bold;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.product-form input[type="file"] {
+  margin-top: 5px;
+  display: block;
+}
+
+/* Specs table */
+.specs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+}
+
+.specs-table th,
+.specs-table td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  text-align: left;
+}
+
+.specs-table input {
+  width: 95%;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+/* Buttons */
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  background: #ff9900;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  background: #e68a00;
+}
+
+.small-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: #555;
+}
+
+.small-btn:hover {
+  background: #333;
+}
+
+.add-spec-btn {
+  margin-top: 5px;
+}
+
+.submit-btn {
+  width: 100%;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+  .price-fields {
+    flex-direction: column;
+  }
+
+  .heading-instock {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .category-input {
+    width: 100%;
+  }
+
+  .tags-section input {
+    width: 100%;
+  }
+}
