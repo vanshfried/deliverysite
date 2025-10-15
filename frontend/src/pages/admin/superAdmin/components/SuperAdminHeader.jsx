@@ -32,18 +32,23 @@ export default function SuperAdminHeader() {
     }
   };
 
-  // Show loading while checking
   if (admin === null) return <div>Loading...</div>;
 
   return (
     <header className="superadmin-header">
-      <div className="logo">SuperAdmin Panel</div>
+      {/* Logo now clickable */}
+      <Link to="/admin/superadmin-dashboard" className="logo-link">
+        SuperAdmin Panel
+      </Link>
+
       <nav className="nav-links">
-        <Link to="/admin/superadmin-dashboard">Dashboard</Link>
+        <Link to="/admin/superadmin-extras">Category/Tags</Link>
         <Link to="/admin/create-admin">Create Admin</Link>
         <Link to="/admin/create-product">Create Product</Link>
         <Link to="/admin/products">All Products</Link>
-        <button onClick={handleLogout} className="logout-btn">Logout</button>
+        <button onClick={handleLogout} className="logout-btn">
+          Logout
+        </button>
       </nav>
     </header>
   );

@@ -67,13 +67,21 @@ const Cart = () => {
                 </td>
                 <td>₹{item.priceAtAddTime}</td>
                 <td>
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    disabled={updatingItem === item.product._id}
-                    onChange={(e) => handleQuantityChange(item.product._id, parseInt(e.target.value))}
-                  />
+                  <div className="quantity-controls">
+                    <button
+                      onClick={() => handleQuantityChange(item.product._id, item.quantity - 1)}
+                      disabled={updatingItem === item.product._id || item.quantity <= 1}
+                    >
+                      -
+                    </button>
+                    <span>{item.quantity}</span>
+                    <button
+                      onClick={() => handleQuantityChange(item.product._id, item.quantity + 1)}
+                      disabled={updatingItem === item.product._id}
+                    >
+                      +
+                    </button>
+                  </div>
                 </td>
                 <td>₹{item.quantity * item.priceAtAddTime}</td>
                 <td>

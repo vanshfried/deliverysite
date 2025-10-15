@@ -27,6 +27,7 @@
     "react-draft-wysiwyg": "^1.15.0",
     "react-dropzone": "^14.3.8",
     "react-quill": "^2.0.0",
-    "react-router-dom": "^7.9.3"
+    "react-router-dom": "^7.9.3",
+    "react-select": "^5.10.2"
   }
 }

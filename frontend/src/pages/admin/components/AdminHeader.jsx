@@ -23,12 +23,11 @@ export default function AdminHeader() {
   return (
     <header className="admin-header">
       <div className="logo">
-        <Link to="/admin/login">MyAdminPanel</Link>
+        <Link to="/admin/dashboard">Dashboard</Link>
       </div>
       <nav className="nav-links">
-        <Link to="/admin/dashboard">Dashboard</Link>
         <Link to="/admin/create-product">Create Product</Link>
-         <Link to="/admin/products">All Products</Link>
+        <Link to="/admin/products">All Products</Link>
         <button onClick={handleLogout} className="logout-btn">
           Logout
         </button>

@@ -1,3 +1,4 @@
+/* Scope everything under the admin-products-container */
 .admin-products-container {
   padding: 30px;
   background: #f9fafc;
@@ -6,28 +7,28 @@
 }
 
 /* Header */
-.products-header {
+.admin-products-container .products-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 25px;
 }
 
-.products-header h1 {
+.admin-products-container .products-header h1 {
   font-size: 1.8rem;
   color: #333;
   font-weight: 600;
 }
 
-.header-buttons-full {
+.admin-products-container .header-buttons-full {
   display: flex;
   gap: 15px;
   flex-wrap: wrap;
 }
 
-.create-btn-full,
-.bulk-delete-btn-full {
-  flex: 1 1 200px; /* grow to fill space, min width 200px */
+.admin-products-container .create-btn-full,
+.admin-products-container .bulk-delete-btn-full {
+  flex: 1 1 200px;
   padding: 14px 0;
   font-size: 1rem;
   font-weight: 600;
@@ -38,71 +39,71 @@
   text-align: center;
 }
 
-.create-btn-full {
+.admin-products-container .create-btn-full {
   background-color: #2e7d32;
   color: #fff;
 }
 
-.create-btn-full:hover {
+.admin-products-container .create-btn-full:hover {
   background-color: #256528;
 }
 
-.bulk-delete-btn-full {
+.admin-products-container .bulk-delete-btn-full {
   background-color: #c62828;
   color: #fff;
 }
 
-.bulk-delete-btn-full:hover:not(:disabled) {
+.admin-products-container .bulk-delete-btn-full:hover:not(:disabled) {
   background-color: #9a0007;
 }
 
-.bulk-delete-btn-full:disabled {
+.admin-products-container .bulk-delete-btn-full:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* Table */
-.products-table-wrapper {
+.admin-products-container .products-table-wrapper {
   background: white;
   border-radius: 10px;
   overflow-x: auto;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.products-table {
+.admin-products-container .products-table {
   width: 100%;
   border-collapse: collapse;
   min-width: 900px;
 }
 
-.products-table thead {
+.admin-products-container .products-table thead {
   background-color: #f1f3f5;
 }
 
-.products-table th,
-.products-table td {
+.admin-products-container .products-table th,
+.admin-products-container .products-table td {
   padding: 14px 16px;
   text-align: left;
   font-size: 0.95rem;
 }
 
-.products-table th {
+.admin-products-container .products-table th {
   color: #555;
   font-weight: 600;
   border-bottom: 2px solid #e2e8f0;
 }
 
-.products-table tbody tr {
+.admin-products-container .products-table tbody tr {
   border-bottom: 1px solid #eee;
   transition: background 0.2s;
 }
 
-.products-table tbody tr:hover {
+.admin-products-container .products-table tbody tr:hover {
   background-color: #f9f9fb;
 }
 
 /* Logos */
-.product-logo {
+.admin-products-container .product-logo {
   width: 45px;
   height: 45px;
   object-fit: cover;
@@ -111,31 +112,31 @@
 }
 
 /* Status Badge */
-.stock-status {
+.admin-products-container .stock-status {
   padding: 5px 10px;
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 600;
 }
 
-.in-stock {
+.admin-products-container .in-stock {
   background-color: #e6f4ea;
   color: #2e7d32;
 }
 
-.out-stock {
+.admin-products-container .out-stock {
   background-color: #fdecea;
   color: #c62828;
 }
 
 /* Action Buttons */
-.action-buttons {
+.admin-products-container .action-buttons {
   display: flex;
   gap: 8px;
 }
 
-.edit-btn,
-.delete-btn {
+.admin-products-container .edit-btn,
+.admin-products-container .delete-btn {
   border: none;
   border-radius: 6px;
   padding: 7px 14px;
@@ -145,26 +146,26 @@
   transition: 0.3s;
 }
 
-.edit-btn {
+.admin-products-container .edit-btn {
   background-color: #1976d2;
   color: white;
 }
 
-.edit-btn:hover {
+.admin-products-container .edit-btn:hover {
   background-color: #115293;
 }
 
-.delete-btn {
+.admin-products-container .delete-btn {
   background-color: #d32f2f;
   color: white;
 }
 
-.delete-btn:hover {
+.admin-products-container .delete-btn:hover {
   background-color: #9a0007;
 }
 
 /* Loading Text */
-.loading-text {
+.admin-products-container .loading-text {
   text-align: center;
   font-size: 1.1rem;
   color: #555;

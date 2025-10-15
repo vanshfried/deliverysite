@@ -14,6 +14,7 @@ import AdminProductsPage from "./pages/admin/pages/AdminProductsPage";
 import ProductDetails from "./pages/public/ProductDetails";
 import EditProduct from "./pages/admin/pages/EditProduct";
 import Cart from "./pages/public/Cart";
+import CreateSuperAdminExtras from "./pages/admin/superAdmin/pages/CreateSuperAdminExtras";
 
 // Layout
 import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
@@ -148,6 +149,17 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/superadmin-extras"
+            element={
+              <ProtectedRoute requireSuper={true}>
+                <DynamicAdminLayout>
+                  <CreateSuperAdminExtras />
+                </DynamicAdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/admin/edit-product/:id"
             element={

@@ -2,11 +2,15 @@
   max-width: 900px;
   margin: 40px auto;
   padding: 0 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .cart-page-wrapper .cart-container h1 {
   text-align: center;
   margin-bottom: 20px;
+  color: #333;
 }
 
 .cart-page-wrapper .clear-cart-btn {
@@ -17,6 +21,11 @@
   border-radius: 5px;
   cursor: pointer;
   margin-bottom: 20px;
+  transition: 0.2s;
+}
+
+.cart-page-wrapper .clear-cart-btn:hover {
+  background-color: #ff7875;
 }
 
 .cart-page-wrapper .cart-table {
@@ -46,6 +55,46 @@
   width: 50px;
   height: 50px;
   object-fit: cover;
+  border-radius: 5px;
+}
+
+.cart-page-wrapper .quantity-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.cart-page-wrapper .quantity-controls button {
+  width: 35px;
+  height: 35px;
+  font-size: 18px;
+  border: none;
+  background-color: #1890ff;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+.cart-page-wrapper .quantity-controls button:disabled {
+  background-color: #bfbfbf;
+  cursor: not-allowed;
+}
+.cart-page-wrapper .quantity-controls button:hover:not(:disabled) {
+  background-color: #40a9ff;
+}
+.cart-page-wrapper .quantity-controls span {
+  width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #fafafa;
 }
 
 .cart-page-wrapper .cart-total {
@@ -60,6 +109,11 @@
   border-radius: 5px;
   cursor: pointer;
   margin-top: 10px;
+  transition: 0.2s;
+}
+
+.cart-page-wrapper .checkout-btn:hover {
+  background-color: #73d13d;
 }
 
 .cart-page-wrapper .cart-empty,
@@ -67,4 +121,5 @@
   text-align: center;
   font-size: 18px;
   margin-top: 50px;
+  color: #555;
 }

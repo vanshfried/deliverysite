@@ -119,7 +119,7 @@ const AdminProductsPage = () => {
               <th>Logo</th>
               <th>Name</th>
               <th>Category</th>
-              <th>Price ($)</th>
+              <th>Price (₹)</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -143,7 +143,7 @@ const AdminProductsPage = () => {
                 </td>
                 <td>{p.name}</td>
                 <td>{p.category?.name || "Uncategorized"}</td>
-                <td>${p.price.toFixed(2)}</td>
+                <td>₹{p.price.toFixed(2)}</td>
                 <td>
                   <span
                     className={`stock-status ${

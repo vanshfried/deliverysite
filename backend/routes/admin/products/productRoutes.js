@@ -1,7 +1,10 @@
+// backend/routes/admin/products/productRoutes.js
 import express from "express";
 import multer from "multer";
 import path from "path";
 import Product from "../../../models/Product.js";
+import Category from "../../../models/Category.js";
+import Tag from "../../../models/Tag.js";
 
 const router = express.Router();
 
@@ -39,24 +42,48 @@ router.post(
     try {
       const { name, description, price, discountPrice, category, inStock, tags, specs, videos } = req.body;
 
+      // Validate required fields
       if (!req.files.logo) return res.status(400).json({ message: "Logo is required" });
+      if (!name || !price) return res.status(400).json({ message: "Name and price are required" });
 
-      const logo = req.files.logo[0].path.replace(/\\/g, "/");
-      const images = req.files.images ? req.files.images.map(img => img.path.replace(/\\/g, "/")) : [];
+      // Validate category (must exist if provided)
+      let validCategory = null;
+      if (category) {
+        validCategory = await Category.findById(category);
+        if (!validCategory) {
+          return res.status(400).json({ message: "Invalid category ID" });
+        }
+      }
 
+      // Validate tags (must all exist if provided)
+      let validTags = [];
+      if (tags) {
+        const tagIds = tags.split(",").map(t => t.trim()).filter(Boolean);
+        validTags = await Tag.find({ _id: { $in: tagIds } });
+        if (validTags.length !== tagIds.length) {
+          return res.status(400).json({ message: "One or more tags are invalid" });
+        }
+      }
+
+      // Parse JSON fields
       let parsedSpecs = {};
       let parsedVideos = [];
       try { parsedSpecs = specs ? JSON.parse(specs) : {}; } catch {}
       try { parsedVideos = videos ? JSON.parse(videos) : []; } catch {}
 
+      // Handle file paths
+      const logo = req.files.logo[0].path.replace(/\\/g, "/");
+      const images = req.files.images ? req.files.images.map(img => img.path.replace(/\\/g, "/")) : [];
+
+      // Create product
       const product = new Product({
         name,
         description,
         price,
         discountPrice: discountPrice || 0,
-        category,
+        category: validCategory ? validCategory._id : null,
         inStock: inStock !== undefined ? inStock === "true" : true,
-        tags: tags ? tags.split(",").map(t => t.trim()) : [],
+        tags: validTags.map(t => t._id),
         specs: parsedSpecs,
         videos: parsedVideos,
         logo,
@@ -64,7 +91,7 @@ router.post(
       });
 
       await product.save();
-      res.status(201).json({ message: "Product created successfully", product });
+      res.status(201).json({ message: "✅ Product created successfully", product });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: err.message || "Server error" });
@@ -86,28 +113,16 @@ router.get("/", async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit))
-      .populate("category", "name");
+      .populate("category", "name")
+      .populate("tags", "name");
 
     const total = await Product.countDocuments(filter);
 
-    const productList = products.map((p) => ({
-      _id: p._id,
-      name: p.name,
-      description: p.description,
-      price: p.price,
-      discountPrice: p.discountPrice,
-      finalPrice: p.discountPrice > 0 ? p.discountPrice : p.price,
-      category: p.category,
-      inStock: p.inStock,
-      tags: p.tags,
-      logo: p.logo,
-      images: p.images,
-      specs: p.specs,
-      videos: p.videos,
-      createdAt: p.createdAt,
-    }));
-
-    res.status(200).json({ total, page: Number(page), products: productList });
+    res.status(200).json({
+      total,
+      page: Number(page),
+      products,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -117,7 +132,10 @@ router.get("/", async (req, res) => {
 // ---------------- GET SINGLE PRODUCT (Admin) ----------------
 router.get("/:id", async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate("category", "name");
+    const product = await Product.findById(req.params.id)
+      .populate("category", "name")
+      .populate("tags", "name");
+
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.status(200).json({ product });
   } catch (err) {
@@ -136,21 +154,48 @@ router.put(
   async (req, res) => {
     try {
       const { name, description, price, discountPrice, category, inStock, tags, specs, videos } = req.body;
+      const updates = {};
 
-      const updates = { name, description, price, discountPrice, category };
+      if (name) updates.name = name;
+      if (description) updates.description = description;
+      if (price !== undefined) updates.price = price;
+      if (discountPrice !== undefined) updates.discountPrice = discountPrice;
       if (inStock !== undefined) updates.inStock = inStock === "true";
-      if (tags) updates.tags = tags.split(",").map(t => t.trim());
 
+      // Validate and set category
+      if (category) {
+        const validCategory = await Category.findById(category);
+        if (!validCategory) {
+          return res.status(400).json({ message: "Invalid category ID" });
+        }
+        updates.category = validCategory._id;
+      }
+
+      // Validate and set tags
+      if (tags) {
+        const tagIds = tags.split(",").map(t => t.trim()).filter(Boolean);
+        const validTags = await Tag.find({ _id: { $in: tagIds } });
+        if (validTags.length !== tagIds.length) {
+          return res.status(400).json({ message: "One or more tags are invalid" });
+        }
+        updates.tags = validTags.map(t => t._id);
+      }
+
+      // Parse JSON fields
       try { updates.specs = specs ? JSON.parse(specs) : {}; } catch {}
       try { updates.videos = videos ? JSON.parse(videos) : []; } catch {}
 
+      // Handle file uploads
       if (req.files.logo) updates.logo = req.files.logo[0].path.replace(/\\/g, "/");
       if (req.files.images) updates.images = req.files.images.map(img => img.path.replace(/\\/g, "/"));
 
-      const product = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });
+      const product = await Product.findByIdAndUpdate(req.params.id, updates, { new: true })
+        .populate("category", "name")
+        .populate("tags", "name");
+
       if (!product) return res.status(404).json({ message: "Product not found" });
 
-      res.status(200).json({ message: "Product updated successfully", product });
+      res.status(200).json({ message: "✅ Product updated successfully", product });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: err.message || "Server error" });
@@ -163,7 +208,7 @@ router.delete("/:id", async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
-    res.status(200).json({ message: "Product deleted successfully" });
+    res.status(200).json({ message: "✅ Product deleted successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -171,3 +216,4 @@ router.delete("/:id", async (req, res) => {
 });
 
 export default router;
+
