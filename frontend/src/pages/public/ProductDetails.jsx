@@ -5,7 +5,7 @@ import { CartContext } from "../admin/Context/CartContext";
 import "./css/ProductDetails.css";
 
 const ProductDetails = () => {
-  const { id } = useParams();
+  const { slug } = useParams(); // ✅ use slug instead of id
   const navigate = useNavigate();
   const { addToCart, cart } = useContext(CartContext);
 
@@ -18,11 +18,10 @@ const ProductDetails = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await API.get(`/products/${id}`);
+        const res = await API.get(`/products/slug/${slug}`); // backend should support slug lookup
         const p = res.data.product;
-
         setProduct(p);
-        setCurrentImage(p.logo || (p.images && p.images[0]) || ""); // fallback
+        setCurrentImage(p.logo || (p.images && p.images[0]) || "");
       } catch (err) {
         console.error(err);
         setError(err.response?.data?.message || "Error fetching product");
@@ -31,11 +30,11 @@ const ProductDetails = () => {
       }
     };
     fetchProduct();
-  }, [id]);
+  }, [slug]);
 
-  if (loading) return <div className="loading">Loading...</div>;
-  if (error) return <div className="error">{error}</div>;
-  if (!product) return <div className="no-product">No product found</div>;
+  if (loading) return <div className="pd-container-loading">Loading...</div>;
+  if (error) return <div className="pd-container-error">{error}</div>;
+  if (!product) return <div className="pd-container-error">No product found</div>;
 
   const {
     name,
@@ -48,10 +47,10 @@ const ProductDetails = () => {
     tags,
     videos,
     specs,
-    category,
+    subCategory,
   } = product;
 
-  const allImages = [logo, ...(images || [])].filter(Boolean); // remove null/undefined
+  const allImages = [logo, ...(images || [])].filter(Boolean);
   const isInCart = cart.items.some((item) => item.product._id === product._id);
 
   const handleAddToCart = async () => {
@@ -68,11 +67,11 @@ const ProductDetails = () => {
   };
 
   return (
-    <div className="product-details-container">
-      <div className="product-grid">
+    <div className="pd-container">
+      <div className="pd-grid">
         {/* Thumbnails */}
         {allImages.length > 0 && (
-          <div className="thumbnail-column">
+          <div className="pd-thumbnails">
             {allImages.map((img, i) => (
               <img
                 key={i}
@@ -87,30 +86,40 @@ const ProductDetails = () => {
 
         {/* Main Image */}
         {currentImage && (
-          <div className="main-image">
+          <div className="pd-main-image">
             <img src={`${API.URL}/${currentImage}`} alt={name} className="fade-in" />
           </div>
         )}
 
         {/* Product Info */}
-        <div className="product-info">
+        <div className="pd-info">
           <h1>
             {name}{" "}
-            {inStock ? (
-              <span className="stock">(In Stock)</span>
-            ) : (
-              <span className="stock out-of-stock">(Out of Stock)</span>
-            )}
+            <span className={`pd-stock ${inStock ? "" : "out-of-stock"}`}>
+              ({inStock ? "In Stock" : "Out of Stock"})
+            </span>
           </h1>
 
-          {/* Category */}
-          {category?.name && <div className="category">Category: {category.name}</div>}
+          {/* Subcategory pill */}
+          {subCategory?.slug && (
+            <div
+              className="pd-subcategory-pill"
+              title={`View all products in ${subCategory.name}`}
+              onClick={() =>
+                navigate(`/subcategory/${subCategory.slug}`, {
+                  state: { name: subCategory.name },
+                })
+              }
+            >
+              {subCategory.name}
+            </div>
+          )}
 
           {/* Tags */}
           {tags?.length > 0 && (
-            <div className="tags">
-              {tags.map((tag, i) => (
-                <span key={i} className="tag">
+            <div className="pd-tags">
+              {tags.map((tag) => (
+                <span key={tag._id} className="pd-tag">
                   #{tag.name}
                 </span>
               ))}
@@ -118,44 +127,44 @@ const ProductDetails = () => {
           )}
 
           {/* Price */}
-          <div className="price">
+          <div className="pd-price">
             {discountPrice > 0 ? (
               <>
-                <span className="original-price">₹{price}</span>
-                <span className="discount-price">₹{discountPrice}</span>
+                <span className="pd-original-price">₹{price}</span>
+                <span className="pd-discount-price">₹{discountPrice}</span>
               </>
             ) : (
-              <span className="discount-price">₹{price}</span>
+              <span className="pd-discount-price">₹{price}</span>
             )}
           </div>
 
           {/* Action Buttons */}
-          <div className="action-buttons">
+          <div className="pd-actions">
             <button
-              className="add-to-cart"
+              className="pd-add-to-cart"
               onClick={handleAddToCart}
               disabled={!inStock || isInCart || addingToCart}
             >
               {isInCart ? "Added to Cart" : addingToCart ? "Adding..." : "Add to Cart"}
             </button>
-            <button className="buy-now">Buy Now</button>
+            <button className="pd-buy-now">Buy Now</button>
           </div>
         </div>
       </div>
 
       {/* Description */}
       {description && (
-        <div className="product-description" dangerouslySetInnerHTML={{ __html: description }} />
+        <div className="pd-description" dangerouslySetInnerHTML={{ __html: description }} />
       )}
 
       {/* Specifications */}
       {specs && Object.keys(specs).length > 0 && (
-        <div className="product-specs">
+        <div className="pd-specs">
           <h3>Specifications</h3>
           <table>
             <tbody>
-              {Object.entries(specs).map(([key, value], i) => (
-                <tr key={i}>
+              {Object.entries(specs).map(([key, value]) => (
+                <tr key={key}>
                   <td>{key}</td>
                   <td>{value}</td>
                 </tr>
@@ -167,10 +176,10 @@ const ProductDetails = () => {
 
       {/* Videos */}
       {videos?.length > 0 && (
-        <div className="product-videos">
+        <div className="pd-videos">
           <h3>Videos</h3>
-          {videos.map((video, i) => (
-            <video key={i} src={`${API.URL}/${video}`} controls width="100%" />
+          {videos.map((video) => (
+            <video key={video} src={`${API.URL}/${video}`} controls width="100%" />
           ))}
         </div>
       )}

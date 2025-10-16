@@ -10,12 +10,15 @@ const CreateProduct = () => {
     price: "",
     discountPrice: "",
     category: "",
+    subCategory: "",
     inStock: true,
-    tags: [], // selected tags
+    tags: [],
   });
 
   const [categories, setCategories] = useState([]);
-  const [allTags, setAllTags] = useState([]); 
+  const [allSubCategories, setAllSubCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [allTags, setAllTags] = useState([]);
   const [filteredTags, setFilteredTags] = useState([]);
   const [description, setDescription] = useState("");
   const [logo, setLogo] = useState(null);
@@ -25,30 +28,31 @@ const CreateProduct = () => {
 
   const quillRef = useRef(null);
 
-  // ---------------- Fetch categories and tags ----------------
+  // ---------------- Fetch categories, subcategories and tags ----------------
   useEffect(() => {
     const fetchExtras = async () => {
       try {
-        const [catRes, tagRes] = await Promise.all([
+        const [catRes, subRes, tagRes] = await Promise.all([
           API.get("/admin/products/extras/categories"),
+          API.get("/admin/products/extras/subcategories"),
           API.get("/admin/products/extras/tags"),
         ]);
 
         setCategories(catRes.data.categories || []);
-
-        const tagsData = (tagRes.data.tags || []).map((t) => ({
-          value: t._id,
-          label: t.name,
-          categoryId: t.category?._id || null,
-        }));
-        setAllTags(tagsData);
-        setFilteredTags(tagsData);
+        setAllSubCategories(subRes.data.subcategories || []);
+        setAllTags(
+          (tagRes.data.tags || []).map((t) => ({
+            value: t._id,
+            label: t.name,
+            categoryId: t.category?._id || null,
+          }))
+        );
+        setFilteredTags(tagRes.data.tags || []);
       } catch (err) {
         console.error(err);
-        showMessage("❌ Failed to load categories or tags.");
+        showMessage("❌ Failed to load categories, subcategories or tags.");
       }
     };
-
     fetchExtras();
   }, []);
 
@@ -58,7 +62,7 @@ const CreateProduct = () => {
     setTimeout(() => setMessage(""), 4000);
   };
 
-  // ---------------- Form handlers ----------------
+  // ---------------- Handlers ----------------
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
@@ -67,22 +71,28 @@ const CreateProduct = () => {
   const handleCategoryChange = (e) => {
     const selectedCat = e.target.value;
 
-    // filter tags for this category or show all if no category
-    const newFilteredTags = selectedCat
-      ? allTags.filter((tag) => tag.categoryId === selectedCat)
-      : allTags;
+    // Filter subcategories for this category
+    const filteredSubCats = allSubCategories.filter((sc) => sc.parentCategory?._id === selectedCat);
+    setSubCategories(filteredSubCats);
 
-    // keep selected tags if they still belong to the selected category
-    const newSelectedTags = formData.tags.filter((tag) =>
-      !selectedCat || tag.categoryId === selectedCat
-    );
+    // Reset subcategory if it doesn't belong to selected category
+    const newSubCat = filteredSubCats.some((sc) => sc._id === formData.subCategory) ? formData.subCategory : "";
+
+    // Filter tags
+    const newFilteredTags = allTags.filter((t) => t.categoryId === selectedCat);
+    const newSelectedTags = formData.tags.filter((t) => t.categoryId === selectedCat);
 
     setFormData((prev) => ({
       ...prev,
       category: selectedCat,
+      subCategory: newSubCat,
       tags: newSelectedTags,
     }));
     setFilteredTags(newFilteredTags);
+  };
+
+  const handleSubCategoryChange = (e) => {
+    setFormData((prev) => ({ ...prev, subCategory: e.target.value }));
   };
 
   const handleTagsChange = (selectedOptions) => {
@@ -96,10 +106,7 @@ const CreateProduct = () => {
     setSpecs((prev) => {
       const updated = [...prev];
       updated[index][field] = value;
-
-      // auto-add empty row if last row is filled
       if (index === prev.length - 1 && updated[index].key) updated.push({ key: "", value: "" });
-
       return updated;
     });
   };
@@ -109,29 +116,25 @@ const CreateProduct = () => {
   // ---------------- Submit ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!logo) return showMessage("❌ Logo is required!");
+    if (!logo || !formData.name || !formData.price || !formData.subCategory)
+      return showMessage("❌ Logo, Name, Price, and Subcategory are required!");
 
     const data = new FormData();
     data.append("name", formData.name);
     data.append("price", Number(formData.price));
     data.append("discountPrice", formData.discountPrice ? Number(formData.discountPrice) : 0);
-    if (formData.category) data.append("category", formData.category);
     data.append("inStock", formData.inStock);
+    data.append("subCategory", formData.subCategory);
     data.append("description", description);
     data.append("logo", logo);
     images.forEach((img) => data.append("images", img));
-
     formData.tags.forEach((tag) => data.append("tags", tag.value));
 
-    const filteredSpecs = Object.fromEntries(
-      specs.filter((s) => s.key).map((s) => [s.key, s.value])
-    );
+    const filteredSpecs = Object.fromEntries(specs.filter((s) => s.key).map((s) => [s.key, s.value]));
     if (Object.keys(filteredSpecs).length) data.append("specs", JSON.stringify(filteredSpecs));
 
     try {
-      await API.post("/admin/products/create", data, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await API.post("/admin/products/create", data, { headers: { "Content-Type": "multipart/form-data" } });
       showMessage("✅ Product created successfully!");
       resetForm();
     } catch (err) {
@@ -141,14 +144,16 @@ const CreateProduct = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: "", price: "", discountPrice: "", category: "", inStock: true, tags: [] });
+    setFormData({ name: "", price: "", discountPrice: "", category: "", subCategory: "", inStock: true, tags: [] });
     setDescription("");
     setLogo(null);
     setImages([]);
     setSpecs([{ key: "", value: "" }]);
     setFilteredTags(allTags);
+    setSubCategories([]);
   };
 
+  // ---------------- JSX ----------------
   return (
     <div className="create-product-container">
       <h2>Create Product</h2>
@@ -180,16 +185,19 @@ const CreateProduct = () => {
             </select>
           </div>
 
+          {/* SubCategory */}
+          <div className="category-section">
+            <label>Subcategory</label>
+            <select value={formData.subCategory} onChange={handleSubCategoryChange}>
+              <option value="">-- Select a subcategory --</option>
+              {subCategories.map((sub) => <option key={sub._id} value={sub._id}>{sub.name}</option>)}
+            </select>
+          </div>
+
           {/* Tags */}
           <div className="tags-section">
             <label>Tags</label>
-            <Select
-              isMulti
-              options={filteredTags}
-              value={formData.tags}
-              onChange={handleTagsChange}
-              placeholder="Select tags..."
-            />
+            <Select isMulti options={filteredTags} value={formData.tags} onChange={handleTagsChange} placeholder="Select tags..." />
           </div>
         </div>
 
@@ -202,23 +210,15 @@ const CreateProduct = () => {
         {/* Images */}
         <div className="form-section">
           <h3>Images</h3>
-          <label>
-            Logo (required):
-            <input type="file" accept="image/*" onChange={handleLogoChange} />
-          </label>
-          <label>
-            Additional Images (max 4):
-            <input type="file" accept="image/*" multiple onChange={handleImagesChange} />
-          </label>
+          <label>Logo (required): <input type="file" accept="image/*" onChange={handleLogoChange} /></label>
+          <label>Additional Images (max 4): <input type="file" accept="image/*" multiple onChange={handleImagesChange} /></label>
         </div>
 
         {/* Specs */}
         <div className="form-section">
           <h3>Specifications</h3>
           <table className="specs-table">
-            <thead>
-              <tr><th>Key</th><th>Value</th><th>Action</th></tr>
-            </thead>
+            <thead><tr><th>Key</th><th>Value</th><th>Action</th></tr></thead>
             <tbody>
               {specs.map((spec, i) => (
                 <tr key={i}>

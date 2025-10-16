@@ -1,5 +1,6 @@
 // backend/models/Product.js
 import mongoose from "mongoose";
+import slugify from "slugify";
 
 const productSchema = new mongoose.Schema(
   {
@@ -9,6 +10,11 @@ const productSchema = new mongoose.Schema(
       trim: true,
       minlength: 2,
       maxlength: 100,
+    },
+    slug: {
+      type: String,
+      unique: true,
+      index: true,
     },
     description: {
       type: String,
@@ -23,9 +29,10 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    category: {
+    subCategory: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
+      ref: "SubCategory",
+      required: true,
     },
     logo: {
       type: String,
@@ -41,7 +48,7 @@ const productSchema = new mongoose.Schema(
     },
     specs: {
       type: Map,
-      of: String, // e.g., { "Color": "Red", "Weight": "1kg" }
+      of: String,
     },
     tags: [
       {
@@ -49,19 +56,36 @@ const productSchema = new mongoose.Schema(
         ref: "Tag",
       },
     ],
-    videos: [String], // Optional
+    videos: [String],
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
-// Virtual for final price
+// ---------------- Slug Middleware ----------------
+productSchema.pre("save", function (next) {
+  if (this.isModified("name") || !this.slug) {
+    this.slug = slugify(this.name, { lower: true, strict: true });
+  }
+  next();
+});
+
+// ---------------- Virtuals ----------------
 productSchema.virtual("finalPrice").get(function () {
   return this.discountPrice > 0 ? this.discountPrice : this.price;
 });
 
-// Indexes
+productSchema.virtual("category", {
+  ref: "Category",
+  localField: "subCategory",
+  foreignField: "_id",
+  justOne: true,
+  options: { strictPopulate: false },
+});
+
+// ---------------- Indexes ----------------
 productSchema.index({ name: 1 });
-productSchema.index({ category: 1 });
+productSchema.index({ slug: 1 });
+productSchema.index({ subCategory: 1 });
 productSchema.index({ tags: 1 });
 
 export default mongoose.model("Product", productSchema);

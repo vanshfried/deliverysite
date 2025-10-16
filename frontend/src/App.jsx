@@ -15,13 +15,14 @@ import ProductDetails from "./pages/public/ProductDetails";
 import EditProduct from "./pages/admin/pages/EditProduct";
 import Cart from "./pages/public/Cart";
 import CreateSuperAdminExtras from "./pages/admin/superAdmin/pages/CreateSuperAdminExtras";
+import SubCategoryPage from "./pages/public/SubCategoryPage";
 
 // Layout
 import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
 
 // Components
 import UserOnlyHeader from "./pages/public/UserOnlyHeader";
-import { CartProvider } from "./pages/admin/Context/CartContext"; // ✅ import CartProvider
+import { CartProvider } from "./pages/admin/Context/CartContext";
 
 // Protected route
 import ProtectedRoute from "./components/ProtectedRoutes";
@@ -38,10 +39,7 @@ function App() {
             path="/"
             element={
               <>
-                <UserOnlyHeader
-                  isLoggedIn={isLoggedIn}
-                  setIsLoggedIn={setIsLoggedIn}
-                />
+                <UserOnlyHeader isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
                 <HomePage />
               </>
             }
@@ -50,22 +48,16 @@ function App() {
             path="/login"
             element={
               <>
-                <UserOnlyHeader
-                  isLoggedIn={isLoggedIn}
-                  setIsLoggedIn={setIsLoggedIn}
-                />
+                <UserOnlyHeader isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
                 <UserLogin setIsLoggedIn={setIsLoggedIn} />
               </>
             }
           />
           <Route
-            path="/product/:id"
+            path="/product/:slug"  // ✅ Updated to slug
             element={
               <>
-                <UserOnlyHeader
-                  isLoggedIn={isLoggedIn}
-                  setIsLoggedIn={setIsLoggedIn}
-                />
+                <UserOnlyHeader isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
                 <ProductDetails />
               </>
             }
@@ -74,11 +66,17 @@ function App() {
             path="/cart"
             element={
               <>
-                <UserOnlyHeader
-                  isLoggedIn={isLoggedIn}
-                  setIsLoggedIn={setIsLoggedIn}
-                />
+                <UserOnlyHeader isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
                 <Cart />
+              </>
+            }
+          />
+          <Route
+            path="/subcategory/:slug"  // ✅ Updated to slug
+            element={
+              <>
+                <UserOnlyHeader isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+                <SubCategoryPage />
               </>
             }
           />
@@ -113,6 +111,16 @@ function App() {
               <ProtectedRoute requireSuper={false}>
                 <DynamicAdminLayout>
                   <AdminProductsPage />
+                </DynamicAdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/edit-product/:id"
+            element={
+              <ProtectedRoute requireSuper={false}>
+                <DynamicAdminLayout>
+                  <EditProduct />
                 </DynamicAdminLayout>
               </ProtectedRoute>
             }
@@ -155,17 +163,6 @@ function App() {
               <ProtectedRoute requireSuper={true}>
                 <DynamicAdminLayout>
                   <CreateSuperAdminExtras />
-                </DynamicAdminLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/edit-product/:id"
-            element={
-              <ProtectedRoute requireSuper={false}>
-                <DynamicAdminLayout>
-                  <EditProduct />
                 </DynamicAdminLayout>
               </ProtectedRoute>
             }

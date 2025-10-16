@@ -11,8 +11,8 @@ const HomePage = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await API.get("/products");
-        setProducts(res.data.products);
+        const res = await API.get("/products"); // Fetch all products
+        setProducts(res.data.products || []);
       } catch (err) {
         console.error("Error fetching products:", err);
       } finally {
@@ -23,40 +23,33 @@ const HomePage = () => {
     fetchProducts();
   }, []);
 
-  if (loading) return <p className="loading-text">Loading products...</p>;
-  if (!products.length)
-    return <p className="loading-text">No products found.</p>;
+  if (loading) return <p className="hp-loading">Loading products...</p>;
+  if (!products.length) return <p className="hp-loading">No products found.</p>;
 
   return (
-    <div className="homepage-container">
+    <div className="hp-container">
       <h1>Our Products</h1>
-      <div className="products-grid">
+      <div className="hp-grid">
         {products.map((product) => (
           <div
             key={product._id}
-            className="product-card"
-            onClick={() => navigate(`/product/${product._id}`)}
+            className="hp-card"
+            onClick={() => navigate(`/product/${product.slug}`)} // ✅ Use slug
           >
-            <div className="product-image">
+            <div className="hp-image">
               <img src={`${API.URL}/${product.logo}`} alt={product.name} />
             </div>
-            <div className="product-info">
-              <div>
-                <h2>{product.name}</h2>
-                {product.category && (
-                  <p className="category">{product.category.name}</p>
-                )}
-              </div>
-              <p className="price">
+
+            <div className="hp-info">
+              <h2>{product.name}</h2>
+              <p className="hp-price">
                 {product.discountPrice > 0 ? (
                   <>
-                    <span className="original-price">₹{product.price}</span>
-                    <span className="discount-price">
-                      ₹{product.discountPrice}
-                    </span>
+                    <span className="hp-original-price">₹{product.price}</span>
+                    <span className="hp-discount-price">₹{product.discountPrice}</span>
                   </>
                 ) : (
-                  <span>₹{product.price}</span>
+                  <span className="hp-discount-price">₹{product.price}</span>
                 )}
               </p>
             </div>

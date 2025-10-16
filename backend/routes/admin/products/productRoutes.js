@@ -3,7 +3,7 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import Product from "../../../models/Product.js";
-import Category from "../../../models/Category.js";
+import SubCategory from "../../../models/SubCategory.js";
 import Tag from "../../../models/Tag.js";
 
 const router = express.Router();
@@ -40,16 +40,16 @@ router.post(
   ]),
   async (req, res) => {
     try {
-      const { name, description, price, discountPrice, category, inStock, tags, specs, videos } = req.body;
+      const { name, description, price, discountPrice, subCategory, inStock, tags, specs, videos } = req.body;
 
       if (!req.files.logo) return res.status(400).json({ message: "Logo is required" });
       if (!name || !price) return res.status(400).json({ message: "Name and price are required" });
 
-      // Validate category
-      let validCategory = null;
-      if (category) {
-        validCategory = await Category.findById(category);
-        if (!validCategory) return res.status(400).json({ message: "Invalid category ID" });
+      // Validate subCategory
+      let validSubCategory = null;
+      if (subCategory) {
+        validSubCategory = await SubCategory.findById(subCategory).populate("parentCategory");
+        if (!validSubCategory) return res.status(400).json({ message: "Invalid sub-category ID" });
       }
 
       // Validate tags
@@ -57,15 +57,19 @@ router.post(
       if (tags) {
         const tagIds = Array.isArray(tags) ? tags : [tags];
         validTags = await Tag.find({ _id: { $in: tagIds } });
-        if (validTags.length !== tagIds.length) {
-          return res.status(400).json({ message: "One or more tags are invalid" });
-        }
 
-        // ✅ Ensure tags belong to the selected category
-        if (validCategory) {
-          const invalidTag = validTags.find(t => t.category.toString() !== validCategory._id.toString());
+        if (validTags.length !== tagIds.length)
+          return res.status(400).json({ message: "One or more tags are invalid" });
+
+        // Ensure tags belong to the same parent category as sub-category
+        if (validSubCategory) {
+          const invalidTag = validTags.find(
+            t => t.category.toString() !== validSubCategory.parentCategory._id.toString()
+          );
           if (invalidTag) {
-            return res.status(400).json({ message: `Tag "${invalidTag.name}" does not belong to the selected category` });
+            return res.status(400).json({
+              message: `Tag "${invalidTag.name}" does not belong to the parent category of selected sub-category`,
+            });
           }
         }
       }
@@ -84,7 +88,7 @@ router.post(
         description,
         price,
         discountPrice: discountPrice || 0,
-        category: validCategory ? validCategory._id : null,
+        subCategory: validSubCategory ? validSubCategory._id : null,
         inStock: inStock !== undefined ? inStock === "true" : true,
         tags: validTags.map(t => t._id),
         specs: parsedSpecs,
@@ -94,7 +98,16 @@ router.post(
       });
 
       await product.save();
-      res.status(201).json({ message: "✅ Product created successfully", product });
+
+      const populatedProduct = await Product.findById(product._id)
+        .populate({
+          path: "subCategory",
+          select: "name",
+          populate: { path: "parentCategory", select: "name" }
+        })
+        .populate("tags", "name category");
+
+      res.status(201).json({ message: "✅ Product created successfully", product: populatedProduct });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: err.message || "Server error" });
@@ -105,18 +118,22 @@ router.post(
 // ---------------- GET ALL PRODUCTS ----------------
 router.get("/", async (req, res) => {
   try {
-    const { page = 1, limit = 20, search, category, inStock } = req.query;
+    const { page = 1, limit = 20, search, subCategory, inStock } = req.query;
     const filter = {};
 
     if (search) filter.name = { $regex: search, $options: "i" };
-    if (category) filter.category = category;
+    if (subCategory) filter.subCategory = subCategory;
     if (inStock !== undefined) filter.inStock = inStock === "true";
 
     const products = await Product.find(filter)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit))
-      .populate("category", "name")
+      .populate({
+        path: "subCategory",
+        select: "name",
+        populate: { path: "parentCategory", select: "name" }
+      })
       .populate("tags", "name category");
 
     const total = await Product.countDocuments(filter);
@@ -132,7 +149,11 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate("category", "name")
+      .populate({
+        path: "subCategory",
+        select: "name",
+        populate: { path: "parentCategory", select: "name" }
+      })
       .populate("tags", "name category");
 
     if (!product) return res.status(404).json({ message: "Product not found" });
@@ -152,7 +173,7 @@ router.put(
   ]),
   async (req, res) => {
     try {
-      const { name, description, price, discountPrice, category, inStock, tags, specs, videos } = req.body;
+      const { name, description, price, discountPrice, subCategory, inStock, tags, specs, videos } = req.body;
       const updates = {};
 
       if (name) updates.name = name;
@@ -161,27 +182,31 @@ router.put(
       if (discountPrice !== undefined) updates.discountPrice = discountPrice;
       if (inStock !== undefined) updates.inStock = inStock === "true";
 
-      // Validate category
-      let validCategory = null;
-      if (category) {
-        validCategory = await Category.findById(category);
-        if (!validCategory) return res.status(400).json({ message: "Invalid category ID" });
-        updates.category = validCategory._id;
+      // Validate subCategory
+      let validSubCategory = null;
+      if (subCategory) {
+        validSubCategory = await SubCategory.findById(subCategory).populate("parentCategory");
+        if (!validSubCategory) return res.status(400).json({ message: "Invalid sub-category ID" });
+        updates.subCategory = validSubCategory._id;
       }
 
       // Validate tags
       if (tags) {
         const tagIds = Array.isArray(tags) ? tags : [tags];
         const validTags = await Tag.find({ _id: { $in: tagIds } });
-        if (validTags.length !== tagIds.length) {
-          return res.status(400).json({ message: "One or more tags are invalid" });
-        }
 
-        // ✅ Ensure tags belong to the selected category
-        if (validCategory) {
-          const invalidTag = validTags.find(t => t.category.toString() !== validCategory._id.toString());
+        if (validTags.length !== tagIds.length)
+          return res.status(400).json({ message: "One or more tags are invalid" });
+
+        // Ensure tags belong to same parent category as sub-category
+        if (validSubCategory) {
+          const invalidTag = validTags.find(
+            t => t.category.toString() !== validSubCategory.parentCategory._id.toString()
+          );
           if (invalidTag) {
-            return res.status(400).json({ message: `Tag "${invalidTag.name}" does not belong to the selected category` });
+            return res.status(400).json({
+              message: `Tag "${invalidTag.name}" does not belong to the parent category of selected sub-category`,
+            });
           }
         }
 
@@ -196,7 +221,11 @@ router.put(
       if (req.files.images) updates.images = req.files.images.map(img => img.path.replace(/\\/g, "/"));
 
       const product = await Product.findByIdAndUpdate(req.params.id, updates, { new: true })
-        .populate("category", "name")
+        .populate({
+          path: "subCategory",
+          select: "name",
+          populate: { path: "parentCategory", select: "name" }
+        })
         .populate("tags", "name category");
 
       if (!product) return res.status(404).json({ message: "Product not found" });
