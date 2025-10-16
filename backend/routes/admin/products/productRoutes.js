@@ -42,26 +42,31 @@ router.post(
     try {
       const { name, description, price, discountPrice, category, inStock, tags, specs, videos } = req.body;
 
-      // Validate required fields
       if (!req.files.logo) return res.status(400).json({ message: "Logo is required" });
       if (!name || !price) return res.status(400).json({ message: "Name and price are required" });
 
-      // Validate category (must exist if provided)
+      // Validate category
       let validCategory = null;
       if (category) {
         validCategory = await Category.findById(category);
-        if (!validCategory) {
-          return res.status(400).json({ message: "Invalid category ID" });
-        }
+        if (!validCategory) return res.status(400).json({ message: "Invalid category ID" });
       }
 
-      // Validate tags (must all exist if provided)
+      // Validate tags
       let validTags = [];
       if (tags) {
-        const tagIds = tags.split(",").map(t => t.trim()).filter(Boolean);
+        const tagIds = Array.isArray(tags) ? tags : [tags];
         validTags = await Tag.find({ _id: { $in: tagIds } });
         if (validTags.length !== tagIds.length) {
           return res.status(400).json({ message: "One or more tags are invalid" });
+        }
+
+        // ✅ Ensure tags belong to the selected category
+        if (validCategory) {
+          const invalidTag = validTags.find(t => t.category.toString() !== validCategory._id.toString());
+          if (invalidTag) {
+            return res.status(400).json({ message: `Tag "${invalidTag.name}" does not belong to the selected category` });
+          }
         }
       }
 
@@ -71,11 +76,9 @@ router.post(
       try { parsedSpecs = specs ? JSON.parse(specs) : {}; } catch {}
       try { parsedVideos = videos ? JSON.parse(videos) : []; } catch {}
 
-      // Handle file paths
       const logo = req.files.logo[0].path.replace(/\\/g, "/");
       const images = req.files.images ? req.files.images.map(img => img.path.replace(/\\/g, "/")) : [];
 
-      // Create product
       const product = new Product({
         name,
         description,
@@ -99,7 +102,7 @@ router.post(
   }
 );
 
-// ---------------- GET ALL PRODUCTS (Admin) ----------------
+// ---------------- GET ALL PRODUCTS ----------------
 router.get("/", async (req, res) => {
   try {
     const { page = 1, limit = 20, search, category, inStock } = req.query;
@@ -114,27 +117,23 @@ router.get("/", async (req, res) => {
       .skip((page - 1) * limit)
       .limit(Number(limit))
       .populate("category", "name")
-      .populate("tags", "name");
+      .populate("tags", "name category");
 
     const total = await Product.countDocuments(filter);
 
-    res.status(200).json({
-      total,
-      page: Number(page),
-      products,
-    });
+    res.status(200).json({ total, page: Number(page), products });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// ---------------- GET SINGLE PRODUCT (Admin) ----------------
+// ---------------- GET SINGLE PRODUCT ----------------
 router.get("/:id", async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate("category", "name")
-      .populate("tags", "name");
+      .populate("tags", "name category");
 
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.status(200).json({ product });
@@ -162,22 +161,30 @@ router.put(
       if (discountPrice !== undefined) updates.discountPrice = discountPrice;
       if (inStock !== undefined) updates.inStock = inStock === "true";
 
-      // Validate and set category
+      // Validate category
+      let validCategory = null;
       if (category) {
-        const validCategory = await Category.findById(category);
-        if (!validCategory) {
-          return res.status(400).json({ message: "Invalid category ID" });
-        }
+        validCategory = await Category.findById(category);
+        if (!validCategory) return res.status(400).json({ message: "Invalid category ID" });
         updates.category = validCategory._id;
       }
 
-      // Validate and set tags
+      // Validate tags
       if (tags) {
-        const tagIds = tags.split(",").map(t => t.trim()).filter(Boolean);
+        const tagIds = Array.isArray(tags) ? tags : [tags];
         const validTags = await Tag.find({ _id: { $in: tagIds } });
         if (validTags.length !== tagIds.length) {
           return res.status(400).json({ message: "One or more tags are invalid" });
         }
+
+        // ✅ Ensure tags belong to the selected category
+        if (validCategory) {
+          const invalidTag = validTags.find(t => t.category.toString() !== validCategory._id.toString());
+          if (invalidTag) {
+            return res.status(400).json({ message: `Tag "${invalidTag.name}" does not belong to the selected category` });
+          }
+        }
+
         updates.tags = validTags.map(t => t._id);
       }
 
@@ -185,13 +192,12 @@ router.put(
       try { updates.specs = specs ? JSON.parse(specs) : {}; } catch {}
       try { updates.videos = videos ? JSON.parse(videos) : []; } catch {}
 
-      // Handle file uploads
       if (req.files.logo) updates.logo = req.files.logo[0].path.replace(/\\/g, "/");
       if (req.files.images) updates.images = req.files.images.map(img => img.path.replace(/\\/g, "/"));
 
       const product = await Product.findByIdAndUpdate(req.params.id, updates, { new: true })
         .populate("category", "name")
-        .populate("tags", "name");
+        .populate("tags", "name category");
 
       if (!product) return res.status(404).json({ message: "Product not found" });
 
@@ -216,4 +222,3 @@ router.delete("/:id", async (req, res) => {
 });
 
 export default router;
-

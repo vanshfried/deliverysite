@@ -1,3 +1,4 @@
+// backend/models/Product.js
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema(
@@ -48,16 +49,17 @@ const productSchema = new mongoose.Schema(
         ref: "Tag",
       },
     ],
-
     videos: [String], // Optional
   },
   { timestamps: true }
 );
 
+// Virtual for final price
 productSchema.virtual("finalPrice").get(function () {
   return this.discountPrice > 0 ? this.discountPrice : this.price;
 });
 
+// Indexes
 productSchema.index({ name: 1 });
 productSchema.index({ category: 1 });
 productSchema.index({ tags: 1 });

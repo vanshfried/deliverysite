@@ -11,11 +11,12 @@ const CreateProduct = () => {
     discountPrice: "",
     category: "",
     inStock: true,
-    tags: [], // now will store selected tag objects
+    tags: [], // selected tags
   });
 
   const [categories, setCategories] = useState([]);
-  const [tags, setTags] = useState([]);
+  const [allTags, setAllTags] = useState([]); 
+  const [filteredTags, setFilteredTags] = useState([]);
   const [description, setDescription] = useState("");
   const [logo, setLogo] = useState(null);
   const [images, setImages] = useState([]);
@@ -24,49 +25,91 @@ const CreateProduct = () => {
 
   const quillRef = useRef(null);
 
-  // Fetch categories and tags
+  // ---------------- Fetch categories and tags ----------------
   useEffect(() => {
     const fetchExtras = async () => {
       try {
-        const catRes = await API.get("/admin/products/extras/categories");
-        const tagRes = await API.get("/admin/products/extras/tags");
+        const [catRes, tagRes] = await Promise.all([
+          API.get("/admin/products/extras/categories"),
+          API.get("/admin/products/extras/tags"),
+        ]);
+
         setCategories(catRes.data.categories || []);
-        // convert to react-select format
-        const tagOptions = (tagRes.data.tags || []).map((t) => ({ value: t._id, label: t.name }));
-        setTags(tagOptions);
+
+        const tagsData = (tagRes.data.tags || []).map((t) => ({
+          value: t._id,
+          label: t.name,
+          categoryId: t.category?._id || null,
+        }));
+        setAllTags(tagsData);
+        setFilteredTags(tagsData);
       } catch (err) {
         console.error(err);
-        setMessage("❌ Failed to load categories or tags.");
+        showMessage("❌ Failed to load categories or tags.");
       }
     };
+
     fetchExtras();
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
+  // ---------------- Message helper ----------------
+  const showMessage = (msg) => {
+    setMessage(msg);
+    setTimeout(() => setMessage(""), 4000);
   };
 
-  const handleCategoryChange = (e) => setFormData({ ...formData, category: e.target.value });
+  // ---------------- Form handlers ----------------
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+  };
+
+  const handleCategoryChange = (e) => {
+    const selectedCat = e.target.value;
+
+    // filter tags for this category or show all if no category
+    const newFilteredTags = selectedCat
+      ? allTags.filter((tag) => tag.categoryId === selectedCat)
+      : allTags;
+
+    // keep selected tags if they still belong to the selected category
+    const newSelectedTags = formData.tags.filter((tag) =>
+      !selectedCat || tag.categoryId === selectedCat
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      category: selectedCat,
+      tags: newSelectedTags,
+    }));
+    setFilteredTags(newFilteredTags);
+  };
 
   const handleTagsChange = (selectedOptions) => {
-    setFormData({ ...formData, tags: selectedOptions || [] });
+    setFormData((prev) => ({ ...prev, tags: selectedOptions || [] }));
   };
 
   const handleLogoChange = (e) => setLogo(e.target.files[0]);
   const handleImagesChange = (e) => setImages(Array.from(e.target.files).slice(0, 4));
 
   const handleSpecChange = (index, field, value) => {
-    const updatedSpecs = [...specs];
-    updatedSpecs[index][field] = value;
-    setSpecs(updatedSpecs);
-  };
-  const addSpec = () => setSpecs([...specs, { key: "", value: "" }]);
-  const removeSpec = (index) => setSpecs(specs.filter((_, i) => i !== index));
+    setSpecs((prev) => {
+      const updated = [...prev];
+      updated[index][field] = value;
 
+      // auto-add empty row if last row is filled
+      if (index === prev.length - 1 && updated[index].key) updated.push({ key: "", value: "" });
+
+      return updated;
+    });
+  };
+
+  const removeSpec = (index) => setSpecs((prev) => prev.filter((_, i) => i !== index));
+
+  // ---------------- Submit ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!logo) return setMessage("❌ Logo is required!");
+    if (!logo) return showMessage("❌ Logo is required!");
 
     const data = new FormData();
     data.append("name", formData.name);
@@ -78,31 +121,32 @@ const CreateProduct = () => {
     data.append("logo", logo);
     images.forEach((img) => data.append("images", img));
 
-    // Send only selected tag IDs
     formData.tags.forEach((tag) => data.append("tags", tag.value));
 
-    if (specs.length) {
-      const filteredSpecs = Object.fromEntries(
-        specs.filter((s) => s.key).map((s) => [s.key, s.value])
-      );
-      data.append("specs", JSON.stringify(filteredSpecs));
-    }
+    const filteredSpecs = Object.fromEntries(
+      specs.filter((s) => s.key).map((s) => [s.key, s.value])
+    );
+    if (Object.keys(filteredSpecs).length) data.append("specs", JSON.stringify(filteredSpecs));
 
     try {
       await API.post("/admin/products/create", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      setMessage("✅ Product created successfully!");
-      setFormData({ name: "", price: "", discountPrice: "", category: "", inStock: true, tags: [] });
-      setDescription("");
-      setLogo(null);
-      setImages([]);
-      setSpecs([{ key: "", value: "" }]);
+      showMessage("✅ Product created successfully!");
+      resetForm();
     } catch (err) {
       console.error(err.response?.data || err);
-      setMessage(err.response?.data?.message || "❌ Error creating product");
+      showMessage(err.response?.data?.message || "❌ Error creating product");
     }
+  };
+
+  const resetForm = () => {
+    setFormData({ name: "", price: "", discountPrice: "", category: "", inStock: true, tags: [] });
+    setDescription("");
+    setLogo(null);
+    setImages([]);
+    setSpecs([{ key: "", value: "" }]);
+    setFilteredTags(allTags);
   };
 
   return (
@@ -141,7 +185,7 @@ const CreateProduct = () => {
             <label>Tags</label>
             <Select
               isMulti
-              options={tags}
+              options={filteredTags}
               value={formData.tags}
               onChange={handleTagsChange}
               placeholder="Select tags..."
@@ -185,7 +229,6 @@ const CreateProduct = () => {
               ))}
             </tbody>
           </table>
-          <button type="button" className="small-btn add-spec-btn" onClick={addSpec}>Add Specification</button>
         </div>
 
         {/* Submit */}
