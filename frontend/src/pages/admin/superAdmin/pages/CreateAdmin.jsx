@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import API from "../../../../api/api";
+import styles from "../css/CreateAdmin.module.css";
 
 export default function CreateAdmin() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false); // new state
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -18,22 +20,24 @@ export default function CreateAdmin() {
       
       if (res.data.success) {
         setMessage(`✅ Admin created: ${res.data.admin.username}`);
+        setIsError(false);
         setUsername("");
         setEmail("");
         setPassword("");
       }
     } catch (err) {
       setMessage(err.response?.data?.error || "❌ Error creating admin");
+      setIsError(true);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "50px auto" }}>
+    <div className={styles.createAdminContainer}>
       <h2>Create Admin</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.inputGroup}>
           <label>Username:</label>
           <input
             type="text"
@@ -42,7 +46,8 @@ export default function CreateAdmin() {
             required
           />
         </div>
-        <div>
+
+        <div className={styles.inputGroup}>
           <label>Email:</label>
           <input
             type="email"
@@ -51,7 +56,8 @@ export default function CreateAdmin() {
             required
           />
         </div>
-        <div>
+
+        <div className={styles.inputGroup}>
           <label>Password:</label>
           <input
             type="password"
@@ -60,11 +66,17 @@ export default function CreateAdmin() {
             required
           />
         </div>
-        <button type="submit" disabled={loading}>
+
+        <button type="submit" className={styles.submitBtn} disabled={loading}>
           {loading ? "Creating..." : "Create Admin"}
         </button>
       </form>
-      {message && <p>{message}</p>}
+
+      {message && (
+        <p className={`${styles.message} ${isError ? styles.error : styles.success}`}>
+          {message}
+        </p>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../../api/api";
-import "../css/LoginAdmin.css"; // <-- import CSS
+import styles from "../css/LoginAdmin.module.css"; // <-- CSS module
 
 export default function LoginAdmin() {
   const [email, setEmail] = useState("");
@@ -38,9 +38,9 @@ export default function LoginAdmin() {
   };
 
   return (
-    <div className="login-admin-container">
+    <div className={styles.loginAdminContainer}>
       <h2>Admin Login</h2>
-      <form className="login-admin-form" onSubmit={handleLogin}>
+      <form className={styles.loginAdminForm} onSubmit={handleLogin}>
         <input
           type="email"
           placeholder="Email"
@@ -59,7 +59,7 @@ export default function LoginAdmin() {
           {loading ? "Logging in..." : "Login"}
         </button>
       </form>
-      {message && <p className="login-message">{message}</p>}
+      {message && <p className={styles.loginMessage}>{message}</p>}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import API from "../../api/api";
 import { CartContext } from "../admin/Context/CartContext";
-import "./css/Cart.css";
+import styles from "./css/Cart.module.css"; // import as module
 
 const Cart = () => {
   const { cart, loading, updateItem, removeItem, clearCart } = useContext(CartContext);
@@ -12,7 +12,7 @@ const Cart = () => {
     setUpdatingItem(productId);
     try {
       await updateItem(productId, quantity);
-    } catch (err) {
+    } catch {
       alert("Failed to update quantity.");
     } finally {
       setUpdatingItem(null);
@@ -23,7 +23,7 @@ const Cart = () => {
     if (!window.confirm("Remove this item from cart?")) return;
     try {
       await removeItem(productId);
-    } catch (err) {
+    } catch {
       alert("Failed to remove item.");
     }
   };
@@ -32,23 +32,23 @@ const Cart = () => {
     if (!window.confirm("Clear your cart?")) return;
     try {
       await clearCart();
-    } catch (err) {
+    } catch {
       alert("Failed to clear cart.");
     }
   };
 
-  if (loading) return <div className="cart-page-wrapper cart-loading">Loading cart...</div>;
-  if (!cart?.items?.length) return <div className="cart-page-wrapper cart-empty">Your cart is empty.</div>;
+  if (loading) return <div className={`${styles.cartWrapper} ${styles.cartLoading}`}>Loading cart...</div>;
+  if (!cart?.items?.length) return <div className={`${styles.cartWrapper} ${styles.cartEmpty}`}>Your cart is empty.</div>;
 
   const total = cart.items.reduce((sum, item) => sum + item.quantity * item.priceAtAddTime, 0);
 
   return (
-    <div className="cart-page-wrapper">
-      <div className="cart-container">
+    <div className={styles.cartWrapper}>
+      <div className={styles.cartContainer}>
         <h1>Your Cart</h1>
-        <button className="clear-cart-btn" onClick={handleClearCart}>Clear Cart</button>
+        <button className={styles.clearBtn} onClick={handleClearCart}>Clear Cart</button>
 
-        <table className="cart-table">
+        <table className={styles.cartTable}>
           <thead>
             <tr>
               <th>Product</th>
@@ -61,26 +61,22 @@ const Cart = () => {
           <tbody>
             {cart.items.map((item) => (
               <tr key={item.product._id}>
-                <td className="product-info">
-                  <img src={`${API.URL}/${item.product.logo}`} alt={item.product.name} className="product-image" />
+                <td className={styles.productInfo}>
+                  <img src={`${API.URL}/${item.product.logo}`} alt={item.product.name} className={styles.productImage} />
                   <span>{item.product.name}</span>
                 </td>
                 <td>₹{item.priceAtAddTime}</td>
                 <td>
-                  <div className="quantity-controls">
+                  <div className={styles.quantityControls}>
                     <button
                       onClick={() => handleQuantityChange(item.product._id, item.quantity - 1)}
                       disabled={updatingItem === item.product._id || item.quantity <= 1}
-                    >
-                      -
-                    </button>
+                    >-</button>
                     <span>{item.quantity}</span>
                     <button
                       onClick={() => handleQuantityChange(item.product._id, item.quantity + 1)}
                       disabled={updatingItem === item.product._id}
-                    >
-                      +
-                    </button>
+                    >+</button>
                   </div>
                 </td>
                 <td>₹{item.quantity * item.priceAtAddTime}</td>
@@ -92,9 +88,9 @@ const Cart = () => {
           </tbody>
         </table>
 
-        <div className="cart-total">
+        <div className={styles.cartTotal}>
           <h2>Total: ₹{total}</h2>
-          <button className="checkout-btn">Proceed to Checkout</button>
+          <button className={styles.checkoutBtn}>Proceed to Checkout</button>
         </div>
       </div>
     </div>

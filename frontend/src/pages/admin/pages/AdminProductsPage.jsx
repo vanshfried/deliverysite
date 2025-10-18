@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../../api/api";
-import "../css/AdminProductsPage.css";
+import styles from "../css/AdminProductsPage.module.css"; // CSS module import
 
 const AdminProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -28,11 +28,9 @@ const AdminProductsPage = () => {
     fetchProducts();
   }, []);
 
-  // Search + sort using useMemo for performance
   const filteredProducts = useMemo(() => {
     let temp = [...products];
 
-    // Search by name or sub-category
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       temp = temp.filter((p) => {
@@ -41,7 +39,6 @@ const AdminProductsPage = () => {
       });
     }
 
-    // Sorting
     if (sortField) {
       temp.sort((a, b) => {
         let aVal, bVal;
@@ -70,7 +67,6 @@ const AdminProductsPage = () => {
     return temp;
   }, [products, searchQuery, sortField, sortOrder]);
 
-  // Sorting handler
   const handleSort = (field) => {
     if (sortField === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -80,7 +76,6 @@ const AdminProductsPage = () => {
     }
   };
 
-  // Select handlers
   const handleSelect = (id) =>
     setSelectedProducts((prev) =>
       prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
@@ -94,7 +89,6 @@ const AdminProductsPage = () => {
     }
   };
 
-  // Delete handlers
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure?")) return;
     try {
@@ -120,12 +114,12 @@ const AdminProductsPage = () => {
     }
   };
 
-  if (loading) return <p className="loading-text">Loading products...</p>;
-  if (!products.length) return <p className="loading-text">No products found.</p>;
+  if (loading) return <p className={styles.loadingText}>Loading products...</p>;
+  if (!products.length) return <p className={styles.loadingText}>No products found.</p>;
 
   return (
-    <div className="admin-products-container">
-      <div className="products-header">
+    <div className={styles.adminProductsContainer}>
+      <div className={styles.productsHeader}>
         <h1>Products</h1>
         <input
           type="text"
@@ -133,12 +127,15 @@ const AdminProductsPage = () => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <div className="header-buttons-full">
-          <button className="create-btn-full" onClick={() => navigate("/admin/create-product")}>
+        <div className={styles.headerButtonsFull}>
+          <button
+            className={styles.createBtnFull}
+            onClick={() => navigate("/admin/create-product")}
+          >
             + Add Product
           </button>
           <button
-            className="bulk-delete-btn-full"
+            className={styles.bulkDeleteBtnFull}
             onClick={handleBulkDelete}
             disabled={!selectedProducts.length}
           >
@@ -147,8 +144,8 @@ const AdminProductsPage = () => {
         </div>
       </div>
 
-      <div className="products-table-wrapper">
-        <table className="products-table">
+      <div className={styles.productsTableWrapper}>
+        <table className={styles.productsTable}>
           <thead>
             <tr>
               <th>
@@ -159,13 +156,13 @@ const AdminProductsPage = () => {
                 />
               </th>
               <th>Logo</th>
-              <th className="sortable" onClick={() => handleSort("name")}>
+              <th className={styles.sortable} onClick={() => handleSort("name")}>
                 Name {sortField === "name" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
               </th>
-              <th className="sortable" onClick={() => handleSort("subCategory")}>
+              <th className={styles.sortable} onClick={() => handleSort("subCategory")}>
                 Sub-Category {sortField === "subCategory" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
               </th>
-              <th className="sortable" onClick={() => handleSort("price")}>
+              <th className={styles.sortable} onClick={() => handleSort("price")}>
                 Price (₹) {sortField === "price" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
               </th>
               <th>Status</th>
@@ -183,21 +180,21 @@ const AdminProductsPage = () => {
                   />
                 </td>
                 <td>
-                  <img src={`${API.URL}/${p.logo}`} alt={p.name} className="product-logo" />
+                  <img src={`${API.URL}/${p.logo}`} alt={p.name} className={styles.productLogo} />
                 </td>
                 <td>{p.name}</td>
                 <td>{p.subCategory?.name || "Uncategorized"}</td>
                 <td>₹{p.price.toFixed(2)}</td>
                 <td>
-                  <span className={`stock-status ${p.inStock ? "in-stock" : "out-stock"}`}>
+                  <span className={`${styles.stockStatus} ${p.inStock ? styles.inStock : styles.outStock}`}>
                     {p.inStock ? "In Stock" : "Out of Stock"}
                   </span>
                 </td>
-                <td className="action-buttons">
-                  <button onClick={() => navigate(`/admin/edit-product/${p._id}`)} className="edit-btn">
+                <td className={styles.actionButtons}>
+                  <button onClick={() => navigate(`/admin/edit-product/${p._id}`)} className={styles.editBtn}>
                     Edit
                   </button>
-                  <button onClick={() => handleDelete(p._id)} className="delete-btn">
+                  <button onClick={() => handleDelete(p._id)} className={styles.deleteBtn}>
                     Delete
                   </button>
                 </td>

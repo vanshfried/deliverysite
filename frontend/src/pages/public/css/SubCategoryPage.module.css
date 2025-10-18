@@ -1,27 +1,27 @@
-/* Isolated CSS with .hp- prefix */
-
-.hp-container {
+/* ---------- Container ---------- */
+.scpContainer {
   padding: 20px;
   background: #f9f9f9;
   min-height: 100vh;
   font-family: 'Poppins', sans-serif;
 }
 
-.hp-container h1 {
+.scpTitle {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 25px;
   color: #222;
-  font-size: 2rem;
+  font-size: 1.8rem;
 }
 
-.hp-grid {
+/* ---------- Products Grid ---------- */
+.scpProductsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 18px;
 }
 
-/* Product Card */
-.hp-card {
+/* ---------- Product Card ---------- */
+.scpProductCard {
   background: #fff;
   border-radius: 12px;
   overflow: hidden;
@@ -32,18 +32,18 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding-bottom: 15px;
+  padding-bottom: 12px;
 }
 
-.hp-card:hover {
+.scpProductCard:hover {
   transform: translateY(-6px);
   box-shadow: 0 12px 25px rgba(0,0,0,0.15);
 }
 
-/* Image */
-.hp-image {
+/* ---------- Product Image ---------- */
+.scpProductImage {
   width: 100%;
-  height: 160px;
+  height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -52,104 +52,89 @@
   border-bottom: 1px solid #eee;
 }
 
-.hp-image img {
+.scpProductImage img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
   transition: transform 0.3s ease;
 }
 
-.hp-card:hover .hp-image img {
+.scpProductCard:hover .scpProductImage img {
   transform: scale(1.05);
 }
 
-/* Info */
-.hp-info {
-  padding: 10px 12px;
+/* ---------- Product Info ---------- */
+.scpProductInfo {
+  padding: 10px 8px;
 }
 
-.hp-info h2 {
-  font-size: 1.05rem;
+.scpProductInfo h2 {
+  font-size: 1rem;
   font-weight: 600;
-  margin: 10px 0 6px;
+  margin: 8px 0 5px;
   color: #333;
   line-height: 1.2;
 }
 
-.hp-price {
+.scpPrice {
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: #111;
 }
 
-.hp-original-price {
+.scpOriginalPrice {
   text-decoration: line-through;
   margin-right: 5px;
   color: #999;
 }
 
-.hp-discount-price {
+.scpDiscountPrice {
   color: #e53935;
 }
 
-/* Loading Text */
-.hp-loading {
+/* ---------- Loading Text ---------- */
+.scpLoadingText {
   text-align: center;
   color: #555;
   font-size: 1.2rem;
   margin-top: 50px;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-  .hp-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 18px;
-  }
-}
-
+/* ---------- Responsive ---------- */
 @media (max-width: 768px) {
-  .hp-container {
-    padding: 15px;
-  }
-
-  .hp-grid {
+  .scpProductsGrid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 15px;
   }
 
-  .hp-card {
-    padding-bottom: 12px;
+  .scpProductImage {
+    height: 120px;
   }
 
-  .hp-image {
-    height: 140px;
-  }
-
-  .hp-info h2 {
-    font-size: 1rem;
-  }
-
-  .hp-price {
+  .scpProductInfo h2 {
     font-size: 0.95rem;
+  }
+
+  .scpPrice {
+    font-size: 0.9rem;
   }
 }
 
 @media (max-width: 480px) {
-  .hp-grid {
+  .scpProductsGrid {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 12px;
   }
 
-  .hp-image {
-    height: 120px;
+  .scpProductImage {
+    height: 100px;
   }
 
-  .hp-info h2 {
-    font-size: 0.95rem;
-  }
-
-  .hp-price {
+  .scpProductInfo h2 {
     font-size: 0.9rem;
+  }
+
+  .scpPrice {
+    font-size: 0.85rem;
   }
 }

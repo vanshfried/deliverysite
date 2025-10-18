@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Select from "react-select";
 import API from "../../../api/api";
 import QuillEditor from "./QuillEditor";
-import "../css/CreateProduct.css";
+import styles from "../css/CreateProduct.module.css";
 
 const CreateProduct = () => {
   const [formData, setFormData] = useState({
@@ -28,7 +28,6 @@ const CreateProduct = () => {
 
   const quillRef = useRef(null);
 
-  // ---------------- Fetch categories, subcategories and tags ----------------
   useEffect(() => {
     const fetchExtras = async () => {
       try {
@@ -56,13 +55,11 @@ const CreateProduct = () => {
     fetchExtras();
   }, []);
 
-  // ---------------- Message helper ----------------
   const showMessage = (msg) => {
     setMessage(msg);
     setTimeout(() => setMessage(""), 4000);
   };
 
-  // ---------------- Handlers ----------------
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
@@ -70,15 +67,10 @@ const CreateProduct = () => {
 
   const handleCategoryChange = (e) => {
     const selectedCat = e.target.value;
-
-    // Filter subcategories for this category
     const filteredSubCats = allSubCategories.filter((sc) => sc.parentCategory?._id === selectedCat);
     setSubCategories(filteredSubCats);
 
-    // Reset subcategory if it doesn't belong to selected category
     const newSubCat = filteredSubCats.some((sc) => sc._id === formData.subCategory) ? formData.subCategory : "";
-
-    // Filter tags
     const newFilteredTags = allTags.filter((t) => t.categoryId === selectedCat);
     const newSelectedTags = formData.tags.filter((t) => t.categoryId === selectedCat);
 
@@ -113,7 +105,6 @@ const CreateProduct = () => {
 
   const removeSpec = (index) => setSpecs((prev) => prev.filter((_, i) => i !== index));
 
-  // ---------------- Submit ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!logo || !formData.name || !formData.price || !formData.subCategory)
@@ -153,31 +144,29 @@ const CreateProduct = () => {
     setSubCategories([]);
   };
 
-  // ---------------- JSX ----------------
   return (
-    <div className="create-product-container">
+    <div className={styles.createProductContainer}>
       <h2>Create Product</h2>
-      {message && <p className="message">{message}</p>}
+      {message && <p className={styles.message}>{message}</p>}
 
-      <form onSubmit={handleSubmit} className="product-form">
+      <form onSubmit={handleSubmit} className={styles.productForm}>
         {/* Product Details */}
-        <div className="form-section">
-          <div className="heading-instock">
+        <div className={styles.formSection}>
+          <div className={styles.headingInstock}>
             <h3>Product Details</h3>
-            <label className="instock-label">
+            <label className={styles.instockLabel}>
               <input type="checkbox" name="inStock" checked={formData.inStock} onChange={handleChange} /> In Stock
             </label>
           </div>
 
           <input type="text" name="name" placeholder="Product Name" value={formData.name} onChange={handleChange} required />
 
-          <div className="price-fields">
+          <div className={styles.priceFields}>
             <input type="number" name="price" placeholder="Price" value={formData.price} onChange={handleChange} required />
             <input type="number" name="discountPrice" placeholder="Discount Price (optional)" value={formData.discountPrice} onChange={handleChange} />
           </div>
 
-          {/* Category */}
-          <div className="category-section">
+          <div className={styles.categorySection}>
             <label>Category</label>
             <select value={formData.category} onChange={handleCategoryChange}>
               <option value="">-- Select a category --</option>
@@ -185,8 +174,7 @@ const CreateProduct = () => {
             </select>
           </div>
 
-          {/* SubCategory */}
-          <div className="category-section">
+          <div className={styles.categorySection}>
             <label>Subcategory</label>
             <select value={formData.subCategory} onChange={handleSubCategoryChange}>
               <option value="">-- Select a subcategory --</option>
@@ -194,46 +182,42 @@ const CreateProduct = () => {
             </select>
           </div>
 
-          {/* Tags */}
-          <div className="tags-section">
+          <div className={styles.tagsSection}>
             <label>Tags</label>
             <Select isMulti options={filteredTags} value={formData.tags} onChange={handleTagsChange} placeholder="Select tags..." />
           </div>
         </div>
 
-        {/* Description */}
-        <div className="form-section">
+        <div className={styles.formSection}>
           <h3>Product Description</h3>
-          <QuillEditor ref={quillRef} value={description} onChange={setDescription} placeholder="Write a detailed product description..." />
+          <QuillEditor ref={quillRef} value={description} onChange={setDescription} className={styles.qlContainer} placeholder="Write a detailed product description..." />
         </div>
 
-        {/* Images */}
-        <div className="form-section">
+        <div className={styles.formSection}>
           <h3>Images</h3>
           <label>Logo (required): <input type="file" accept="image/*" onChange={handleLogoChange} /></label>
           <label>Additional Images (max 4): <input type="file" accept="image/*" multiple onChange={handleImagesChange} /></label>
         </div>
 
-        {/* Specs */}
-        <div className="form-section">
+        <div className={styles.formSection}>
           <h3>Specifications</h3>
-          <table className="specs-table">
+          <table className={styles.specsTable}>
             <thead><tr><th>Key</th><th>Value</th><th>Action</th></tr></thead>
             <tbody>
               {specs.map((spec, i) => (
                 <tr key={i}>
                   <td><input value={spec.key} onChange={(e) => handleSpecChange(i, "key", e.target.value)} /></td>
                   <td><input value={spec.value} onChange={(e) => handleSpecChange(i, "value", e.target.value)} /></td>
-                  <td><button type="button" className="small-btn" onClick={() => removeSpec(i)}>Remove</button></td>
+                  <td><button type="button" className={styles.smallBtn} onClick={() => removeSpec(i)}>Remove</button></td>
                 </tr>
               ))}
             </tbody>
           </table>
+          
         </div>
 
-        {/* Submit */}
-        <div className="form-section">
-          <button type="submit" className="submit-btn">Create Product</button>
+        <div className={styles.formSection}>
+          <button type="submit" className={styles.submitBtn}>Create Product</button>
         </div>
       </form>
     </div>

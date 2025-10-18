@@ -1,5 +1,5 @@
 /* Container for the whole login form */
-.login-admin-container {
+.loginAdminContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -10,13 +10,13 @@
 }
 
 /* Heading */
-.login-admin-container h2 {
+.loginAdminContainer h2 {
   margin-bottom: 20px;
   color: #333;
 }
 
 /* Form styling */
-.login-admin-form {
+.loginAdminForm {
   display: flex;
   flex-direction: column;
   width: 300px;
@@ -27,7 +27,7 @@
 }
 
 /* Input fields */
-.login-admin-form input {
+.loginAdminForm input {
   padding: 12px;
   margin-bottom: 15px;
   border: 1px solid #ccc;
@@ -36,13 +36,13 @@
   transition: border-color 0.2s;
 }
 
-.login-admin-form input:focus {
+.loginAdminForm input:focus {
   border-color: #007bff;
   outline: none;
 }
 
 /* Button */
-.login-admin-form button {
+.loginAdminForm button {
   padding: 12px;
   background: #007bff;
   color: #fff;
@@ -53,17 +53,17 @@
   transition: background 0.2s;
 }
 
-.login-admin-form button:disabled {
+.loginAdminForm button:disabled {
   background: #6c757d;
   cursor: not-allowed;
 }
 
-.login-admin-form button:hover:not(:disabled) {
+.loginAdminForm button:hover:not(:disabled) {
   background: #0056b3;
 }
 
 /* Error / info message */
-.login-message {
+.loginMessage {
   margin-top: 15px;
   color: #e74c3c;
   font-weight: 500;

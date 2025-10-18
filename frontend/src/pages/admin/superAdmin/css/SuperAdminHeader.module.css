@@ -1,10 +1,8 @@
-/* SuperAdminHeader.css - scoped for SuperAdminHeader only */
-
-.superadmin-header {
+.superadminHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #0f172a; /* deep navy */
+  background: #0f172a;
   color: #f8fafc;
   padding: 14px 32px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -15,30 +13,30 @@
 }
 
 /* Logo */
-.superadmin-header .logo-link {
+.logoLink {
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: #38bdf8; /* light blue accent */
+  color: #38bdf8;
   text-transform: uppercase;
-  text-decoration: none; /* remove underline */
+  text-decoration: none;
   cursor: pointer;
   transition: color 0.25s ease, transform 0.2s ease;
 }
 
-.superadmin-header .logo-link:hover {
-  color: #60a5fa; /* lighter blue on hover */
+.logoLink:hover {
+  color: #60a5fa;
   transform: scale(1.05);
 }
 
 /* Navigation links */
-.superadmin-header .nav-links {
+.navLinks {
   display: flex;
   align-items: center;
   gap: 24px;
 }
 
-.superadmin-header .nav-links a {
+.navLinks a {
   color: #e2e8f0;
   font-weight: 500;
   font-size: 0.95rem;
@@ -47,7 +45,7 @@
   transition: color 0.25s ease;
 }
 
-.superadmin-header .nav-links a::after {
+.navLinks a::after {
   content: "";
   position: absolute;
   left: 0;
@@ -58,16 +56,16 @@
   transition: width 0.25s ease;
 }
 
-.superadmin-header .nav-links a:hover {
+.navLinks a:hover {
   color: #38bdf8;
 }
 
-.superadmin-header .nav-links a:hover::after {
+.navLinks a:hover::after {
   width: 100%;
 }
 
 /* Logout button */
-.superadmin-header .logout-btn {
+.logoutBtn {
   background: linear-gradient(135deg, #ef4444, #dc2626);
   color: #fff;
   border: none;
@@ -79,26 +77,26 @@
   transition: transform 0.15s ease, background 0.3s ease;
 }
 
-.superadmin-header .logout-btn:hover {
+.logoutBtn:hover {
   transform: translateY(-2px);
   background: linear-gradient(135deg, #f87171, #dc2626);
 }
 
 /* Mobile responsive */
 @media (max-width: 768px) {
-  .superadmin-header {
+  .superadminHeader {
     flex-direction: column;
     align-items: flex-start;
     padding: 16px;
     gap: 12px;
   }
 
-  .superadmin-header .nav-links {
+  .navLinks {
     flex-wrap: wrap;
     gap: 12px 16px;
   }
 
-  .superadmin-header .logout-btn {
+  .logoutBtn {
     width: 100%;
     text-align: center;
   }

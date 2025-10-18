@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../../../../api/api"; // adjust path
-import "../css/SuperAdminHeader.css";
+import styles from "../css/SuperAdminHeader.module.css"; // CSS module
 
 export default function SuperAdminHeader() {
   const [admin, setAdmin] = useState(null); // null = loading, false = not super admin
@@ -12,10 +12,10 @@ export default function SuperAdminHeader() {
       try {
         const res = await API.get("/admin/me");
         if (res.data.admin?.isSuper) setAdmin(res.data.admin);
-        else navigate("/admin/dashboard"); // redirect normal admin
+        else navigate("/admin/dashboard");
       } catch {
         setAdmin(false);
-        navigate("/admin/login"); // redirect if not logged in
+        navigate("/admin/login");
       }
     };
     checkLogin();
@@ -35,18 +35,17 @@ export default function SuperAdminHeader() {
   if (admin === null) return <div>Loading...</div>;
 
   return (
-    <header className="superadmin-header">
-      {/* Logo now clickable */}
-      <Link to="/admin/superadmin-dashboard" className="logo-link">
+    <header className={styles.superadminHeader}>
+      <Link to="/admin/superadmin-dashboard" className={styles.logoLink}>
         SuperAdmin Panel
       </Link>
 
-      <nav className="nav-links">
+      <nav className={styles.navLinks}>
         <Link to="/admin/superadmin-extras">Category/Tags</Link>
         <Link to="/admin/create-admin">Create Admin</Link>
         <Link to="/admin/create-product">Create Product</Link>
         <Link to="/admin/products">All Products</Link>
-        <button onClick={handleLogout} className="logout-btn">
+        <button onClick={handleLogout} className={styles.logoutBtn}>
           Logout
         </button>
       </nav>

@@ -1,0 +1,179 @@
+.adminProductsContainer {
+  padding: 30px;
+  background: #f9fafc;
+  min-height: 100vh;
+  font-family: "Inter", sans-serif;
+}
+
+.productsHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25px;
+  gap: 10px;
+}
+
+.productsHeader h1 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.productsHeader input[type="text"] {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
+  outline: none;
+  transition: 0.2s;
+  flex: 1 1 250px;
+}
+
+.productsHeader input[type="text"]:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 6px rgba(25, 118, 210, 0.2);
+}
+
+.headerButtonsFull {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.createBtnFull,
+.bulkDeleteBtnFull {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.createBtnFull {
+  background: #2e7d32;
+  color: #fff;
+}
+
+.createBtnFull:hover {
+  background: #256528;
+}
+
+.bulkDeleteBtnFull {
+  background: #c62828;
+  color: #fff;
+}
+
+.bulkDeleteBtnFull:hover:not(:disabled) {
+  background: #9a0007;
+}
+
+.bulkDeleteBtnFull:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.productsTableWrapper {
+  background: white;
+  border-radius: 10px;
+  overflow-x: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.productsTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.productsTable thead {
+  background-color: #f1f3f5;
+}
+
+.productsTable th,
+.productsTable td {
+  padding: 14px 16px;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.productsTable tbody tr {
+  border-bottom: 1px solid #eee;
+  transition: background 0.2s;
+}
+
+.productsTable tbody tr:hover {
+  background-color: #f9f9fb;
+}
+
+.productLogo {
+  width: 45px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.stockStatus {
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.inStock {
+  background: #e6f4ea;
+  color: #2e7d32;
+}
+
+.outStock {
+  background: #fdecea;
+  color: #c62828;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.editBtn,
+.deleteBtn {
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.editBtn {
+  background: #1976d2;
+  color: white;
+}
+
+.editBtn:hover {
+  background: #115293;
+}
+
+.deleteBtn {
+  background: #d32f2f;
+  color: white;
+}
+
+.deleteBtn:hover {
+  background: #9a0007;
+}
+
+.loadingText {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #555;
+  margin-top: 50px;
+}

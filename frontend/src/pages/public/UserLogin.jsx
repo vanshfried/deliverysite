@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/api";
 import { AuthContext } from "../admin/Context/AuthContext.jsx";
-import "./css/UserLogin.css";
+import styles from './css/UserLogin.module.css';
 
 const UserLogin = () => {
   const { setUserLoggedIn, setUser } = useContext(AuthContext);
@@ -15,11 +15,6 @@ const UserLogin = () => {
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const inputsRef = useRef([]);
-
-  useEffect(() => {
-    document.body.classList.add("login-page-bg");
-    return () => document.body.classList.remove("login-page-bg");
-  }, []);
 
   const handlePhoneChange = (e) => {
     setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
@@ -72,11 +67,8 @@ const UserLogin = () => {
 
       setUserLoggedIn(true);
       setUser(res.data.user);
-
-      // Redirect to homepage after login
       navigate("/");
 
-      // Reset form
       setStep(1);
       setPhone("");
       setOtp(Array(6).fill(""));
@@ -94,52 +86,68 @@ const UserLogin = () => {
   };
 
   return (
-    <div className="user-login">
-      <h2>{step === 1 ? "Login with OTP" : "Enter OTP"}</h2>
-      {message && <p className="inline-message">{message}</p>}
+    <div className={styles.loginPageBg}>
+      <div className={styles.userLogin}>
+        <h2>{step === 1 ? "Login with OTP" : "Enter OTP"}</h2>
+        {message && <p className={styles.inlineMessage}>{message}</p>}
 
-      {step === 1 ? (
-        <>
-          <div className="mobile-input-wrapper">
-            <span className="prefix">+91</span>
-            <input
-              type="tel"
-              placeholder="Enter mobile number"
-              value={phone}
-              onChange={handlePhoneChange}
-              maxLength={10}
-              disabled={loading}
-            />
-          </div>
-          <button onClick={requestOtp} disabled={loading}>
-            {loading ? "Sending..." : "Get OTP"}
-          </button>
-        </>
-      ) : (
-        <>
-          <p>OTP sent to +91 {phone}</p>
-          <div className="otp-container">
-            {otp.map((d, i) => (
+        {step === 1 ? (
+          <>
+            <div className={styles.mobileInputWrapper}>
+              <span className={styles.prefix}>+91</span>
               <input
-                key={i}
-                type="text"
-                maxLength={1}
-                value={d}
-                onChange={(e) => handleOtpChange(i, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(i, e)}
-                ref={(el) => (inputsRef.current[i] = el)}
+                type="tel"
+                placeholder="Enter mobile number"
+                value={phone}
+                onChange={handlePhoneChange}
+                maxLength={10}
                 disabled={loading}
+                className={styles.mobileInput}
               />
-            ))}
-          </div>
-          <button onClick={verifyOtp} disabled={loading}>
-            {loading ? "Verifying..." : "Verify OTP"}
-          </button>
-          <button onClick={handleResend} disabled={loading || !otpSent}>
-            Resend OTP
-          </button>
-        </>
-      )}
+            </div>
+            <button
+              onClick={requestOtp}
+              disabled={loading}
+              className={`${styles.getOtpButton} ${styles.buttonCommon}`}
+            >
+              {loading ? "Sending..." : "Get OTP"}
+            </button>
+          </>
+        ) : (
+          <>
+            <p>OTP sent to +91 {phone}</p>
+            <div className={styles.otpContainer}>
+              {otp.map((d, i) => (
+                <input
+                  key={i}
+                  type="text"
+                  maxLength={1}
+                  value={d}
+                  onChange={(e) => handleOtpChange(i, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(i, e)}
+                  ref={(el) => (inputsRef.current[i] = el)}
+                  disabled={loading}
+                  className={styles.otpInput}
+                />
+              ))}
+            </div>
+            <button
+              onClick={verifyOtp}
+              disabled={loading}
+              className={`${styles.verifyOtpButton} ${styles.buttonCommon}`}
+            >
+              {loading ? "Verifying..." : "Verify OTP"}
+            </button>
+            <button
+              onClick={handleResend}
+              disabled={loading || !otpSent}
+              className={styles.resendOtpButton}
+            >
+              Resend OTP
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 };

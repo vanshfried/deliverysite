@@ -3,19 +3,18 @@ import { NavLink } from "react-router-dom";
 import { AuthContext } from "../admin/Context/AuthContext.jsx";
 import { CartContext } from "../admin/Context/CartContext";
 import API from "../../api/api";
-import "./css/UserOnlyHeader.css";
+import styles from "./css/UserOnlyHeader.module.css";
 
 const UserOnlyHeader = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { userLoggedIn, setUserLoggedIn, setUser } = useContext(AuthContext);
-  const { cart } = useContext(CartContext); // live cart
+  const { cart } = useContext(CartContext);
 
-  // Count unique items in cart
   const uniqueCartCount = cart?.items?.length || 0;
 
   const handleLogout = async () => {
     try {
-      await API.post("/users/logout", {}, { withCredentials: true }); // clear cookie on backend
+      await API.post("/users/logout", {}, { withCredentials: true });
       setUserLoggedIn(false);
       setUser(null);
       setMenuOpen(false);
@@ -27,28 +26,28 @@ const UserOnlyHeader = () => {
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header className="user-header">
-      <div className="logo">
+    <header className={styles.userHeader}>
+      <div className={styles.logo}>
         <NavLink to="/" onClick={closeMenu}>MyApp</NavLink>
       </div>
 
-      <nav className={`nav-links ${menuOpen ? "open" : ""}`}>
+      <nav className={`${styles.navLinks} ${menuOpen ? styles.open : ""}`}>
         {userLoggedIn ? (
           <>
             <NavLink to="/cart" onClick={closeMenu}>
-              Cart {uniqueCartCount > 0 && <span className="cart-count">{uniqueCartCount}</span>}
+              Cart {uniqueCartCount > 0 && <span className={styles.cartCount}>{uniqueCartCount}</span>}
             </NavLink>
             <NavLink to="/orders" onClick={closeMenu}>Orders</NavLink>
             <NavLink to="/settings" onClick={closeMenu}>Settings</NavLink>
-            <button className="logout-btn" onClick={handleLogout}>Logout</button>
+            <button className={styles.logoutBtn} onClick={handleLogout}>Logout</button>
           </>
         ) : (
-          <NavLink to="/login" className="login-btn" onClick={closeMenu}>Login</NavLink>
+          <NavLink to="/login" className={styles.loginBtn} onClick={closeMenu}>Login</NavLink>
         )}
       </nav>
 
       <div
-        className={`hamburger ${menuOpen ? "open" : ""}`}
+        className={`${styles.hamburger} ${menuOpen ? styles.open : ""}`}
         onClick={() => setMenuOpen(!menuOpen)}
       >
         <span></span>

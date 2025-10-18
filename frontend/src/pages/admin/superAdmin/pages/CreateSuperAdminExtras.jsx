@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import API from "../../../../api/api";
-import "../css/CreateSuperAdminExtras.css";
+import styles from "../css/CreateSuperAdminExtras.module.css"; // CSS module
 
 const CreateSuperAdminExtras = () => {
   // ---------------- STATES ----------------
@@ -127,7 +127,7 @@ const CreateSuperAdminExtras = () => {
         category: selectedCategoryForTag,
       });
       setTags([...tags, res.data.tag]);
-      setNewTag(""); // keep category selected for multiple tags
+      setNewTag("");
       showMessage("✅ Tag created!");
     } catch (err) {
       console.error(err.response?.data || err);
@@ -150,42 +150,41 @@ const CreateSuperAdminExtras = () => {
   };
 
   // ---------------- GROUP DATA ----------------
-  const groupedSubCategories = categories.map((cat) => ({
-    ...cat,
-    subCategories: subCategories.filter((sc) => sc.parentCategory?._id === cat._id),
-  }));
-
   const groupedTags = categories.map((cat) => ({
     ...cat,
     tags: tags.filter((t) => t.category?._id === cat._id),
   }));
 
   return (
-    <div className="create-superadmin-extras">
+    <div className={styles.createSuperadminExtras}>
       <h2>Super Admin: Manage Categories, Subcategories & Tags</h2>
-      {message && <p className="message">{message}</p>}
+      {message && <p className={styles.message}>{message}</p>}
 
       {/* Categories */}
-      <div className="form-section">
+      <div className={styles.formSection}>
         <h3>Categories</h3>
-        <div className="input-row">
-          <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="New category name" />
+        <div className={styles.inputRow}>
+          <input
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            placeholder="New category name"
+          />
           <button onClick={handleCreateCategory} disabled={loadingCategory}>
             {loadingCategory ? "Adding..." : "Add"}
           </button>
         </div>
-        <ul className="extras-list">
+        <ul className={styles.extrasList}>
           {categories.map((cat) => (
             <li key={cat._id}>
-              <span className="item-name">{cat.name}</span>
-              <div className="actions">
+              <span className={styles.itemName}>{cat.name}</span>
+              <div className={styles.actions}>
                 {pendingDeleteCategory === cat._id ? (
                   <>
-                    <button className="confirm-btn" onClick={() => handleDeleteCategory(cat._id)}>Confirm</button>
-                    <button className="cancel-btn" onClick={() => setPendingDeleteCategory(null)}>Cancel</button>
+                    <button className={styles.confirmBtn} onClick={() => handleDeleteCategory(cat._id)}>Confirm</button>
+                    <button className={styles.cancelBtn} onClick={() => setPendingDeleteCategory(null)}>Cancel</button>
                   </>
                 ) : (
-                  <button className="delete-btn" onClick={() => setPendingDeleteCategory(cat._id)}>🗑</button>
+                  <button className={styles.deleteBtn} onClick={() => setPendingDeleteCategory(cat._id)}>🗑</button>
                 )}
               </div>
             </li>
@@ -194,11 +193,18 @@ const CreateSuperAdminExtras = () => {
       </div>
 
       {/* SubCategories */}
-      <div className="form-section">
+      <div className={styles.formSection}>
         <h3>SubCategories</h3>
-        <div className="input-row">
-          <input value={newSubCategory} onChange={(e) => setNewSubCategory(e.target.value)} placeholder="New subcategory name" />
-          <select value={selectedParentForSubCategory} onChange={(e) => setSelectedParentForSubCategory(e.target.value)}>
+        <div className={styles.inputRow}>
+          <input
+            value={newSubCategory}
+            onChange={(e) => setNewSubCategory(e.target.value)}
+            placeholder="New subcategory name"
+          />
+          <select
+            value={selectedParentForSubCategory}
+            onChange={(e) => setSelectedParentForSubCategory(e.target.value)}
+          >
             <option value="">Select Category</option>
             {categories.map((cat) => <option key={cat._id} value={cat._id}>{cat.name}</option>)}
           </select>
@@ -206,18 +212,18 @@ const CreateSuperAdminExtras = () => {
             {loadingSubCategory ? "Adding..." : "Add"}
           </button>
         </div>
-        <ul className="extras-list">
+        <ul className={styles.extrasList}>
           {subCategories.map((sc) => (
             <li key={sc._id}>
-              <span className="item-name">{sc.name} ({sc.parentCategory?.name})</span>
-              <div className="actions">
+              <span className={styles.itemName}>{sc.name} ({sc.parentCategory?.name})</span>
+              <div className={styles.actions}>
                 {pendingDeleteSubCategory === sc._id ? (
                   <>
-                    <button className="confirm-btn" onClick={() => handleDeleteSubCategory(sc._id)}>Confirm</button>
-                    <button className="cancel-btn" onClick={() => setPendingDeleteSubCategory(null)}>Cancel</button>
+                    <button className={styles.confirmBtn} onClick={() => handleDeleteSubCategory(sc._id)}>Confirm</button>
+                    <button className={styles.cancelBtn} onClick={() => setPendingDeleteSubCategory(null)}>Cancel</button>
                   </>
                 ) : (
-                  <button className="delete-btn" onClick={() => setPendingDeleteSubCategory(sc._id)}>🗑</button>
+                  <button className={styles.deleteBtn} onClick={() => setPendingDeleteSubCategory(sc._id)}>🗑</button>
                 )}
               </div>
             </li>
@@ -226,11 +232,18 @@ const CreateSuperAdminExtras = () => {
       </div>
 
       {/* Tags */}
-      <div className="form-section">
+      <div className={styles.formSection}>
         <h3>Tags</h3>
-        <div className="input-row">
-          <input value={newTag} onChange={(e) => setNewTag(e.target.value)} placeholder="New tag name" />
-          <select value={selectedCategoryForTag} onChange={(e) => setSelectedCategoryForTag(e.target.value)}>
+        <div className={styles.inputRow}>
+          <input
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+            placeholder="New tag name"
+          />
+          <select
+            value={selectedCategoryForTag}
+            onChange={(e) => setSelectedCategoryForTag(e.target.value)}
+          >
             <option value="">Select category</option>
             {categories.map((cat) => <option key={cat._id} value={cat._id}>{cat.name}</option>)}
           </select>
@@ -239,26 +252,26 @@ const CreateSuperAdminExtras = () => {
           </button>
         </div>
         {groupedTags.map((cat) => (
-          <div key={cat._id} className="category-tags-group">
+          <div key={cat._id} className={styles.categoryTagsGroup}>
             <h4>{cat.name}</h4>
-            <ul className="extras-list">
+            <ul className={styles.extrasList}>
               {cat.tags.length > 0 ? (
                 cat.tags.map((tag) => (
                   <li key={tag._id}>
-                    <span className="item-name">{tag.name}</span>
-                    <div className="actions">
+                    <span className={styles.itemName}>{tag.name}</span>
+                    <div className={styles.actions}>
                       {pendingDeleteTag === tag._id ? (
                         <>
-                          <button className="confirm-btn" onClick={() => handleDeleteTag(tag._id)}>Confirm</button>
-                          <button className="cancel-btn" onClick={() => setPendingDeleteTag(null)}>Cancel</button>
+                          <button className={styles.confirmBtn} onClick={() => handleDeleteTag(tag._id)}>Confirm</button>
+                          <button className={styles.cancelBtn} onClick={() => setPendingDeleteTag(null)}>Cancel</button>
                         </>
                       ) : (
-                        <button className="delete-btn" onClick={() => setPendingDeleteTag(tag._id)}>🗑</button>
+                        <button className={styles.deleteBtn} onClick={() => setPendingDeleteTag(tag._id)}>🗑</button>
                       )}
                     </div>
                   </li>
                 ))
-              ) : <li className="no-tags">No tags in this category</li>}
+              ) : <li className={styles.noTags}>No tags in this category</li>}
             </ul>
           </div>
         ))}

@@ -1,19 +1,24 @@
-.cart-page-wrapper .cart-container {
+.cartWrapper {
+  padding: 40px 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.cartContainer {
   max-width: 900px;
-  margin: 40px auto;
-  padding: 0 20px;
-  background-color: #fff;
+  margin: 0 auto;
+  background: #fff;
   border-radius: 10px;
+  padding: 20px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-.cart-page-wrapper .cart-container h1 {
+.cartContainer h1 {
   text-align: center;
   margin-bottom: 20px;
   color: #333;
 }
 
-.cart-page-wrapper .clear-cart-btn {
+.clearBtn {
   background-color: #ff4d4f;
   color: white;
   border: none;
@@ -24,47 +29,48 @@
   transition: 0.2s;
 }
 
-.cart-page-wrapper .clear-cart-btn:hover {
+.clearBtn:hover {
   background-color: #ff7875;
 }
 
-.cart-page-wrapper .cart-table {
+.cartTable {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 20px;
 }
 
-.cart-page-wrapper .cart-table th,
-.cart-page-wrapper .cart-table td {
+.cartTable th,
+.cartTable td {
   border: 1px solid #ddd;
   padding: 10px;
   text-align: center;
 }
 
-.cart-page-wrapper .cart-table th {
+.cartTable th {
   background-color: #f5f5f5;
 }
 
-.cart-page-wrapper .product-info {
+.productInfo {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.cart-page-wrapper .product-image {
+.productImage {
   width: 50px;
   height: 50px;
   object-fit: cover;
   border-radius: 5px;
 }
 
-.cart-page-wrapper .quantity-controls {
+.quantityControls {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
 }
-.cart-page-wrapper .quantity-controls button {
+
+.quantityControls button {
   width: 35px;
   height: 35px;
   font-size: 18px;
@@ -78,14 +84,17 @@
   justify-content: center;
   transition: background-color 0.2s;
 }
-.cart-page-wrapper .quantity-controls button:disabled {
+
+.quantityControls button:disabled {
   background-color: #bfbfbf;
   cursor: not-allowed;
 }
-.cart-page-wrapper .quantity-controls button:hover:not(:disabled) {
+
+.quantityControls button:hover:not(:disabled) {
   background-color: #40a9ff;
 }
-.cart-page-wrapper .quantity-controls span {
+
+.quantityControls span {
   width: 40px;
   display: inline-flex;
   align-items: center;
@@ -97,11 +106,11 @@
   background-color: #fafafa;
 }
 
-.cart-page-wrapper .cart-total {
+.cartTotal {
   text-align: right;
 }
 
-.cart-page-wrapper .checkout-btn {
+.checkoutBtn {
   background-color: #52c41a;
   color: white;
   border: none;
@@ -112,12 +121,12 @@
   transition: 0.2s;
 }
 
-.cart-page-wrapper .checkout-btn:hover {
+.checkoutBtn:hover {
   background-color: #73d13d;
 }
 
-.cart-page-wrapper .cart-empty,
-.cart-page-wrapper .cart-loading {
+.cartEmpty,
+.cartLoading {
   text-align: center;
   font-size: 18px;
   margin-top: 50px;

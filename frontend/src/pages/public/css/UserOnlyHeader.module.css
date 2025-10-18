@@ -1,5 +1,4 @@
-/* Header wrapper */
-.user-header {
+.userHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -10,33 +9,30 @@
   z-index: 1000;
 }
 
-/* Logo */
-.user-header .logo a {
+.logo a {
   text-decoration: none;
   color: white;
   font-size: 1.5rem;
   font-weight: bold;
 }
 
-/* Navigation links */
-.nav-links {
+.navLinks {
   display: flex;
   gap: 15px;
   align-items: center;
 }
 
-.nav-links a {
+.navLinks a {
   color: white;
   text-decoration: none;
   font-weight: 500;
 }
 
-.nav-links a:hover {
+.navLinks a:hover {
   text-decoration: underline;
 }
 
-/* Logout button */
-.logout-btn {
+.logoutBtn {
   background-color: #e53935;
   border: none;
   padding: 6px 12px;
@@ -46,11 +42,10 @@
   font-weight: 500;
 }
 
-.logout-btn:hover {
+.logoutBtn:hover {
   background-color: #c62828;
 }
 
-/* Hamburger menu */
 .hamburger {
   display: none;
   flex-direction: column;
@@ -65,8 +60,7 @@
   border-radius: 2px;
 }
 
-/* Open state for mobile menu */
-.nav-links.open {
+.navLinks.open {
   display: flex;
   flex-direction: column;
   position: absolute;
@@ -76,7 +70,8 @@
   padding: 10px 15px;
   border-radius: 8px;
 }
-.cart-count {
+
+.cartCount {
   display: inline-block;
   background-color: #ff4d4f;
   color: white;
@@ -86,9 +81,8 @@
   margin-left: 5px;
 }
 
-/* Responsive for mobile */
 @media screen and (max-width: 768px) {
-  .nav-links {
+  .navLinks {
     display: none;
     flex-direction: column;
     position: absolute;

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import ProtectedRoute from "../../../../components/ProtectedRoutes";
-import "../css/SuperAdminDashboard.css"; // ensure path is correct
+import styles from "../css/SuperAdminDashboard.module.css"; // CSS module
 
 function DashboardContent() {
   const tools = [
@@ -12,15 +12,15 @@ function DashboardContent() {
   ];
 
   return (
-    <div className="superadmin-dashboard">
+    <div className={styles.superadminDashboard}>
       <header>
         <h2>Super Admin Dashboard</h2>
         <p>Welcome, superadmin! Full access granted.</p>
       </header>
 
-      <div className="tools">
+      <div className={styles.tools}>
         {tools.map((tool, idx) => (
-          <Link key={idx} to={tool.link} className="tool-card">
+          <Link key={idx} to={tool.link} className={styles.toolCard}>
             {tool.title}
           </Link>
         ))}

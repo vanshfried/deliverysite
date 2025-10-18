@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { AuthContext } from "../Context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../../../api/api.js";
-import "../css/AdminHeader.css";
+import styles from "../css/AdminHeader.module.css"; // <-- CSS module import
 
 export default function AdminHeader() {
   const { setIsLoggedIn, setIsSuper } = useContext(AuthContext);
@@ -21,14 +21,14 @@ export default function AdminHeader() {
   };
 
   return (
-    <header className="admin-header">
-      <div className="logo">
+    <header className={styles.adminHeader}>
+      <div className={styles.logo}>
         <Link to="/admin/dashboard">Dashboard</Link>
       </div>
-      <nav className="nav-links">
+      <nav className={styles.navLinks}>
         <Link to="/admin/create-product">Create Product</Link>
         <Link to="/admin/products">All Products</Link>
-        <button onClick={handleLogout} className="logout-btn">
+        <button onClick={handleLogout} className={styles.logoutBtn}>
           Logout
         </button>
       </nav>

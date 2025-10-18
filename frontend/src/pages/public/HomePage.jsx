@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/api";
-import "./css/HomePage.css";
+import styles from "./css/HomePage.module.css"; // <-- CSS module
 
 const HomePage = () => {
   const [products, setProducts] = useState([]);
@@ -11,7 +11,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await API.get("/products"); // Fetch all products
+        const res = await API.get("/products");
         setProducts(res.data.products || []);
       } catch (err) {
         console.error("Error fetching products:", err);
@@ -19,37 +19,35 @@ const HomePage = () => {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, []);
 
-  if (loading) return <p className="hp-loading">Loading products...</p>;
-  if (!products.length) return <p className="hp-loading">No products found.</p>;
+  if (loading) return <p className={styles.hpLoading}>Loading products...</p>;
+  if (!products.length) return <p className={styles.hpLoading}>No products found.</p>;
 
   return (
-    <div className="hp-container">
+    <div className={styles.hpContainer}>
       <h1>Our Products</h1>
-      <div className="hp-grid">
+      <div className={styles.hpGrid}>
         {products.map((product) => (
           <div
             key={product._id}
-            className="hp-card"
-            onClick={() => navigate(`/product/${product.slug}`)} // ✅ Use slug
+            className={styles.hpCard}
+            onClick={() => navigate(`/product/${product.slug}`)}
           >
-            <div className="hp-image">
+            <div className={styles.hpImage}>
               <img src={`${API.URL}/${product.logo}`} alt={product.name} />
             </div>
-
-            <div className="hp-info">
+            <div className={styles.hpInfo}>
               <h2>{product.name}</h2>
-              <p className="hp-price">
+              <p className={styles.hpPrice}>
                 {product.discountPrice > 0 ? (
                   <>
-                    <span className="hp-original-price">₹{product.price}</span>
-                    <span className="hp-discount-price">₹{product.discountPrice}</span>
+                    <span className={styles.hpOriginalPrice}>₹{product.price}</span>
+                    <span className={styles.hpDiscountPrice}>₹{product.discountPrice}</span>
                   </>
                 ) : (
-                  <span className="hp-discount-price">₹{product.price}</span>
+                  <span className={styles.hpDiscountPrice}>₹{product.price}</span>
                 )}
               </p>
             </div>

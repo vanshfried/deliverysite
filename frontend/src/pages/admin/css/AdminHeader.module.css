@@ -1,43 +1,41 @@
-/* AdminHeader.css */
-
-.admin-header {
+.adminHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 24px;
-  background-color: #2c3e50; /* dark blue/gray */
+  background-color: #2c3e50; 
   color: #fff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   font-family: Arial, sans-serif;
 }
 
-.admin-header .logo a {
-  color: #1abc9c; /* greenish accent */
+.logo a {
+  color: #1abc9c;
   font-size: 1.5rem;
   font-weight: bold;
   text-decoration: none;
 }
 
-.admin-header .nav-links {
+.navLinks {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-.admin-header .nav-links a {
+.navLinks a {
   color: #fff;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
 }
 
-.admin-header .nav-links a:hover {
+.navLinks a:hover {
   color: #1abc9c;
 }
 
-.admin-header .nav-links .logout-btn {
+.logoutBtn {
   padding: 5px 12px;
-  background-color: #e74c3c; /* red */
+  background-color: #e74c3c;
   border: none;
   border-radius: 5px;
   color: #fff;
@@ -46,18 +44,17 @@
   transition: background-color 0.2s ease;
 }
 
-.admin-header .nav-links .logout-btn:hover {
-  background-color: #c0392b; /* darker red */
+.logoutBtn:hover {
+  background-color: #c0392b;
 }
 
-/* Optional: Responsive adjustments */
 @media (max-width: 600px) {
-  .admin-header {
+  .adminHeader {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .admin-header .nav-links {
+  .navLinks {
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 8px;

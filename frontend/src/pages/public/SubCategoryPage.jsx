@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate, Link } from "react-router-dom";
 import API from "../../api/api";
-import "./css/SubCategoryPage.css";
+import styles from './css/SubCategoryPage.module.css';
 
 const SubCategoryPage = () => {
   const { slug } = useParams(); // ✅ use slug instead of id
@@ -13,7 +13,7 @@ const SubCategoryPage = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await API.get(`/products/subcategory/slug/${slug}`); // backend endpoint by slug
+        const res = await API.get(`/products/subcategory/slug/${slug}`);
         setProducts(res.data.products || []);
       } catch (err) {
         console.error(err);
@@ -24,39 +24,37 @@ const SubCategoryPage = () => {
     fetchProducts();
   }, [slug]);
 
-  if (loading) return <p className="scp-loading-text">Loading products...</p>;
-  if (!products.length) return <p className="scp-loading-text">No products found.</p>;
+  if (loading) return <p className={styles.scpLoadingText}>Loading products...</p>;
+  if (!products.length) return <p className={styles.scpLoadingText}>No products found.</p>;
 
   return (
-    <div className="scp-container">
+    <div className={styles.scpContainer}>
       {/* Breadcrumb */}
-      <nav className="scp-breadcrumb">
+      <nav className={styles.scpBreadcrumb}>
         <Link to="/">Home</Link> &gt; <span>{state?.name || "Subcategory"}</span>
       </nav>
 
-      <h1 className="scp-title">{state?.name || "Subcategory Products"}</h1>
+      <h1 className={styles.scpTitle}>{state?.name || "Subcategory Products"}</h1>
 
-      <div className="scp-products-grid">
+      <div className={styles.scpProductsGrid}>
         {products.map((product) => (
           <div
             key={product._id}
-            className="scp-product-card"
+            className={styles.scpProductCard}
             onClick={() =>
-              navigate(`/product/${product.slug}`, {
-                state: { name: product.name },
-              })
+              navigate(`/product/${product.slug}`, { state: { name: product.name } })
             }
           >
-            <div className="scp-product-image">
+            <div className={styles.scpProductImage}>
               <img src={`${API.URL}/${product.logo}`} alt={product.name} />
             </div>
-            <div className="scp-product-info">
+            <div className={styles.scpProductInfo}>
               <h2>{product.name}</h2>
-              <p className="scp-price">
+              <p className={styles.scpPrice}>
                 {product.discountPrice > 0 ? (
                   <>
-                    <span className="scp-original-price">₹{product.price}</span>
-                    <span className="scp-discount-price">₹{product.discountPrice}</span>
+                    <span className={styles.scpOriginalPrice}>₹{product.price}</span>
+                    <span className={styles.scpDiscountPrice}>₹{product.discountPrice}</span>
                   </>
                 ) : (
                   <span>₹{product.price}</span>

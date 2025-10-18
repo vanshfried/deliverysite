@@ -1,7 +1,4 @@
-/* ------------------------------
-   CreateSuperAdminExtras Scoped
------------------------------- */
-.create-superadmin-extras {
+.createSuperadminExtras {
   --primary: #4caf50;
   --primary-hover: #43a047;
   --danger: #ef4444;
@@ -20,14 +17,14 @@
   color: var(--text-dark);
 }
 
-.create-superadmin-extras h2 {
+.createSuperadminExtras h2 {
   text-align: center;
   margin-bottom: 1.8rem;
   font-weight: 600;
   font-size: 1.6rem;
 }
 
-.create-superadmin-extras .message {
+.createSuperadminExtras .message {
   text-align: center;
   margin-bottom: 1.2rem;
   padding: 0.6rem 1rem;
@@ -38,26 +35,27 @@
   border: 1px solid #bbf7d0;
 }
 
-.create-superadmin-extras .form-section {
+.createSuperadminExtras .formSection {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid #e5e7eb;
 }
 
-.create-superadmin-extras .form-section h3 {
+.createSuperadminExtras .formSection h3 {
   margin-bottom: 0.8rem;
   font-weight: 600;
   border-left: 4px solid var(--primary);
   padding-left: 8px;
 }
 
-.create-superadmin-extras .input-row {
+.createSuperadminExtras .inputRow {
   display: flex;
   gap: 8px;
   margin-bottom: 1rem;
 }
 
-.create-superadmin-extras .input-row input[type="text"] {
+.createSuperadminExtras .inputRow input[type="text"],
+.createSuperadminExtras .inputRow select {
   flex: 1;
   padding: 0.55rem 0.75rem;
   border: 1px solid #d1d5db;
@@ -67,12 +65,13 @@
   transition: all 0.2s ease;
 }
 
-.create-superadmin-extras .input-row input[type="text"]:focus {
+.createSuperadminExtras .inputRow input:focus,
+.createSuperadminExtras .inputRow select:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
 }
 
-.create-superadmin-extras .input-row button {
+.createSuperadminExtras .inputRow button {
   padding: 0.55rem 1rem;
   font-size: 0.95rem;
   background-color: var(--primary);
@@ -83,16 +82,16 @@
   transition: all 0.2s ease;
 }
 
-.create-superadmin-extras .input-row button:hover {
+.createSuperadminExtras .inputRow button:hover {
   background-color: var(--primary-hover);
 }
 
-.create-superadmin-extras .extras-list {
+.createSuperadminExtras .extrasList {
   list-style: none;
   padding-left: 0;
 }
 
-.create-superadmin-extras .extras-list li {
+.createSuperadminExtras .extrasList li {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -104,16 +103,16 @@
   transition: background 0.2s ease;
 }
 
-.create-superadmin-extras .extras-list li:hover {
+.createSuperadminExtras .extrasList li:hover {
   background: #eef2f7;
 }
 
-.create-superadmin-extras .extras-list .actions {
+.createSuperadminExtras .actions {
   display: flex;
   gap: 4px;
 }
 
-.create-superadmin-extras .delete-btn {
+.createSuperadminExtras .deleteBtn {
   background: var(--danger);
   color: white;
   border: none;
@@ -124,12 +123,13 @@
   transition: all 0.15s ease;
 }
 
-.create-superadmin-extras .delete-btn:hover {
+.createSuperadminExtras .deleteBtn:hover {
   background: var(--danger-hover);
   transform: scale(1.1);
 }
-.create-superadmin-extras .confirm-btn {
-  background: #f59e0b; /* amber */
+
+.createSuperadminExtras .confirmBtn {
+  background: #f59e0b;
   color: #fff;
   border: none;
   padding: 2px 6px;
@@ -140,13 +140,13 @@
   transition: all 0.15s ease;
 }
 
-.create-superadmin-extras .confirm-btn:hover {
+.createSuperadminExtras .confirmBtn:hover {
   background: #d97706;
   transform: scale(1.05);
 }
 
-.create-superadmin-extras .cancel-btn {
-  background: #6b7280; /* gray */
+.createSuperadminExtras .cancelBtn {
+  background: #6b7280;
   color: #fff;
   border: none;
   padding: 2px 6px;
@@ -156,23 +156,28 @@
   transition: all 0.15s ease;
 }
 
-.create-superadmin-extras .cancel-btn:hover {
+.createSuperadminExtras .cancelBtn:hover {
   background: #4b5563;
   transform: scale(1.05);
 }
 
+.createSuperadminExtras .noTags {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
-  .create-superadmin-extras .input-row {
+  .createSuperadminExtras .inputRow {
     flex-direction: column;
   }
 
-  .create-superadmin-extras .extras-list li {
+  .createSuperadminExtras .extrasList li {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .create-superadmin-extras .extras-list .actions {
+  .createSuperadminExtras .actions {
     margin-top: 4px;
   }
 }
