@@ -2,22 +2,24 @@ import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../../api/api";
 import { CartContext } from "../admin/Context/CartContext";
+import { AuthContext } from "../admin/Context/AuthContext";
 import styles from "./css/ProductDetails.module.css";
 
 const ProductDetails = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { addToCart, cart } = useContext(CartContext);
+  const { userLoggedIn } = useContext(AuthContext);
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentImage, setCurrentImage] = useState("");
   const [addingToCart, setAddingToCart] = useState(false);
-
   const [similarProducts, setSimilarProducts] = useState([]);
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
 
-  // Scroll instantly to top whenever slug changes
+  // Scroll to top on slug change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
@@ -70,7 +72,12 @@ const ProductDetails = () => {
   const allImages = [logo, ...(images || [])].filter(Boolean);
   const isInCart = cart.items.some((item) => item.product._id === product._id);
 
+  // Handle Add to Cart with login check
   const handleAddToCart = async () => {
+    if (!userLoggedIn) {
+      setShowLoginPopup(true);
+      return;
+    }
     if (!inStock || isInCart) return;
     setAddingToCart(true);
     try {
@@ -83,8 +90,33 @@ const ProductDetails = () => {
     }
   };
 
+  // Handle Buy Now with login check
+  const handleBuyNow = () => {
+    if (!userLoggedIn) {
+      setShowLoginPopup(true);
+      return;
+    }
+    // Navigate to checkout page (example)
+    navigate("/checkout");
+  };
+
+  // Popup component
+  const LoginPrompt = () => (
+    <div className={styles.loginPopupBackdrop}>
+      <div className={styles.loginPopup}>
+        <p>You need to log in to perform this action.</p>
+        <div className={styles.popupButtons}>
+          <button onClick={() => { navigate("/login"); setShowLoginPopup(false); }}>Login</button>
+          <button onClick={() => setShowLoginPopup(false)}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className={styles.pdContainer}>
+      {showLoginPopup && <LoginPrompt />}
+
       <div className={styles.pdGrid}>
         {/* Thumbnails */}
         {allImages.length > 0 && (
@@ -160,7 +192,9 @@ const ProductDetails = () => {
             >
               {isInCart ? "Added to Cart" : addingToCart ? "Adding..." : "Add to Cart"}
             </button>
-            <button className={styles.pdBuyNow}>Buy Now</button>
+            <button className={styles.pdBuyNow} onClick={handleBuyNow}>
+              Buy Now
+            </button>
           </div>
         </div>
       </div>

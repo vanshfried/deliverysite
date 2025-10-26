@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
-import API from "../../../api/api.js";
+import API, { setUserLoggedInFlag } from "../../../api/api.js";
 
 export const AuthContext = createContext();
 
@@ -11,29 +11,34 @@ export function AuthProvider({ children }) {
   const [isSuper, setIsSuper] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Check user login
+  // Only attempt API calls if we suspect user might be logged in
   const fetchUser = async () => {
+    if (!document.cookie.includes("session")) return; // skip if no session cookie
     try {
       const res = await API.get("/users/me");
       setUserLoggedIn(true);
       setUser(res.data.user);
+      setUserLoggedInFlag(true); // tell API interceptor user is logged in
     } catch {
       setUserLoggedIn(false);
       setUser(null);
+      setUserLoggedInFlag(false);
     }
   };
 
-  // Check admin login
   const fetchAdmin = async () => {
+    if (!document.cookie.includes("adminSession")) return; // skip if no admin session
     try {
       const res = await API.get("/admin/me");
       setAdminLoggedIn(true);
       setAdmin(res.data.admin);
       setIsSuper(res.data.admin.isSuper);
+      setUserLoggedInFlag(true);
     } catch {
       setAdminLoggedIn(false);
       setAdmin(null);
       setIsSuper(false);
+      setUserLoggedInFlag(false);
     }
   };
 
