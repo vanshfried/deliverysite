@@ -19,12 +19,14 @@ const ProductDetails = () => {
   const [similarProducts, setSimilarProducts] = useState([]);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
 
-  // Scroll to top on slug change
   useEffect(() => {
     window.scrollTo(0, 0);
+    setProduct(null);
+    setSimilarProducts([]);
+    setLoading(true);
   }, [slug]);
 
-  // Fetch main product
+  // Fetch Product
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -33,7 +35,6 @@ const ProductDetails = () => {
         setProduct(p);
         setCurrentImage(p.logo || (p.images && p.images[0]) || "");
       } catch (err) {
-        console.error(err);
         setError(err.response?.data?.message || "Error fetching product");
       } finally {
         setLoading(false);
@@ -42,21 +43,50 @@ const ProductDetails = () => {
     fetchProduct();
   }, [slug]);
 
-  // Fetch similar products
+  // Smart Similar Products Logic
   useEffect(() => {
-    if (!product?.subCategory?.slug) return;
+    if (!product) return;
 
     const fetchSimilar = async () => {
       try {
-        const res = await API.get(`/products/subcategory/slug/${product.subCategory.slug}`);
-        const filtered = res.data.products
-          .filter((p) => p._id !== product._id)
+        let similar = [];
+        const tagIds = product.tags?.map((tag) => tag._id).join(",");
+
+        // Fetch both in parallel
+        const [scRes, tagRes] = await Promise.all([
+          product.subCategory?.slug
+            ? API.get(`/products/subcategory/slug/${product.subCategory.slug}`)
+            : { data: { products: [] } },
+          product.tags?.length > 0
+            ? API.get(`/products/tags/${tagIds}`)
+            : { data: { products: [] } },
+        ]);
+
+        const subcatProducts = scRes.data.products.filter((p) => p._id !== product._id);
+        const tagProducts = tagRes.data.products.filter((p) => p._id !== product._id);
+
+        // Count tag matches for sorting
+        const tagSet = new Set(product.tags?.map((t) => t._id));
+
+        const scoreMatch = (p) => {
+          const tagCount = p.tags?.filter((t) => tagSet.has(t._id)).length || 0;
+          const subcatMatch = p.subCategory?._id === product.subCategory?._id ? 1 : 0;
+          return tagCount * 10 + subcatMatch * 5;
+        };
+
+        // Merge + score + sort + dedupe
+        const merged = [...subcatProducts, ...tagProducts]
+          .map((p) => ({ ...p, score: scoreMatch(p) }))
+          .sort((a, b) => b.score - a.score)
+          .filter((p, i, arr) => arr.findIndex(x => x._id === p._id) === i)
           .slice(0, 10);
-        setSimilarProducts(filtered);
+
+        setSimilarProducts(merged);
       } catch (err) {
-        console.error("Error fetching similar products:", err);
+        console.error("Similar Fetch Error:", err);
       }
     };
+
     fetchSimilar();
   }, [product]);
 
@@ -65,48 +95,52 @@ const ProductDetails = () => {
   if (!product) return <div className={styles.pdContainerError}>No product found</div>;
 
   const {
-    name, description, logo, images, price, discountPrice, inStock,
-    tags, videos, specs, subCategory
+    name,
+    description,
+    logo,
+    images,
+    price,
+    discountPrice,
+    inStock,
+    tags,
+    videos,
+    specs,
+    subCategory,
   } = product;
 
   const allImages = [logo, ...(images || [])].filter(Boolean);
   const isInCart = cart.items.some((item) => item.product._id === product._id);
 
-  // Handle Add to Cart with login check
   const handleAddToCart = async () => {
-    if (!userLoggedIn) {
-      setShowLoginPopup(true);
-      return;
-    }
+    if (!userLoggedIn) return setShowLoginPopup(true);
     if (!inStock || isInCart) return;
     setAddingToCart(true);
     try {
       await addToCart(product._id, 1);
       navigate("/cart");
-    } catch (err) {
-      console.error(err);
     } finally {
       setAddingToCart(false);
     }
   };
 
-  // Handle Buy Now with login check
   const handleBuyNow = () => {
-    if (!userLoggedIn) {
-      setShowLoginPopup(true);
-      return;
-    }
-    // Navigate to checkout page (example)
+    if (!userLoggedIn) return setShowLoginPopup(true);
     navigate("/checkout");
   };
 
-  // Popup component
   const LoginPrompt = () => (
     <div className={styles.loginPopupBackdrop}>
       <div className={styles.loginPopup}>
         <p>You need to log in to perform this action.</p>
         <div className={styles.popupButtons}>
-          <button onClick={() => { navigate("/login"); setShowLoginPopup(false); }}>Login</button>
+          <button
+            onClick={() => {
+              navigate("/login");
+              setShowLoginPopup(false);
+            }}
+          >
+            Login
+          </button>
           <button onClick={() => setShowLoginPopup(false)}>Cancel</button>
         </div>
       </div>
@@ -149,13 +183,14 @@ const ProductDetails = () => {
             </span>
           </h1>
 
-          {/* Subcategory pill */}
+          {/* Subcategory */}
           {subCategory?.slug && (
             <div
               className={styles.pdSubcategoryPill}
-              title={`View all products in ${subCategory.name}`}
               onClick={() =>
-                navigate(`/subcategory/${subCategory.slug}`, { state: { name: subCategory.name } })
+                navigate(`/subcategory/${subCategory.slug}`, {
+                  state: { name: subCategory.name },
+                })
               }
             >
               {subCategory.name}
@@ -166,7 +201,9 @@ const ProductDetails = () => {
           {tags?.length > 0 && (
             <div className={styles.pdTags}>
               {tags.map((tag) => (
-                <span key={tag._id} className={styles.pdTag}>#{tag.name}</span>
+                <span key={tag._id} className={styles.pdTag}>
+                  #{tag.name}
+                </span>
               ))}
             </div>
           )}
@@ -183,7 +220,7 @@ const ProductDetails = () => {
             )}
           </div>
 
-          {/* Action Buttons */}
+          {/* Buttons */}
           <div className={styles.pdActions}>
             <button
               className={styles.pdAddToCart}
@@ -201,10 +238,13 @@ const ProductDetails = () => {
 
       {/* Description */}
       {description && (
-        <div className={styles.pdDescription} dangerouslySetInnerHTML={{ __html: description }} />
+        <div
+          className={styles.pdDescription}
+          dangerouslySetInnerHTML={{ __html: description }}
+        />
       )}
 
-      {/* Specifications */}
+      {/* Specs */}
       {specs && Object.keys(specs).length > 0 && (
         <div className={styles.pdSpecs}>
           <h3>Specifications</h3>
@@ -243,7 +283,10 @@ const ProductDetails = () => {
                 onClick={() => navigate(`/product/${p.slug}`)}
               >
                 <div className={styles.similarImage}>
-                  <img src={`${API.URL}/${p.logo || (p.images && p.images[0])}`} alt={p.name} />
+                  <img
+                    src={`${API.URL}/${p.logo || (p.images && p.images[0])}`}
+                    alt={p.name}
+                  />
                 </div>
                 <div className={styles.similarInfo}>
                   <h4>{p.name}</h4>
@@ -251,7 +294,9 @@ const ProductDetails = () => {
                     {p.discountPrice > 0 ? (
                       <>
                         <span className={styles.similarOriginalPrice}>₹{p.price}</span>
-                        <span className={styles.similarDiscountPrice}>₹{p.discountPrice}</span>
+                        <span className={styles.similarDiscountPrice}>
+                          ₹{p.discountPrice}
+                        </span>
                       </>
                     ) : (
                       <span className={styles.similarDiscountPrice}>₹{p.price}</span>
