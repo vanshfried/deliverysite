@@ -1,31 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../../api/api";
-import styles from "../css/LoginAdmin.module.css"; // <-- CSS module
+import styles from "../css/LoginAdmin.module.css";
+import { AuthContext } from "../Context/AuthContext";
 
 export default function LoginAdmin() {
+  const { adminLoggedIn, isSuper, loading } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loadingLogin, setLoadingLogin] = useState(false);
   const navigate = useNavigate();
+
+  // ✅ If already logged in → auto-redirect
+  useEffect(() => {
+    if (!loading && adminLoggedIn) {
+      navigate(isSuper ? "/admin/superadmin-dashboard" : "/admin/dashboard", { replace: true });
+    }
+  }, [adminLoggedIn, isSuper, loading, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!email || !password) return setMessage("Email and password required");
 
-    setLoading(true);
+    setLoadingLogin(true);
     setMessage("");
 
     try {
-      const res = await API.post("/adminlogin/login", { email, password });
+      const res = await API.post("/admin/login", { email, password });
 
       if (res.data.success) {
-        if (res.data.isSuper) {
-          navigate("/admin/superadmin-dashboard");
-        } else {
-          navigate("/admin/dashboard");
-        }
+        navigate(res.data.isSuper ? "/admin/superadmin-dashboard" : "/admin/dashboard", { replace: true });
       } else {
         setMessage(res.data.error || "Invalid credentials");
       }
@@ -33,7 +38,7 @@ export default function LoginAdmin() {
       console.error(err);
       setMessage("Server error");
     } finally {
-      setLoading(false);
+      setLoadingLogin(false);
     }
   };
 
@@ -55,8 +60,8 @@ export default function LoginAdmin() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
+        <button type="submit" disabled={loadingLogin}>
+          {loadingLogin ? "Logging in..." : "Login"}
         </button>
       </form>
       {message && <p className={styles.loginMessage}>{message}</p>}

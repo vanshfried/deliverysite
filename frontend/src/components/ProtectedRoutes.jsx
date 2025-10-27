@@ -1,43 +1,27 @@
 // ProtectedRoute.jsx
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect } from "react";
 import { Navigate } from "react-router-dom";
-import API from "../api/api";
+import { AuthContext } from "../pages/admin/Context/AuthContext";
 
 export default function ProtectedRoute({ children, requireSuper = false }) {
-  const [loading, setLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
-  const [error, setError] = useState(null);
+  const {
+    adminLoggedIn,
+    isSuper,
+    loading,
+  } = useContext(AuthContext);
 
-  useEffect(() => {
-    const checkAccess = async () => {
-      try {
-        const res = await API.get("/admin/me"); // fetch user info
-        const isSuper = res.data.admin.isSuper;
+  
 
-        // If route requires super, allow only super admins
-        // Otherwise, allow any authenticated admin
-        if (!requireSuper || isSuper) {
-          setHasAccess(true);
-        } else {
-          setHasAccess(false);
-        }
-      } catch (err) {
-        if (err.response?.status === 401) {
-          setHasAccess(false); // unauthorized
-        } else {
-          setError("Network error. Please try again.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAccess();
-  }, [requireSuper]);
-
+  // Still loading → show splash
   if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
-  if (!hasAccess) return <Navigate to="/admin/login" replace />;
+
+  // If admin not logged in → go to login page
+  if (!adminLoggedIn) return <Navigate to="/admin/login" replace />;
+
+  // If requires super and not super admin → block access
+  if (requireSuper && !isSuper) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   return children;
 }

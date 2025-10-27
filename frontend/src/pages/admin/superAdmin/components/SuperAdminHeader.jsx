@@ -1,38 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect } from "react";
+import { AuthContext } from "../../Context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import API from "../../../../api/api"; // adjust path
-import styles from "../css/SuperAdminHeader.module.css"; // CSS module
+import styles from "../css/SuperAdminHeader.module.css";
 
 export default function SuperAdminHeader() {
-  const [admin, setAdmin] = useState(null); // null = loading, false = not super admin
+  const { adminLoggedIn, isSuper, setAdmin, setAdminLoggedIn, setIsSuper, loading } =
+    useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkLogin = async () => {
-      try {
-        const res = await API.get("/admin/me");
-        if (res.data.admin?.isSuper) setAdmin(res.data.admin);
-        else navigate("/admin/dashboard");
-      } catch {
-        setAdmin(false);
-        navigate("/admin/login");
+    if (!loading) {
+      if (!adminLoggedIn) {
+        navigate("/admin/login", { replace: true });
+      } else if (!isSuper) {
+        navigate("/admin/dashboard", { replace: true });
       }
-    };
-    checkLogin();
-  }, [navigate]);
+    }
+  }, [loading, adminLoggedIn, isSuper, navigate]);
 
   const handleLogout = async () => {
     try {
-      await API.post("/adminlogout");
+      await API.post("/admin/logout");
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
-      setAdmin(false);
-      navigate("/admin/login");
+      setAdmin(null);
+      setAdminLoggedIn(false);
+      setIsSuper(false);
+      navigate("/admin/login", { replace: true });
     }
   };
 
-  if (admin === null) return <div>Loading...</div>;
+  if (loading) return null; // Header invisible until auth restored ✅
 
   return (
     <header className={styles.superadminHeader}>
@@ -45,6 +44,7 @@ export default function SuperAdminHeader() {
         <Link to="/admin/create-admin">Create Admin</Link>
         <Link to="/admin/create-product">Create Product</Link>
         <Link to="/admin/products">All Products</Link>
+
         <button onClick={handleLogout} className={styles.logoutBtn}>
           Logout
         </button>

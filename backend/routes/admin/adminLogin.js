@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-router.post("/login", async (req, res) => {
+router.post("/", async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password)
@@ -18,7 +18,9 @@ router.post("/login", async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, admin.passwordHash);
     if (!isMatch)
-      return res.status(400).json({ success: false, error: "Invalid password" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid password" });
 
     // Create JWT token
     const adminToken = jwt.sign(
@@ -30,17 +32,19 @@ router.post("/login", async (req, res) => {
     // Send token as httpOnly cookie
     res
       .cookie("adminToken", adminToken, {
-        httpOnly: true, // JS cannot access it
-        secure: false, // use HTTPS in prod
+        httpOnly: true,
+        secure: false,
         sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       })
       .json({
         success: true,
-        username: admin.username,
-        isSuper: admin.isSuper,
+        admin: {
+          id: admin._id,
+          email: admin.email,
+          isSuper: admin.isSuper,
+        },
       });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: "Server error" });
