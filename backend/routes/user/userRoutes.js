@@ -1,11 +1,11 @@
-// backend/routes/user/usersRouter.js
+// backend/routes/user/userRoutes.js
 import express from "express";
 import User from "../../models/User.js";
 import jwt from "jsonwebtoken";
 import { requireUser } from "../../middleware/requireUser.js";
 
 const router = express.Router();
-const otpStore = {}; // in-memory OTP store (demo only)
+const otpStore = {}; // temporary OTP store
 
 // --- Generate OTP ---
 router.post("/otp", async (req, res) => {
@@ -23,16 +23,16 @@ router.post("/otp", async (req, res) => {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     otpStore[phone] = otp;
-    console.log(`OTP for ${phone}: ${otp}`);
+    console.log(`✅ OTP for ${phone}: ${otp}`);
 
-    res.status(200).json({ message: "OTP sent. Check console.", phone: user.phone });
+    res.status(200).json({ message: "OTP sent successfully", phone: user.phone });
   } catch (err) {
-    console.error(err);
+    console.error("OTP ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-// --- Verify OTP & login ---
+// --- Verify OTP & Login ---
 router.post("/verify-otp", async (req, res) => {
   try {
     let { phone, otp } = req.body;
@@ -44,51 +44,50 @@ router.post("/verify-otp", async (req, res) => {
     if (!storedOtp) return res.status(400).json({ error: "No OTP found" });
     if (storedOtp !== otp) return res.status(400).json({ error: "Invalid OTP" });
 
-    delete otpStore[phone]; // OTP consumed
+    delete otpStore[phone]; // remove OTP
 
     const user = await User.findOne({ phone });
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // Issue JWT cookie
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
-    res
-      .cookie("userToken", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      })
-      .status(200)
-      .json({
-        message: "Login successful",
-        user: { id: user._id, phone: user.phone, name: user.name || "User" },
-      });
+    res.cookie("userToken", token, {
+      httpOnly: true,
+      secure: false, // ✅ local dev must be false
+      sameSite: "Lax", // ✅ FIX HERE
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      message: "Login successful",
+      user: {
+        id: user._id,
+        phone: user.phone,
+        name: user.name || "User",
+      },
+    });
   } catch (err) {
-    console.error(err);
+    console.error("VERIFY ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
 // --- Logout ---
 router.post("/logout", (req, res) => {
-  res
-    .clearCookie("userToken", {
-      httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-    })
-    .status(200)
-    .json({ message: "Logged out successfully" });
+  res.clearCookie("userToken", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "Lax",
+  });
+  res.json({ message: "Logged out successfully" });
 });
 
-// --- Get current logged-in user ---
-router.get("/me", requireUser, async (req, res) => {
-  const { _id, name, phone, addresses } = req.user;
-  res.status(200).json({
-    success: true,
-    user: { _id, name, phone, addresses },
-  });
+// --- Session Check ---
+router.get("/me", requireUser, (req, res) => {
+  const { _id, name, phone } = req.user;
+  res.json({ success: true, user: { _id, name, phone } });
 });
 
 export default router;

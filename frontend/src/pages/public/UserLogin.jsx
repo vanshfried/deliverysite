@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect, useContext } from "react";
+import React, { useState, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import API from "../../api/api";
+import API, { setUserLoggedInFlag } from "../../api/api";
 import { AuthContext } from "../admin/Context/AuthContext.jsx";
-import styles from './css/UserLogin.module.css';
+import styles from "./css/UserLogin.module.css";
 
 const UserLogin = () => {
-  const { setUserLoggedIn, setUser } = useContext(AuthContext);
+  const { fetchUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [phone, setPhone] = useState("");
@@ -14,6 +14,7 @@ const UserLogin = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+
   const inputsRef = useRef([]);
 
   const handlePhoneChange = (e) => {
@@ -25,13 +26,16 @@ const UserLogin = () => {
       setMessage("Enter a valid 10-digit mobile number");
       return;
     }
+
     setLoading(true);
     try {
       const res = await API.post("/users/otp", { phone });
+
       setMessage(res.data.message);
       setStep(2);
       setOtp(Array(6).fill(""));
       setOtpSent(true);
+
       setTimeout(() => inputsRef.current[0]?.focus(), 200);
     } catch (err) {
       setMessage(err.response?.data?.error || "Failed to send OTP");
@@ -42,9 +46,11 @@ const UserLogin = () => {
 
   const handleOtpChange = (idx, val) => {
     if (!/^\d*$/.test(val)) return;
+
     const newOtp = [...otp];
     newOtp[idx] = val.slice(-1);
     setOtp(newOtp);
+
     if (val && idx < 5) inputsRef.current[idx + 1]?.focus();
   };
 
@@ -56,23 +62,35 @@ const UserLogin = () => {
 
   const verifyOtp = async () => {
     const otpValue = otp.join("");
+
     if (otpValue.length !== 6) {
       setMessage("Enter all 6 digits");
       return;
     }
+
     setLoading(true);
     try {
-      const res = await API.post("/users/verify-otp", { phone, otp: otpValue });
+      const res = await API.post("/users/verify-otp", {
+        phone,
+        otp: otpValue,
+      });
+
       setMessage(`Welcome ${res.data.user.name || "User"}!`);
 
-      setUserLoggedIn(true);
-      setUser(res.data.user);
+      // ✅ update global flag so axios interceptor knows user is authenticated
+      setUserLoggedInFlag(true);
+
+      // ✅ fetch user straight from cookie → state becomes correct everywhere
+      await fetchUser();
+
       navigate("/");
 
+      // Reset UI
       setStep(1);
       setPhone("");
       setOtp(Array(6).fill(""));
       setOtpSent(false);
+
     } catch (err) {
       setMessage(err.response?.data?.error || "Invalid OTP");
     } finally {
@@ -105,6 +123,7 @@ const UserLogin = () => {
                 className={styles.mobileInput}
               />
             </div>
+
             <button
               onClick={requestOtp}
               disabled={loading}
@@ -116,13 +135,14 @@ const UserLogin = () => {
         ) : (
           <>
             <p>OTP sent to +91 {phone}</p>
+
             <div className={styles.otpContainer}>
-              {otp.map((d, i) => (
+              {otp.map((digit, i) => (
                 <input
                   key={i}
                   type="text"
                   maxLength={1}
-                  value={d}
+                  value={digit}
                   onChange={(e) => handleOtpChange(i, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(i, e)}
                   ref={(el) => (inputsRef.current[i] = el)}
@@ -131,6 +151,7 @@ const UserLogin = () => {
                 />
               ))}
             </div>
+
             <button
               onClick={verifyOtp}
               disabled={loading}
@@ -138,6 +159,7 @@ const UserLogin = () => {
             >
               {loading ? "Verifying..." : "Verify OTP"}
             </button>
+
             <button
               onClick={handleResend}
               disabled={loading || !otpSent}

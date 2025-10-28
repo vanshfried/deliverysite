@@ -13,14 +13,25 @@ export const setUserLoggedInFlag = (flag) => {
   isUserLoggedIn = flag;
 };
 
-// Response interceptor for 401s
+// ✅ Response interceptor for 401s
 API.interceptors.response.use(
   response => response,
   error => {
-    // Only log if user was previously logged in
-    if (error.response?.status === 401 && isUserLoggedIn) {
-      console.warn("Unauthorized request - logging out user if logged in");
+    const url = error.config?.url;
+    const status = error.response?.status;
+
+    // ✅ Ignore 401 errors only for session-check endpoints
+    const ignore401Endpoints = ["/admin/me", "/users/me"];
+
+    if (status === 401 && ignore401Endpoints.includes(url)) {
+      return Promise.resolve({ data: {} }); // Pretend success
     }
+
+    // ✅ Only warn if user WAS logged in and token expired
+    if (status === 401 && isUserLoggedIn) {
+      console.warn("Unauthorized — likely session expired");
+    }
+
     return Promise.reject(error);
   }
 );
