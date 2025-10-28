@@ -15,6 +15,11 @@ const AddressSchema = new mongoose.Schema({
 const UserSchema = new mongoose.Schema({
   name: { type: String },
   phone: { type: String, unique: true, required: true },
+
+  // ✅ OTP fields for login verification
+  otp: { type: String, default: null },
+  otpExpires: { type: Number, default: null },
+
   addresses: [AddressSchema],
   createdAt: { type: Date, default: Date.now },
 });

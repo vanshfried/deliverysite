@@ -1,35 +1,38 @@
+// src/api/api.js
 import axios from "axios";
 
-// Track if a user is currently logged in (set by AuthContext)
+// Track user login (controlled by AuthContext)
 let isUserLoggedIn = false;
 
 const API = axios.create({
   baseURL: import.meta.env.VITE_URL,
-  withCredentials: true, // sends cookies automatically
+  withCredentials: true, // ✅ required for cookies
 });
 
-// Function to update login state (called from AuthContext)
+// Update login-state from AuthContext
 export const setUserLoggedInFlag = (flag) => {
   isUserLoggedIn = flag;
 };
 
-// ✅ Response interceptor for 401s
+// ✅ Endpoints where 401 is acceptable (session restore checks)
+const ignore401Endpoints = ["/admin/me", "/users/me"];
+
+// ✅ Clean interceptor for handling unauthorized responses
 API.interceptors.response.use(
-  response => response,
-  error => {
-    const url = error.config?.url;
+  (response) => response,
+  (error) => {
+    const urlPath = new URL(error.config?.url, import.meta.env.VITE_URL).pathname;
     const status = error.response?.status;
 
-    // ✅ Ignore 401 errors only for session-check endpoints
-    const ignore401Endpoints = ["/admin/me", "/users/me"];
+    if (status === 401) {
+      if (ignore401Endpoints.includes(urlPath)) {
+        // ✅ Treat missing session as "not logged in" but not error
+        return Promise.resolve({ data: { success: false } });
+      }
 
-    if (status === 401 && ignore401Endpoints.includes(url)) {
-      return Promise.resolve({ data: {} }); // Pretend success
-    }
-
-    // ✅ Only warn if user WAS logged in and token expired
-    if (status === 401 && isUserLoggedIn) {
-      console.warn("Unauthorized — likely session expired");
+      if (isUserLoggedIn) {
+        console.warn("⚠️ Session expired — user was logged in.");
+      }
     }
 
     return Promise.reject(error);

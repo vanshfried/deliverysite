@@ -16,7 +16,7 @@ export default function CreateAdmin() {
     setMessage("");
 
     try {
-      const res = await API.post("/create-admin", { username, email, password });
+      const res = await API.post("admin/create-admin", { username, email, password });
       
       if (res.data.success) {
         setMessage(`✅ Admin created: ${res.data.admin.username}`);

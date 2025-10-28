@@ -1,23 +1,23 @@
 import React, { useState, useContext } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { AuthContext } from "../admin/Context/AuthContext.jsx";
 import { CartContext } from "../admin/Context/CartContext";
-import API from "../../api/api";
 import styles from "./css/UserOnlyHeader.module.css";
 
 const UserOnlyHeader = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { userLoggedIn, setUserLoggedIn, setUser } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const { userLoggedIn, logoutUser } = useContext(AuthContext);
   const { cart } = useContext(CartContext);
 
   const uniqueCartCount = cart?.items?.length || 0;
 
   const handleLogout = async () => {
     try {
-      await API.post("/users/logout", {}, { withCredentials: true });
-      setUserLoggedIn(false);
-      setUser(null);
+      await logoutUser();
       setMenuOpen(false);
+      navigate("/"); // ✅ Redirect after state updates
     } catch (err) {
       console.error("Logout failed:", err.response?.data || err);
     }
@@ -31,10 +31,7 @@ const UserOnlyHeader = () => {
         <NavLink to="/" onClick={closeMenu}>MyApp</NavLink>
       </div>
 
-      <nav
-        className={`${styles.navLinks} ${menuOpen ? styles.open : ""}`}
-        role="navigation"
-      >
+      <nav className={`${styles.navLinks} ${menuOpen ? styles.open : ""}`}>
         {userLoggedIn ? (
           <>
             <NavLink to="/cart" onClick={closeMenu}>
@@ -60,15 +57,12 @@ const UserOnlyHeader = () => {
         )}
       </nav>
 
-      {/* Hamburger */}
       <button
         className={`${styles.hamburger} ${menuOpen ? styles.open : ""}`}
         onClick={() => setMenuOpen(!menuOpen)}
         aria-label="Toggle menu"
       >
-        <span></span>
-        <span></span>
-        <span></span>
+        <span></span><span></span><span></span>
       </button>
     </header>
   );

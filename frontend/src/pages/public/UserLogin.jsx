@@ -14,6 +14,7 @@ const UserLogin = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const inputsRef = useRef([]);
 
@@ -29,13 +30,16 @@ const UserLogin = () => {
 
     setLoading(true);
     try {
-      const res = await API.post("/users/otp", { phone });
+      const res = await API.post(
+        "/users/otp",
+        { phone },
+        { withCredentials: true }
+      );
 
       setMessage(res.data.message);
       setStep(2);
       setOtp(Array(6).fill(""));
       setOtpSent(true);
-
       setTimeout(() => inputsRef.current[0]?.focus(), 200);
     } catch (err) {
       setMessage(err.response?.data?.error || "Failed to send OTP");
@@ -46,11 +50,9 @@ const UserLogin = () => {
 
   const handleOtpChange = (idx, val) => {
     if (!/^\d*$/.test(val)) return;
-
     const newOtp = [...otp];
     newOtp[idx] = val.slice(-1);
     setOtp(newOtp);
-
     if (val && idx < 5) inputsRef.current[idx + 1]?.focus();
   };
 
@@ -61,40 +63,48 @@ const UserLogin = () => {
   };
 
   const verifyOtp = async () => {
-    const otpValue = otp.join("");
+    if (isVerifying) return;
+    setIsVerifying(true);
 
+    const otpValue = otp.join("");
     if (otpValue.length !== 6) {
       setMessage("Enter all 6 digits");
+      setIsVerifying(false);
       return;
     }
 
     setLoading(true);
     try {
-      const res = await API.post("/users/verify-otp", {
-        phone,
-        otp: otpValue,
-      });
+      const res = await API.post(
+        "/users/verify-otp",
+        { phone, otp: otpValue },
+        { withCredentials: true }
+      );
 
-      setMessage(`Welcome ${res.data.user.name || "User"}!`);
-
-      // ✅ update global flag so axios interceptor knows user is authenticated
+      setMessage(`Welcome ${res.data.user?.name || "User"}!`);
       setUserLoggedInFlag(true);
 
-      // ✅ fetch user straight from cookie → state becomes correct everywhere
-      await fetchUser();
+      // ✅ Delay fetchUser until cookie is saved
+      setTimeout(async () => {
+        try {
+          await fetchUser();
+        } catch (err) {
+          console.error("fetchUser failed but login is valid:", err);
+        }
 
-      navigate("/");
+        navigate("/");
 
-      // Reset UI
-      setStep(1);
-      setPhone("");
-      setOtp(Array(6).fill(""));
-      setOtpSent(false);
-
+        // ✅ Reset UI
+        setStep(1);
+        setPhone("");
+        setOtp(Array(6).fill(""));
+        setOtpSent(false);
+      }, 300);
     } catch (err) {
       setMessage(err.response?.data?.error || "Invalid OTP");
     } finally {
       setLoading(false);
+      setIsVerifying(false);
     }
   };
 
@@ -115,8 +125,8 @@ const UserLogin = () => {
               <span className={styles.prefix}>+91</span>
               <input
                 type="tel"
-                placeholder="Enter mobile number"
                 value={phone}
+                placeholder="Enter mobile number"
                 onChange={handlePhoneChange}
                 maxLength={10}
                 disabled={loading}
@@ -154,7 +164,7 @@ const UserLogin = () => {
 
             <button
               onClick={verifyOtp}
-              disabled={loading}
+              disabled={loading || isVerifying}
               className={`${styles.verifyOtpButton} ${styles.buttonCommon}`}
             >
               {loading ? "Verifying..." : "Verify OTP"}

@@ -11,7 +11,8 @@ import adminLoginRoute from "./routes/admin/adminLogin.js";
 import adminMeRoute from "./routes/admin/me.js";
 import adminLogoutRoute from "./routes/admin/logout.js";
 import adminProductRoutes from "./routes/admin/products/productRoutes.js";
-import extraRoutes from "./routes/admin/products/extraRoutes.js"; // ✅ new
+import extraRoutes from "./routes/admin/products/extraRoutes.js";
+import categoryTagAdminRoutes from "./routes/admin/products/categoryTagAdminRoutes.js";
 
 // --- Public routes ---
 import publicProductRoutes from "./routes/public/products.js";
@@ -19,55 +20,51 @@ import publicProductRoutes from "./routes/public/products.js";
 // --- User routes ---
 import userRoutes from "./routes/user/userRoutes.js";
 import cartRoutes from "./routes/user/cartRoutes.js";
-import categoryTagAdminRoutes from "./routes/admin/products/categoryTagAdminRoutes.js";
-
 
 dotenv.config();
 const app = express();
 
-// --- Middleware ---
+// ✅ Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use("/uploads", express.static(path.join(path.resolve(), "uploads")));
 
+// ✅ ✅ Very Important: Browser cookies MUST be allowed cross-site
 app.use(
   cors({
-    origin: "http://localhost:5173", // frontend URL
-    credentials: true, // allow cookies
+    origin: "http://localhost:5173",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// --- Public routes ---
+// ✅ Static files
+app.use("/uploads", express.static(path.join(path.resolve(), "uploads")));
+
+// ✅ Public Routes
 app.use("/products", publicProductRoutes);
 
-// --- User routes ---
+// ✅ User Routes
 app.use("/users", userRoutes);
 app.use("/api/cart", cartRoutes);
 
-// --- Admin routes ---
-// Authentication
+// ✅ Admin Routes
 app.use("/admin/login", adminLoginRoute);
 app.use("/admin/logout", adminLogoutRoute);
 app.use("/admin/me", adminMeRoute);
 app.use("/admin/create-admin", createAdminRoute);
+app.use("/admin/products", adminProductRoutes);
+app.use("/admin/products/extras", extraRoutes);
+app.use("/admin/products/manage", categoryTagAdminRoutes);
 
-// Products
-app.use("/admin/products", adminProductRoutes); // CRUD: create, update, delete products
-
-// Extras (read-only, any admin)
-app.use("/admin/products/extras", extraRoutes); // GET /categories, /tags
-
-// Superadmin management for categories & tags
-app.use("/admin/products/manage", categoryTagAdminRoutes); 
-// POST/PUT/DELETE for /categories and /tags
-
-
-// --- MongoDB Connection ---
+// ✅ MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// --- Start Server ---
+// ✅ Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`🚀 Server running on http://localhost:${PORT}`)
+);

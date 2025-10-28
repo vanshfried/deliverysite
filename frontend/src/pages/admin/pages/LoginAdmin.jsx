@@ -11,7 +11,6 @@ export default function LoginAdmin() {
   const [loadingLogin, setLoadingLogin] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ Auto-redirect if already logged in
   useEffect(() => {
     if (!loading && adminLoggedIn) {
       navigate(isSuper ? "/admin/superadmin-dashboard" : "/admin/dashboard", {
@@ -30,8 +29,7 @@ export default function LoginAdmin() {
     const res = await loginAdmin(email, password);
 
     if (res.success) {
-      navigate(
-        res.admin.isSuper ? "/admin/superadmin-dashboard" : "/admin/dashboard",
+      navigate(res.admin.isSuper ? "/admin/superadmin-dashboard" : "/admin/dashboard",
         { replace: true }
       );
     } else {

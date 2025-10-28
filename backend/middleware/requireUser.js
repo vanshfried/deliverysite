@@ -4,31 +4,55 @@ import User from "../models/User.js";
 
 export async function requireUser(req, res, next) {
   try {
-    // 1️⃣ Get token from cookies
     const token = req.cookies?.userToken;
+
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized: No token" });
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized: No login session",
+      });
     }
 
-    // 2️⃣ Verify token
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      // ✅ Token invalid/expired → clear cookie properly
+      res.clearCookie("userToken", {
+        httpOnly: true,
+        secure: true,     // ✅ same as login
+        sameSite: "none", // ✅ match cookie settings
+      });
+
+      return res.status(401).json({
+        success: false,
+        error: "Session expired, please log in again",
+      });
+    }
+
     if (!payload?.id) {
-      return res.status(401).json({ error: "Unauthorized: Invalid token" });
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized: Invalid token data",
+      });
     }
 
-    // 3️⃣ Find user in DB
-    const user = await User.findById(payload.id);
+    const user = await User.findById(payload.id).select("-otp -otpExpires");
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
     }
 
-    // 4️⃣ Attach user to request
     req.user = user;
-
-    // ✅ Proceed
     next();
+
   } catch (err) {
     console.error("requireUser middleware error:", err);
-    res.status(401).json({ error: "Unauthorized" });
+    return res.status(401).json({
+      success: false,
+      error: "Unauthorized",
+    });
   }
 }
