@@ -105,7 +105,9 @@ const AdminProductsPage = () => {
     if (!selectedProducts.length) return alert("Select products to delete.");
     if (!window.confirm(`Delete ${selectedProducts.length} products?`)) return;
     try {
-      await Promise.all(selectedProducts.map((id) => API.delete(`/admin/products/${id}`)));
+      await Promise.all(
+        selectedProducts.map((id) => API.delete(`/admin/products/${id}`))
+      );
       setProducts(products.filter((p) => !selectedProducts.includes(p._id)));
       setSelectedProducts([]);
     } catch (err) {
@@ -115,7 +117,8 @@ const AdminProductsPage = () => {
   };
 
   if (loading) return <p className={styles.loadingText}>Loading products...</p>;
-  if (!products.length) return <p className={styles.loadingText}>No products found.</p>;
+  if (!products.length)
+    return <p className={styles.loadingText}>No products found.</p>;
 
   return (
     <div className={styles.adminProductsContainer}>
@@ -151,19 +154,42 @@ const AdminProductsPage = () => {
               <th>
                 <input
                   type="checkbox"
-                  checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                  checked={
+                    selectedProducts.length === filteredProducts.length &&
+                    filteredProducts.length > 0
+                  }
                   onChange={handleSelectAll}
                 />
               </th>
               <th>Logo</th>
-              <th className={styles.sortable} onClick={() => handleSort("name")}>
-                Name {sortField === "name" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
+              <th
+                className={styles.sortable}
+                onClick={() => handleSort("name")}
+              >
+                Name{" "}
+                {sortField === "name" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
               </th>
-              <th className={styles.sortable} onClick={() => handleSort("subCategory")}>
-                Sub-Category {sortField === "subCategory" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
+              <th
+                className={styles.sortable}
+                onClick={() => handleSort("subCategory")}
+              >
+                Sub-Category{" "}
+                {sortField === "subCategory"
+                  ? sortOrder === "asc"
+                    ? "▲"
+                    : "▼"
+                  : "↕"}
               </th>
-              <th className={styles.sortable} onClick={() => handleSort("price")}>
-                Price (₹) {sortField === "price" ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
+              <th
+                className={styles.sortable}
+                onClick={() => handleSort("price")}
+              >
+                Real Price (₹){" "}
+                {sortField === "price"
+                  ? sortOrder === "asc"
+                    ? "▲"
+                    : "▼"
+                  : "↕"}
               </th>
               <th>Status</th>
               <th>Actions</th>
@@ -180,21 +206,42 @@ const AdminProductsPage = () => {
                   />
                 </td>
                 <td>
-                  <img src={`${API.URL}/${p.logo}`} alt={p.name} className={styles.productLogo} />
+                  <img
+                    src={`${API.URL}/${p.logo}`}
+                    alt={p.name}
+                    className={styles.productLogo}
+                  />
                 </td>
                 <td>{p.name}</td>
                 <td>{p.subCategory?.name || "Uncategorized"}</td>
-                <td>₹{p.price.toFixed(2)}</td>
                 <td>
-                  <span className={`${styles.stockStatus} ${p.inStock ? styles.inStock : styles.outStock}`}>
+                  ₹
+                  {(p.discountPrice && p.discountPrice > 0
+                    ? p.discountPrice
+                    : p.price
+                  ).toFixed(2)}
+                </td>
+
+                <td>
+                  <span
+                    className={`${styles.stockStatus} ${
+                      p.inStock ? styles.inStock : styles.outStock
+                    }`}
+                  >
                     {p.inStock ? "In Stock" : "Out of Stock"}
                   </span>
                 </td>
                 <td className={styles.actionButtons}>
-                  <button onClick={() => navigate(`/admin/edit-product/${p._id}`)} className={styles.editBtn}>
+                  <button
+                    onClick={() => navigate(`/admin/edit-product/${p._id}`)}
+                    className={styles.editBtn}
+                  >
                     Edit
                   </button>
-                  <button onClick={() => handleDelete(p._id)} className={styles.deleteBtn}>
+                  <button
+                    onClick={() => handleDelete(p._id)}
+                    className={styles.deleteBtn}
+                  >
                     Delete
                   </button>
                 </td>
