@@ -1,4 +1,3 @@
-// backend/routes/admin/products/productRoutes.js
 import express from "express";
 import multer from "multer";
 import path from "path";
@@ -45,6 +44,17 @@ router.post(
       if (!req.files.logo) return res.status(400).json({ message: "Logo is required" });
       if (!name || !price) return res.status(400).json({ message: "Name and price are required" });
 
+      // ✅ Normalize & Check Duplicate Name
+      const normalizedName = name.trim().replace(/\s+/g, " ").toLowerCase();
+      const existingName = await Product.findOne({
+        name: { $regex: `^${normalizedName}$`, $options: "i" }
+      });
+      if (existingName) {
+        return res.status(400).json({
+          message: "A product with this name already exists. Please choose a different name."
+        });
+      }
+
       // Validate subCategory
       let validSubCategory = null;
       if (subCategory) {
@@ -61,20 +71,18 @@ router.post(
         if (validTags.length !== tagIds.length)
           return res.status(400).json({ message: "One or more tags are invalid" });
 
-        // Ensure tags belong to the same parent category as sub-category
         if (validSubCategory) {
           const invalidTag = validTags.find(
             t => t.category.toString() !== validSubCategory.parentCategory._id.toString()
           );
           if (invalidTag) {
             return res.status(400).json({
-              message: `Tag "${invalidTag.name}" does not belong to the parent category of selected sub-category`,
+              message: `Tag "${invalidTag.name}" does not belong to the selected sub-category`,
             });
           }
         }
       }
 
-      // Parse JSON fields
       let parsedSpecs = {};
       let parsedVideos = [];
       try { parsedSpecs = specs ? JSON.parse(specs) : {}; } catch {}
@@ -84,7 +92,7 @@ router.post(
       const images = req.files.images ? req.files.images.map(img => img.path.replace(/\\/g, "/")) : [];
 
       const product = new Product({
-        name,
+        name: name.trim().replace(/\s+/g, " "), // ✅ cleaned name
         description,
         price,
         discountPrice: discountPrice || 0,
@@ -173,24 +181,39 @@ router.put(
   ]),
   async (req, res) => {
     try {
+      const product = await Product.findById(req.params.id);
+      if (!product) return res.status(404).json({ message: "Product not found" });
+
       const { name, description, price, discountPrice, subCategory, inStock, tags, specs, videos } = req.body;
-      const updates = {};
 
-      if (name) updates.name = name;
-      if (description) updates.description = description;
-      if (price !== undefined) updates.price = price;
-      if (discountPrice !== undefined) updates.discountPrice = discountPrice;
-      if (inStock !== undefined) updates.inStock = inStock === "true";
+      // ✅ Duplicate name + normalize + slug auto-update
+      if (name) {
+        const normalizedName = name.trim().replace(/\s+/g, " ").toLowerCase();
+        const existingName = await Product.findOne({
+          _id: { $ne: product._id }, // avoid matching itself
+          name: { $regex: `^${normalizedName}$`, $options: "i" }
+        });
 
-      // Validate subCategory
-      let validSubCategory = null;
-      if (subCategory) {
-        validSubCategory = await SubCategory.findById(subCategory).populate("parentCategory");
-        if (!validSubCategory) return res.status(400).json({ message: "Invalid sub-category ID" });
-        updates.subCategory = validSubCategory._id;
+        if (existingName) {
+          return res.status(400).json({
+            message: "A product with this name already exists. Please choose a different name."
+          });
+        }
+
+        product.name = name.trim().replace(/\s+/g, " ");
       }
 
-      // Validate tags
+      if (description) product.description = description;
+      if (price !== undefined) product.price = price;
+      if (discountPrice !== undefined) product.discountPrice = discountPrice;
+      if (inStock !== undefined) product.inStock = inStock === "true";
+
+      if (subCategory) {
+        const validSubCategory = await SubCategory.findById(subCategory).populate("parentCategory");
+        if (!validSubCategory) return res.status(400).json({ message: "Invalid sub-category ID" });
+        product.subCategory = validSubCategory._id;
+      }
+
       if (tags) {
         const tagIds = Array.isArray(tags) ? tags : [tags];
         const validTags = await Tag.find({ _id: { $in: tagIds } });
@@ -198,29 +221,18 @@ router.put(
         if (validTags.length !== tagIds.length)
           return res.status(400).json({ message: "One or more tags are invalid" });
 
-        // Ensure tags belong to same parent category as sub-category
-        if (validSubCategory) {
-          const invalidTag = validTags.find(
-            t => t.category.toString() !== validSubCategory.parentCategory._id.toString()
-          );
-          if (invalidTag) {
-            return res.status(400).json({
-              message: `Tag "${invalidTag.name}" does not belong to the parent category of selected sub-category`,
-            });
-          }
-        }
-
-        updates.tags = validTags.map(t => t._id);
+        product.tags = validTags.map(t => t._id);
       }
 
-      // Parse JSON fields
-      try { updates.specs = specs ? JSON.parse(specs) : {}; } catch {}
-      try { updates.videos = videos ? JSON.parse(videos) : []; } catch {}
+      try { product.specs = specs ? JSON.parse(specs) : {}; } catch {}
+      try { product.videos = videos ? JSON.parse(videos) : []; } catch {}
 
-      if (req.files.logo) updates.logo = req.files.logo[0].path.replace(/\\/g, "/");
-      if (req.files.images) updates.images = req.files.images.map(img => img.path.replace(/\\/g, "/"));
+      if (req.files.logo) product.logo = req.files.logo[0].path.replace(/\\/g, "/");
+      if (req.files.images) product.images = req.files.images.map(img => img.path.replace(/\\/g, "/"));
 
-      const product = await Product.findByIdAndUpdate(req.params.id, updates, { new: true })
+      await product.save(); // ✅ runs slug middleware
+
+      const populatedProduct = await Product.findById(product._id)
         .populate({
           path: "subCategory",
           select: "name",
@@ -228,9 +240,8 @@ router.put(
         })
         .populate("tags", "name category");
 
-      if (!product) return res.status(404).json({ message: "Product not found" });
+      res.status(200).json({ message: "✅ Product updated successfully", product: populatedProduct });
 
-      res.status(200).json({ message: "✅ Product updated successfully", product });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: err.message || "Server error" });
