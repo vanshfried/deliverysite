@@ -1,21 +1,22 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import API from "../../../api/api";
 import styles from "../css/LoginAdmin.module.css";
 import { AuthContext } from "../Context/AuthContext";
 
 export default function LoginAdmin() {
-  const { adminLoggedIn, isSuper, loading } = useContext(AuthContext);
+  const { adminLoggedIn, isSuper, loading, loginAdmin } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loadingLogin, setLoadingLogin] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ If already logged in → auto-redirect
+  // ✅ Auto-redirect if already logged in
   useEffect(() => {
     if (!loading && adminLoggedIn) {
-      navigate(isSuper ? "/admin/superadmin-dashboard" : "/admin/dashboard", { replace: true });
+      navigate(isSuper ? "/admin/superadmin-dashboard" : "/admin/dashboard", {
+        replace: true,
+      });
     }
   }, [adminLoggedIn, isSuper, loading, navigate]);
 
@@ -26,20 +27,18 @@ export default function LoginAdmin() {
     setLoadingLogin(true);
     setMessage("");
 
-    try {
-      const res = await API.post("/admin/login", { email, password });
+    const res = await loginAdmin(email, password);
 
-      if (res.data.success) {
-        navigate(res.data.isSuper ? "/admin/superadmin-dashboard" : "/admin/dashboard", { replace: true });
-      } else {
-        setMessage(res.data.error || "Invalid credentials");
-      }
-    } catch (err) {
-      console.error(err);
-      setMessage("Server error");
-    } finally {
-      setLoadingLogin(false);
+    if (res.success) {
+      navigate(
+        res.admin.isSuper ? "/admin/superadmin-dashboard" : "/admin/dashboard",
+        { replace: true }
+      );
+    } else {
+      setMessage(res.error || "Invalid credentials");
     }
+
+    setLoadingLogin(false);
   };
 
   return (

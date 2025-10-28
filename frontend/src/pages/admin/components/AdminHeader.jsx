@@ -1,24 +1,15 @@
 import React, { useContext } from "react";
 import { AuthContext } from "../Context/AuthContext.jsx";
 import { Link, useNavigate } from "react-router-dom";
-import API from "../../../api/api.js";
 import styles from "../css/AdminHeader.module.css";
 
 export default function AdminHeader() {
-  const { setAdmin, setAdminLoggedIn, setIsSuper } = useContext(AuthContext);
+  const { logoutAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    try {
-      await API.post("/admin/logout");
-    } catch (err) {
-      console.error("Logout error:", err);
-    } finally {
-      setAdmin(null);
-      setAdminLoggedIn(false);
-      setIsSuper(false);
-      navigate("/admin/login", { replace: true });
-    }
+    await logoutAdmin();
+    navigate("/admin/login", { replace: true });
   };
 
   return (

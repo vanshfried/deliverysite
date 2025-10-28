@@ -1,6 +1,6 @@
 // AuthContext.jsx
 import React, { createContext, useState, useEffect } from "react";
-import API from "../../../api/api.js";
+import API, { setUserLoggedInFlag } from "../../../api/api.js";
 
 export const AuthContext = createContext();
 
@@ -17,10 +17,11 @@ export function AuthProvider({ children }) {
   const fetchUser = async () => {
     try {
       const res = await API.get("/users/me");
+      setUserLoggedInFlag(true); // ✅ track user login for 401 interceptor
       setUserLoggedIn(true);
       setUser(res.data.user);
-    } catch (error) {
-      if (error.response?.status !== 401) console.error(error);
+    } catch {
+      setUserLoggedInFlag(false);
       setUserLoggedIn(false);
       setUser(null);
     }
@@ -32,33 +33,60 @@ export function AuthProvider({ children }) {
       setAdminLoggedIn(true);
       setAdmin(res.data.admin);
       setIsSuper(res.data.admin.isSuper);
-    } catch (error) {
-      if (error.response?.status !== 401) console.error(error);
+    } catch {
       setAdminLoggedIn(false);
       setAdmin(null);
       setIsSuper(false);
     }
   };
 
+  // ✅ Centralized Admin Login
+  const loginAdmin = async (email, password) => {
+    try {
+      const res = await API.post("/admin/login", { email, password });
+
+      if (!res.data.success) {
+        return { success: false, error: res.data.error || "Invalid credentials" };
+      }
+
+      await fetchAdmin(); // ✅ refresh from DB after cookie issued
+      return { success: true, admin: res.data.admin };
+
+    } catch (err) {
+      return { success: false, error: err.response?.data?.error || "Server error" };
+    }
+  };
+
+  // ✅ Centralized Logout (Admin)
+  const logoutAdmin = async () => {
+    try {
+      await API.post("/admin/logout");
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      setAdmin(null);
+      setAdminLoggedIn(false);
+      setIsSuper(false);
+    }
+  };
+
+  // ✅ Restore session only if token cookies exist
   useEffect(() => {
     const restoreSession = async () => {
       const hasUserToken = document.cookie.includes("userToken");
       const hasAdminToken = document.cookie.includes("adminToken");
 
-      // ✅ No tokens => skip requests
       if (!hasUserToken && !hasAdminToken) {
         setLoading(false);
         return;
       }
 
-      try {
-        const tasks = [];
-        if (hasUserToken) tasks.push(fetchUser());
-        if (hasAdminToken) tasks.push(fetchAdmin());
-        await Promise.all(tasks);
-      } finally {
-        setLoading(false);
-      }
+      const requests = [];
+      if (hasUserToken) requests.push(fetchUser());
+      if (hasAdminToken) requests.push(fetchAdmin());
+
+      await Promise.all(requests);
+      setLoading(false);
     };
 
     restoreSession();
@@ -67,18 +95,20 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider
       value={{
+        // User auth
         userLoggedIn,
-        setUserLoggedIn,
         user,
-        setUser,
 
+        // Admin auth
         adminLoggedIn,
-        setAdminLoggedIn,
         admin,
-        setAdmin,
-
         isSuper,
-        setIsSuper,
+
+        // Auth methods
+        loginAdmin,
+        logoutAdmin,
+        fetchAdmin,
+        fetchUser,
 
         loading,
       }}

@@ -1,3 +1,4 @@
+//backend/routes/admin/logout.js
 import express from "express";
 const router = express.Router();
 

@@ -1,37 +1,16 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext } from "react";
 import { AuthContext } from "../../Context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "../css/SuperAdminHeader.module.css";
 
 export default function SuperAdminHeader() {
-  const { adminLoggedIn, isSuper, setAdmin, setAdminLoggedIn, setIsSuper, loading } =
-    useContext(AuthContext);
+  const { logoutAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!loading) {
-      if (!adminLoggedIn) {
-        navigate("/admin/login", { replace: true });
-      } else if (!isSuper) {
-        navigate("/admin/dashboard", { replace: true });
-      }
-    }
-  }, [loading, adminLoggedIn, isSuper, navigate]);
-
   const handleLogout = async () => {
-    try {
-      await API.post("/admin/logout");
-    } catch (err) {
-      console.error("Logout error:", err);
-    } finally {
-      setAdmin(null);
-      setAdminLoggedIn(false);
-      setIsSuper(false);
-      navigate("/admin/login", { replace: true });
-    }
+    await logoutAdmin();
+    navigate("/admin/login", { replace: true });
   };
-
-  if (loading) return null; // Header invisible until auth restored ✅
 
   return (
     <header className={styles.superadminHeader}>

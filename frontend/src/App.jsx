@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import React, { useState } from "react";
+import React from "react";
 import "./App.css";
 
 // Pages
@@ -20,156 +20,169 @@ import SubCategoryPage from "./pages/public/SubCategoryPage";
 // Layout
 import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
 
-// Components
+// Auth + Protected
+import { AuthProvider } from "./pages/admin/Context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoutes";
+
+// User Header + Cart Context
 import UserOnlyHeader from "./pages/public/UserOnlyHeader";
 import { CartProvider } from "./pages/admin/Context/CartContext";
 
-// Protected route
-import ProtectedRoute from "./components/ProtectedRoutes";
-
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
   return (
-    <CartProvider>
-      <Router>
-        <Routes>
-          {/* ---------- Public pages with UserOnlyHeader ---------- */}
-          <Route
-            path="/"
-            element={
-              <>
-                <UserOnlyHeader isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
-                <HomePage />
-              </>
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              <>
-                <UserOnlyHeader isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
-                <UserLogin setIsLoggedIn={setIsLoggedIn} />
-              </>
-            }
-          />
-          <Route
-            path="/product/:slug"  // ✅ Updated to slug
-            element={
-              <>
-                <UserOnlyHeader isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
-                <ProductDetails />
-              </>
-            }
-          />
-          <Route
-            path="/cart"
-            element={
-              <>
-                <UserOnlyHeader isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
-                <Cart />
-              </>
-            }
-          />
-          <Route
-            path="/subcategory/:slug"  // ✅ Updated to slug
-            element={
-              <>
-                <UserOnlyHeader isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
-                <SubCategoryPage />
-              </>
-            }
-          />
+    <AuthProvider>
+      <CartProvider>
+        <Router>
+          <Routes>
 
-          {/* ---------- Admin login ---------- */}
-          <Route path="/admin/login" element={<LoginAdmin />} />
+            {/* ---------- Public Routes ---------- */}
+            <Route
+              path="/"
+              element={
+                <>
+                  <UserOnlyHeader />
+                  <HomePage />
+                </>
+              }
+            />
 
-          {/* ---------- Admin routes ---------- */}
-          <Route
-            path="/admin/dashboard"
-            element={
-              <ProtectedRoute requireSuper={false}>
-                <DynamicAdminLayout>
-                  <AdminDashboard />
-                </DynamicAdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/create-product"
-            element={
-              <ProtectedRoute requireSuper={false}>
-                <DynamicAdminLayout>
-                  <CreateProduct />
-                </DynamicAdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/products"
-            element={
-              <ProtectedRoute requireSuper={false}>
-                <DynamicAdminLayout>
-                  <AdminProductsPage />
-                </DynamicAdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/edit-product/:id"
-            element={
-              <ProtectedRoute requireSuper={false}>
-                <DynamicAdminLayout>
-                  <EditProduct />
-                </DynamicAdminLayout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/login"
+              element={
+                <>
+                  <UserOnlyHeader />
+                  <UserLogin />
+                </>
+              }
+            />
 
-          {/* ---------- SuperAdmin routes ---------- */}
-          <Route
-            path="/admin/superadmin-dashboard"
-            element={
-              <ProtectedRoute requireSuper={true}>
-                <DynamicAdminLayout>
-                  <SuperAdminDashboard />
-                </DynamicAdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/create-admin"
-            element={
-              <ProtectedRoute requireSuper={true}>
-                <DynamicAdminLayout>
-                  <CreateAdmin />
-                </DynamicAdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/superadmin-products"
-            element={
-              <ProtectedRoute requireSuper={true}>
-                <DynamicAdminLayout>
-                  <AdminProductsPage />
-                </DynamicAdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/superadmin-extras"
-            element={
-              <ProtectedRoute requireSuper={true}>
-                <DynamicAdminLayout>
-                  <CreateSuperAdminExtras />
-                </DynamicAdminLayout>
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Router>
-    </CartProvider>
+            <Route
+              path="/product/:slug"
+              element={
+                <>
+                  <UserOnlyHeader />
+                  <ProductDetails />
+                </>
+              }
+            />
+
+            <Route
+              path="/subcategory/:slug"
+              element={
+                <>
+                  <UserOnlyHeader />
+                  <SubCategoryPage />
+                </>
+              }
+            />
+
+            <Route
+              path="/cart"
+              element={
+                <>
+                  <UserOnlyHeader />
+                  <Cart />
+                </>
+              }
+            />
+
+            {/* ---------- Admin Login ---------- */}
+            <Route path="/admin/login" element={<LoginAdmin />} />
+
+            {/* ---------- Admin Routes ---------- */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DynamicAdminLayout>
+                    <AdminDashboard />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/create-product"
+              element={
+                <ProtectedRoute>
+                  <DynamicAdminLayout>
+                    <CreateProduct />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/products"
+              element={
+                <ProtectedRoute>
+                  <DynamicAdminLayout>
+                    <AdminProductsPage />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/edit-product/:id"
+              element={
+                <ProtectedRoute>
+                  <DynamicAdminLayout>
+                    <EditProduct />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ---------- Super Admin Routes ---------- */}
+            <Route
+              path="/admin/superadmin-dashboard"
+              element={
+                <ProtectedRoute requireSuper>
+                  <DynamicAdminLayout>
+                    <SuperAdminDashboard />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/create-admin"
+              element={
+                <ProtectedRoute requireSuper>
+                  <DynamicAdminLayout>
+                    <CreateAdmin />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/superadmin-products"
+              element={
+                <ProtectedRoute requireSuper>
+                  <DynamicAdminLayout>
+                    <AdminProductsPage />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/superadmin-extras"
+              element={
+                <ProtectedRoute requireSuper>
+                  <DynamicAdminLayout>
+                    <CreateSuperAdminExtras />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+          </Routes>
+        </Router>
+      </CartProvider>
+    </AuthProvider>
   );
 }
 
