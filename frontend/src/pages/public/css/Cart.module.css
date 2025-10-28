@@ -1,134 +1,165 @@
 .cartWrapper {
-  padding: 40px 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: #f2f2f2;
+  min-height: 100vh;
 }
 
-.cartContainer {
-  max-width: 900px;
-  margin: 0 auto;
-  background: #fff;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.cartContainer h1 {
+/* 🔴 Error Toast */
+.errorToast {
+  background: #ff4d4f;
+  color: #fff;
   text-align: center;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.clearBtn {
-  background-color: #ff4d4f;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-bottom: 20px;
-  transition: 0.2s;
-}
-
-.clearBtn:hover {
-  background-color: #ff7875;
-}
-
-.cartTable {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
-}
-
-.cartTable th,
-.cartTable td {
-  border: 1px solid #ddd;
   padding: 10px;
+  border-radius: 5px;
+  animation: fadein 0.3s;
+}
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+.statusBox {
   text-align: center;
+  margin-top: 50px;
+  font-size: 18px;
+  color: #555;
 }
 
-.cartTable th {
-  background-color: #f5f5f5;
+/* 📦 Cart Items */
+.cartList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-.productInfo {
+.cartItem {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.productImage {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+}
+
+.details {
+  flex: 1;
+}
+
+.price {
+  font-weight: 600;
+  margin: 5px 0;
+  color: #b12704;
+}
+
+/* 🔁 Quantity Controls */
+.controls {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.productImage {
-  width: 50px;
-  height: 50px;
-  object-fit: cover;
-  border-radius: 5px;
-}
-
-.quantityControls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-}
-
-.quantityControls button {
-  width: 35px;
-  height: 35px;
+.controls button {
+  width: 32px;
+  height: 32px;
   font-size: 18px;
-  border: none;
-  background-color: #1890ff;
-  color: white;
+  border: 1px solid #a6a6a6;
+  background: #fff;
   cursor: pointer;
   border-radius: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
 }
 
-.quantityControls button:disabled {
-  background-color: #bfbfbf;
-  cursor: not-allowed;
+.controls button:disabled {
+  opacity: 0.5;
 }
 
-.quantityControls button:hover:not(:disabled) {
-  background-color: #40a9ff;
+/* ❌ Remove Button */
+.removeBtn {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #007185;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.removeBtn:hover {
+  text-decoration: underline;
 }
 
-.quantityControls span {
-  width: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+/* 📌 Sticky Checkout Box */
+.cartTotalBox {
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  position: sticky;
+  bottom: 0;
+}
+
+/* 🚚 Delivery Text */
+.freeDeliveryText {
+  color: #007600;
+  font-size: 15px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.deliveryHint {
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #cc0c39;
   font-weight: 500;
-  font-size: 16px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background-color: #fafafa;
 }
 
-.cartTotal {
-  text-align: right;
-}
-
+/* ✅ Checkout Button */
 .checkoutBtn {
-  background-color: #52c41a;
+  width: 100%;
+  background: #ffd814;
+  border: 1px solid #fcd200;
+  padding: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 600;
+  border-radius: 8px;
+}
+.checkoutBtn:hover {
+  background: #f7ca00;
+}
+
+/* 🗑 Clear Cart */
+.clearBtn {
+  width: 100%;
+  margin-top: 10px;
+  background: #e53935;
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
+  padding: 10px;
+  border-radius: 8px;
   cursor: pointer;
-  margin-top: 10px;
-  transition: 0.2s;
+}
+.clearBtn:hover {
+  background: #d32f2f;
 }
 
-.checkoutBtn:hover {
-  background-color: #73d13d;
-}
+/* 🖥 Desktop Layout */
+@media (min-width: 768px) {
+  .cartWrapper {
+    flex-direction: row;
+    justify-content: center;
+    gap: 20px;
+  }
 
-.cartEmpty,
-.cartLoading {
-  text-align: center;
-  font-size: 18px;
-  margin-top: 50px;
-  color: #555;
+  .cartList {
+    width: 65%;
+  }
+
+  .cartTotalBox {
+    width: 30%;
+    height: fit-content;
+    top: 100px;
+    position: sticky;
+  }
 }
