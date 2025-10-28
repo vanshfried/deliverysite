@@ -31,29 +31,45 @@ const UserOnlyHeader = () => {
         <NavLink to="/" onClick={closeMenu}>MyApp</NavLink>
       </div>
 
-      <nav className={`${styles.navLinks} ${menuOpen ? styles.open : ""}`}>
+      <nav
+        className={`${styles.navLinks} ${menuOpen ? styles.open : ""}`}
+        role="navigation"
+      >
         {userLoggedIn ? (
           <>
             <NavLink to="/cart" onClick={closeMenu}>
-              Cart {uniqueCartCount > 0 && <span className={styles.cartCount}>{uniqueCartCount}</span>}
+              Cart{" "}
+              {uniqueCartCount > 0 && (
+                <span className={styles.cartCount}>{uniqueCartCount}</span>
+              )}
             </NavLink>
             <NavLink to="/orders" onClick={closeMenu}>Orders</NavLink>
             <NavLink to="/settings" onClick={closeMenu}>Settings</NavLink>
-            <button className={styles.logoutBtn} onClick={handleLogout}>Logout</button>
+            <button className={styles.logoutBtn} onClick={handleLogout}>
+              Logout
+            </button>
           </>
         ) : (
-          <NavLink to="/login" className={styles.loginBtn} onClick={closeMenu}>Login</NavLink>
+          <NavLink
+            to="/login"
+            className={styles.loginBtn}
+            onClick={closeMenu}
+          >
+            Login
+          </NavLink>
         )}
       </nav>
 
-      <div
+      {/* Hamburger */}
+      <button
         className={`${styles.hamburger} ${menuOpen ? styles.open : ""}`}
         onClick={() => setMenuOpen(!menuOpen)}
+        aria-label="Toggle menu"
       >
         <span></span>
         <span></span>
         <span></span>
-      </div>
+      </button>
     </header>
   );
 };
