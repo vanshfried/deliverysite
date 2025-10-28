@@ -19,7 +19,8 @@ export function AuthProvider({ children }) {
       const res = await API.get("/users/me");
       setUserLoggedIn(true);
       setUser(res.data.user);
-    } catch {
+    } catch (error) {
+      if (error.response?.status !== 401) console.error(error);
       setUserLoggedIn(false);
       setUser(null);
     }
@@ -31,7 +32,8 @@ export function AuthProvider({ children }) {
       setAdminLoggedIn(true);
       setAdmin(res.data.admin);
       setIsSuper(res.data.admin.isSuper);
-    } catch {
+    } catch (error) {
+      if (error.response?.status !== 401) console.error(error);
       setAdminLoggedIn(false);
       setAdmin(null);
       setIsSuper(false);
@@ -40,8 +42,20 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const restoreSession = async () => {
+      const hasUserToken = document.cookie.includes("userToken");
+      const hasAdminToken = document.cookie.includes("adminToken");
+
+      // ✅ No tokens => skip requests
+      if (!hasUserToken && !hasAdminToken) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        await Promise.all([fetchUser(), fetchAdmin()]);
+        const tasks = [];
+        if (hasUserToken) tasks.push(fetchUser());
+        if (hasAdminToken) tasks.push(fetchAdmin());
+        await Promise.all(tasks);
       } finally {
         setLoading(false);
       }
