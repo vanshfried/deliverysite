@@ -1,28 +1,25 @@
-// ProtectedRoute.jsx
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { AuthContext } from "../pages/admin/Context/AuthContext";
 
 export default function ProtectedRoute({ children, requireSuper = false }) {
-  const { adminLoggedIn, isSuper, loading } = useContext(AuthContext);
+  const { adminLoggedIn, isSuper, loading, fetchAdmin } =
+    useContext(AuthContext);
 
-  // ✅ Session still checking → avoid incorrect redirect
+  // ✅ Fetch admin session only inside admin protected pages
+  useEffect(() => {
+  if (!adminLoggedIn) {
+    fetchAdmin();
+  }
+}, [adminLoggedIn]);
+
+
   if (loading) return <div>Checking Authentication...</div>;
 
-  // ✅ Not logged in → send to admin login
   if (!adminLoggedIn) return <Navigate to="/admin/login" replace />;
 
-  // ✅ Superadmin restriction
-  if (requireSuper && !isSuper) {
-    return (
-      <Navigate 
-        to="/admin/dashboard" 
-        replace 
-        state={{ error: "Not authorized" }}
-      />
-    );
-  }
+  if (requireSuper && !isSuper)
+    return <Navigate to="/admin/dashboard" replace />;
 
-  // ✅ Authenticated and allowed → show the page
   return children;
 }

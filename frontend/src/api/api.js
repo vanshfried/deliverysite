@@ -14,25 +14,18 @@ export const setUserLoggedInFlag = (flag) => {
   isUserLoggedIn = flag;
 };
 
-// ✅ Endpoints where 401 is acceptable (session restore checks)
-const ignore401Endpoints = ["/admin/me", "/users/me"];
-
-// ✅ Clean interceptor for handling unauthorized responses
+// ✅ Silent on expected 401, warn only if session was active before
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    const urlPath = new URL(error.config?.url, import.meta.env.VITE_URL).pathname;
     const status = error.response?.status;
 
     if (status === 401) {
-      if (ignore401Endpoints.includes(urlPath)) {
-        // ✅ Treat missing session as "not logged in" but not error
-        return Promise.resolve({ data: { success: false } });
-      }
-
       if (isUserLoggedIn) {
-        console.warn("⚠️ Session expired — user was logged in.");
+        console.warn("⚠️ Session expired — please login again");
       }
+      // ✅ Silent fail for unauthenticated state
+      return Promise.resolve(null);
     }
 
     return Promise.reject(error);

@@ -23,6 +23,7 @@ import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
 // Auth + Protected
 import { AuthProvider } from "./pages/admin/Context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoutes";
+import UserProtectedRoute from "./pages/public/UserProtectedRoute";
 
 // User Header + Cart Context
 import UserOnlyHeader from "./pages/public/UserOnlyHeader";
@@ -76,13 +77,14 @@ function App() {
               }
             />
 
+            {/* ✅ Cart is now protected */}
             <Route
               path="/cart"
               element={
-                <>
+                <UserProtectedRoute>
                   <UserOnlyHeader />
                   <Cart />
-                </>
+                </UserProtectedRoute>
               }
             />
 
