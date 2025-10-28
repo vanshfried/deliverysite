@@ -52,8 +52,16 @@ const AdminProductsPage = () => {
             bVal = b.subCategory?.name?.toLowerCase() || "";
             break;
           case "price":
-            aVal = a.price;
-            bVal = b.price;
+            aVal =
+              a.discountPrice && a.discountPrice > 0
+                ? a.discountPrice
+                : a.price;
+            bVal =
+              b.discountPrice && b.discountPrice > 0
+                ? b.discountPrice
+                : b.price;
+            break;
+
             break;
           default:
             return 0;
