@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const AddressSchema = new mongoose.Schema({
-  label: { type: String, default: "" }, // Home, Work etc.
+  label: { type: String, default: "" },
   houseNo: { type: String, required: true },
   laneOrSector: { type: String, required: true },
   landmark: { type: String, default: "" },
@@ -10,7 +10,7 @@ const AddressSchema = new mongoose.Schema({
     lat: { type: Number, default: 0 },
     lon: { type: Number, default: 0 },
   },
-});
+}, { _id: true }); // ✅ ensure each address has ObjectId
 
 const UserSchema = new mongoose.Schema({
   name: { type: String },
@@ -20,6 +20,12 @@ const UserSchema = new mongoose.Schema({
   otpExpires: { type: Number, default: null },
 
   addresses: { type: [AddressSchema], default: [] },
+
+  // ✅ NEW FIELD (store ObjectId of one address)
+  defaultAddress: {
+    type: mongoose.Schema.Types.ObjectId,
+    default: null
+  }
 
 }, { timestamps: true });
 

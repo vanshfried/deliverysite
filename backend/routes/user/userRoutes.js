@@ -19,13 +19,11 @@ router.post("/otp", async (req, res) => {
     if (!user) user = await User.create({ phone });
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
     user.otp = otp;
     user.otpExpires = Date.now() + 3 * 60 * 1000;
     await user.save();
 
     console.log(`✅ OTP Generated for ${phone}: ${otp}`);
-
     return res.json({ success: true, message: "OTP sent", phone });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
@@ -85,14 +83,21 @@ router.post("/logout", (req, res) => {
 
 // ✅ Session check
 router.get("/me", requireUser, async (req, res) => {
-  const { _id, name, phone, addresses } = req.user;
-  return res.json({ success: true, user: { _id, name, phone, addresses } });
+  const { _id, name, phone, addresses, defaultAddress } = req.user;
+  return res.json({
+    success: true,
+    user: { _id, name, phone, addresses, defaultAddress }
+  });
 });
 
 // ✅ Update profile
 router.put("/update", requireUser, async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.user._id, { name: req.body.name }, { new: true });
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { name: req.body.name },
+      { new: true }
+    );
     res.json({ success: true, user });
   } catch {
     res.status(500).json({ error: "Server error" });
@@ -108,19 +113,29 @@ router.post("/address", requireUser, async (req, res) => {
     }
 
     const { houseNo, laneOrSector, pincode, landmark } = req.body;
-    if (!houseNo || !laneOrSector) return res.status(400).json({ error: "Required fields missing" });
-    if (!/^\d{6}$/.test(String(pincode))) return res.status(400).json({ error: "Invalid pincode" });
+    if (!houseNo || !laneOrSector)
+      return res.status(400).json({ error: "Required fields missing" });
+    if (!/^\d{6}$/.test(String(pincode)))
+      return res.status(400).json({ error: "Invalid pincode" });
 
-    user.addresses.push({
+    const newAddr = {
       label: req.body.label ?? "",
       houseNo,
       laneOrSector,
       landmark: landmark ?? "",
       pincode,
       coords: req.body.coords ?? { lat: 0, lon: 0 },
-    });
+    };
 
+    user.addresses.push(newAddr);
     await user.save();
+
+    // ✅ If first address → auto default
+    if (!user.defaultAddress && user.addresses.length === 1) {
+      user.defaultAddress = user.addresses[0]._id;
+      await user.save();
+    }
+
     res.json({ success: true, addresses: user.addresses });
   } catch (err) {
     console.error("ADD ADDRESS ERROR:", err);
@@ -128,7 +143,7 @@ router.post("/address", requireUser, async (req, res) => {
   }
 });
 
-// ✅ Edit Address (Secure)
+// ✅ Edit Address
 router.put("/address/:id", requireUser, async (req, res) => {
   try {
     const allowed = ["label", "houseNo", "laneOrSector", "landmark", "pincode"];
@@ -157,23 +172,53 @@ router.put("/address/:id", requireUser, async (req, res) => {
 // ✅ Delete Address
 router.delete("/address/:id", requireUser, async (req, res) => {
   try {
-    const updated = await User.findByIdAndUpdate(
-      req.user._id,
-      { $pull: { addresses: { _id: req.params.id } } },
-      { new: true }
-    );
-    res.json({ success: true, addresses: updated.addresses });
+    const user = await User.findById(req.user._id);
+    const addrId = req.params.id;
+
+    user.addresses = user.addresses.filter(a => a._id.toString() !== addrId);
+
+    // ✅ If default got deleted → reset
+    if (user.defaultAddress?.toString() === addrId) {
+      user.defaultAddress = user.addresses.length > 0
+        ? user.addresses[0]._id
+        : null;
+    }
+
+    await user.save();
+
+    res.json({ success: true, addresses: user.addresses, defaultAddress: user.defaultAddress });
   } catch {
     res.status(500).json({ error: "Address remove failed" });
   }
 });
 
-// ✅ Delete Account Entirely
+// ✅ Set Default Address
+router.put("/address/default/:id", requireUser, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const address = user.addresses.id(req.params.id);
+
+    if (!address) return res.status(404).json({ error: "Address not found" });
+
+    user.defaultAddress = req.params.id;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Default address updated",
+      defaultAddress: user.defaultAddress,
+      addresses: user.addresses
+    });
+  } catch {
+    res.status(500).json({ error: "Set default failed" });
+  }
+});
+
+// ✅ Delete Account
 router.delete("/delete", requireUser, async (req, res) => {
   try {
     const userId = req.user._id;
-
-    await Cart.deleteMany({ user: userId }); // ✅ Bulletproof
+    await Cart.deleteMany({ user: userId });
     await User.findByIdAndDelete(userId);
 
     res.clearCookie("userToken", {

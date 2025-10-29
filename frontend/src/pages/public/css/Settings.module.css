@@ -1,68 +1,305 @@
-.container {
-  max-width: 450px;
-  margin: auto;
+.settingsLayout {
+  display: flex;
+  gap: 20px;
   padding: 20px;
-  font-family: sans-serif;
 }
 
-h2, h3 {
-  margin-bottom: 10px;
+/* Sidebar */
+.sidebar {
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-right: 1px solid #eee;
+  padding-right: 12px;
+}
+
+.sidebar button {
+  background: none;
+  border: none;
+  padding: 10px;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  color: #222;
+}
+
+.activeTab {
+  font-weight: 700;
+  color: #2b6fff;
+  border-left: 3px solid #2b6fff;
+  padding-left: 7px;
+  background: rgba(43,103,255,0.04);
+  border-radius: 4px;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  min-width: 0;
 }
 
 .section {
-  margin-bottom: 25px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
+/* Phone */
+.phoneDisplay {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Inputs & Buttons */
 .input {
   width: 100%;
-  padding: 10px;
-  margin-bottom: 12px;
-  border-radius: 6px;
-  border: 1px solid #aaa;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
+  box-sizing: border-box;
 }
 
-.btn, .btnAdd {
-  width: 100%;
-  padding: 10px;
+.btn,
+.btnAdd {
+  padding: 10px 14px;
   border: none;
-  margin-top: 5px;
-  border-radius: 5px;
-  cursor: pointer;
-  background: #1d7ef1;
+  border-radius: 8px;
+  background: #2b6fff;
   color: #fff;
+  cursor: pointer;
   font-weight: 600;
 }
 
+/* Address card */
 .addressCard {
-  padding: 10px;
-  background: #f5f6f7;
-  margin-bottom: 10px;
-  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.02);
 }
 
-.deleteBtn {
-  background: crimson;
-  color: #fff;
-  border: none;
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.addrLabel {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.addrLine {
+  margin: 6px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+/* default highlight */
+.defaultAddressCard {
+  border: 2px solid #1a8f1a;
+  background: #f3fff3;
+}
+
+.defaultBadge {
+  font-size: 12px;
+  background: #1a8f1a;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+/* actions row */
+.cardActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.setDefaultBtn {
+  font-size: 13px;
+  background: transparent;
+  border: 1px solid #555;
   padding: 6px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.logoutBtn {
-  width: 100%;
-  background: #555;
-  color: #fff;
-  padding: 12px;
-  border: none;
   border-radius: 6px;
   cursor: pointer;
 }
 
-.loading {
-  text-align: center;
-  margin-top: 50px;
+.editBtn {
+  background: #ffa500;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.deleteBtn {
+  background: none;
+  color: #d63a3a;
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* small action buttons used in edit/save/cancel */
+.saveBtn {
+  background: #2b6fff;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.cancelBtn {
+  background: transparent;
+  color: #333;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Add new address area */
+.addButtonWrap {
+  margin-top: 10px;
+}
+.addBtnPrimary {
+  background: #2b6fff;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+/* Add form card */
+.addFormCard {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.addHeading {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+}
+
+/* actions for add form */
+.addFormActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* default info preview in Profile tab */
+.defaultInfo {
+  border-left: 3px solid #e6f4ff;
+  background: #f4fbff;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 8px;
+  color: #0f3f82;
+  font-size: 14px;
+}
+
+/* delete account */
+.deleteAccountBtn {
+  background: #d72929;
+  color: #fff;
+  padding: 12px;
+  border-radius: 6px;
+  border: none;
+}
+
+/* warning */
+.warningText {
+  color: #c0392b;
+  font-size: 14px;
+}
+
+/* logout */
+.logoutBtn {
+  background: #333;
+  color: white !important;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: auto;
+}
+
+/* Toast Notification */
+.toast {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 15px;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  z-index: 9999;
+  animation: toastFade 2.3s ease forwards;
+}
+.toast.success {
+  background: #1a8f1a;
+}
+.toast.error {
+  background: #b00020;
+}
+@keyframes toastFade {
+  0% { opacity: 0; transform: translate(-50%, -10px); }
+  10% { opacity: 1; transform: translate(-50%, 0); }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* empty text */
+.emptyText {
+  color: #666;
+  font-size: 14px;
+}
+
+/* responsive */
+@media (max-width: 768px) {
+  .settingsLayout {
+    flex-direction: column;
+    padding: 12px;
+  }
+
+  .sidebar {
+    flex-direction: row;
+    gap: 8px;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+  }
+
+  .sidebar button {
+    white-space: nowrap;
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .addressCard {
+    padding: 12px;
+  }
+
+  .cardActions {
+    gap: 6px;
+  }
+
+  .addBtnPrimary {
+    width: 100%;
+  }
 }
