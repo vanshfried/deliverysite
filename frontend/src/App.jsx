@@ -16,7 +16,7 @@ import EditProduct from "./pages/admin/pages/EditProduct";
 import Cart from "./pages/public/Cart";
 import CreateSuperAdminExtras from "./pages/admin/superAdmin/pages/CreateSuperAdminExtras";
 import SubCategoryPage from "./pages/public/SubCategoryPage";
-
+import Settings from "./pages/public/Settings";
 // Layout
 import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
 
@@ -84,6 +84,15 @@ function App() {
                 <UserProtectedRoute>
                   <UserOnlyHeader />
                   <Cart />
+                </UserProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <UserProtectedRoute>
+                  <UserOnlyHeader />
+                  <Settings />
                 </UserProtectedRoute>
               }
             />
