@@ -1,12 +1,19 @@
 import React, { useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../../api/api";
 import { CartContext } from "../admin/Context/CartContext";
+import { AuthContext } from "../admin/Context/AuthContext";
 import styles from "./css/Cart.module.css";
 
 const Cart = () => {
-  const { cart, loading, updateItem, removeItem, clearCart } = useContext(CartContext);
+  const { cart, loading, updateItem, removeItem, clearCart } =
+    useContext(CartContext);
+  const { userLoggedIn } = useContext(AuthContext);
+  const navigate = useNavigate();
+
   const [updatingItem, setUpdatingItem] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [processingCheckout, setProcessingCheckout] = useState(false);
 
   const showError = (msg) => {
     setErrorMsg(msg);
@@ -41,10 +48,28 @@ const Cart = () => {
     }
   };
 
-  if (loading) return <div className={styles.statusBox}>Loading your cart...</div>;
-  if (!cart?.items?.length) return <div className={styles.statusBox}>Your Amazon Cart is empty</div>;
+  const handleProceedToBuy = async () => {
+    if (!userLoggedIn) return navigate("/login");
+    if (!cart?.items?.length) return showError("Your cart is empty!");
+    if (processingCheckout) return;
 
-  const total = cart.items.reduce((sum, item) => sum + item.quantity * item.priceAtAddTime, 0);
+    setProcessingCheckout(true);
+    try {
+      navigate("/checkout", { state: { fromCart: true } });
+    } finally {
+      setProcessingCheckout(false);
+    }
+  };
+
+  if (loading)
+    return <div className={styles.statusBox}>Loading your cart...</div>;
+  if (!cart?.items?.length)
+    return <div className={styles.statusBox}>Your Amazon Cart is empty</div>;
+
+  const total = cart.items.reduce(
+    (sum, item) => sum + item.quantity * item.priceAtAddTime,
+    0
+  );
 
   const isFreeDelivery = total >= 499;
   const remainingForFree = 499 - total;
@@ -68,19 +93,32 @@ const Cart = () => {
 
               <div className={styles.controls}>
                 <button
-                  onClick={() => handleQuantityChange(item.product._id, item.quantity - 1)}
-                  disabled={updatingItem === item.product._id || item.quantity <= 1}
-                >-</button>
+                  onClick={() =>
+                    handleQuantityChange(item.product._id, item.quantity - 1)
+                  }
+                  disabled={
+                    updatingItem === item.product._id || item.quantity <= 1
+                  }
+                >
+                  -
+                </button>
 
                 <span>{item.quantity}</span>
 
                 <button
-                  onClick={() => handleQuantityChange(item.product._id, item.quantity + 1)}
+                  onClick={() =>
+                    handleQuantityChange(item.product._id, item.quantity + 1)
+                  }
                   disabled={updatingItem === item.product._id}
-                >+</button>
+                >
+                  +
+                </button>
               </div>
 
-              <button className={styles.removeBtn} onClick={() => handleRemoveItem(item.product._id)}>
+              <button
+                className={styles.removeBtn}
+                onClick={() => handleRemoveItem(item.product._id)}
+              >
                 Remove
               </button>
             </div>
@@ -97,9 +135,21 @@ const Cart = () => {
           </p>
         )}
 
-        <h2>Subtotal ({cart.items.length} items): ₹{total}</h2>
-        <button className={styles.checkoutBtn}>Proceed to Buy</button>
-        <button className={styles.clearBtn} onClick={handleClearCart}>Clear Cart</button>
+        <h2>
+          Subtotal ({cart.items.length} items): ₹{total.toFixed(2)}
+        </h2>
+
+        <button
+          className={styles.checkoutBtn}
+          onClick={handleProceedToBuy}
+          disabled={processingCheckout}
+        >
+          {processingCheckout ? "Processing..." : "Proceed to Buy"}
+        </button>
+
+        <button className={styles.clearBtn} onClick={handleClearCart}>
+          Clear Cart
+        </button>
       </div>
     </div>
   );

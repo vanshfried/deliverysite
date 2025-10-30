@@ -19,6 +19,7 @@ const ProductDetails = () => {
   const [similarProducts, setSimilarProducts] = useState([]);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
 
+  // reset state when slug changes
   useEffect(() => {
     window.scrollTo(0, 0);
     setProduct(null);
@@ -26,7 +27,7 @@ const ProductDetails = () => {
     setLoading(true);
   }, [slug]);
 
-  // Fetch Product
+  // fetch product
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -43,16 +44,13 @@ const ProductDetails = () => {
     fetchProduct();
   }, [slug]);
 
-  // Smart Similar Products Logic
+  // fetch similar products
   useEffect(() => {
     if (!product) return;
-
     const fetchSimilar = async () => {
       try {
         let similar = [];
         const tagIds = product.tags?.map((tag) => tag._id).join(",");
-
-        // Fetch both in parallel
         const [scRes, tagRes] = await Promise.all([
           product.subCategory?.slug
             ? API.get(`/products/subcategory/slug/${product.subCategory.slug}`)
@@ -65,20 +63,17 @@ const ProductDetails = () => {
         const subcatProducts = scRes.data.products.filter((p) => p._id !== product._id);
         const tagProducts = tagRes.data.products.filter((p) => p._id !== product._id);
 
-        // Count tag matches for sorting
         const tagSet = new Set(product.tags?.map((t) => t._id));
-
         const scoreMatch = (p) => {
           const tagCount = p.tags?.filter((t) => tagSet.has(t._id)).length || 0;
           const subcatMatch = p.subCategory?._id === product.subCategory?._id ? 1 : 0;
           return tagCount * 10 + subcatMatch * 5;
         };
 
-        // Merge + score + sort + dedupe
         const merged = [...subcatProducts, ...tagProducts]
           .map((p) => ({ ...p, score: scoreMatch(p) }))
           .sort((a, b) => b.score - a.score)
-          .filter((p, i, arr) => arr.findIndex(x => x._id === p._id) === i)
+          .filter((p, i, arr) => arr.findIndex((x) => x._id === p._id) === i)
           .slice(0, 10);
 
         setSimilarProducts(merged);
@@ -86,10 +81,10 @@ const ProductDetails = () => {
         console.error("Similar Fetch Error:", err);
       }
     };
-
     fetchSimilar();
   }, [product]);
 
+  // ---- loading & error handling ----
   if (loading) return <div className={styles.pdContainerLoading}>Loading...</div>;
   if (error) return <div className={styles.pdContainerError}>{error}</div>;
   if (!product) return <div className={styles.pdContainerError}>No product found</div>;
@@ -111,6 +106,7 @@ const ProductDetails = () => {
   const allImages = [logo, ...(images || [])].filter(Boolean);
   const isInCart = cart.items.some((item) => item.product._id === product._id);
 
+  // ---- Add to Cart ----
   const handleAddToCart = async () => {
     if (!userLoggedIn) return setShowLoginPopup(true);
     if (!inStock || isInCart) return;
@@ -123,11 +119,13 @@ const ProductDetails = () => {
     }
   };
 
+  // ---- Buy Now (with direct checkout) ----
   const handleBuyNow = () => {
     if (!userLoggedIn) return setShowLoginPopup(true);
-    navigate("/checkout");
+    navigate("/checkout", { state: { buyNowProduct: product } });
   };
 
+  // ---- Login Popup ----
   const LoginPrompt = () => (
     <div className={styles.loginPopupBackdrop}>
       <div className={styles.loginPopup}>
@@ -147,6 +145,7 @@ const ProductDetails = () => {
     </div>
   );
 
+  // ---- UI ----
   return (
     <div className={styles.pdContainer}>
       {showLoginPopup && <LoginPrompt />}
@@ -220,7 +219,7 @@ const ProductDetails = () => {
             )}
           </div>
 
-          {/* Buttons */}
+          {/* Action Buttons */}
           <div className={styles.pdActions}>
             <button
               className={styles.pdAddToCart}
@@ -229,7 +228,12 @@ const ProductDetails = () => {
             >
               {isInCart ? "Added to Cart" : addingToCart ? "Adding..." : "Add to Cart"}
             </button>
-            <button className={styles.pdBuyNow} onClick={handleBuyNow}>
+
+            <button
+              className={styles.pdBuyNow}
+              onClick={handleBuyNow}
+              disabled={!inStock}
+            >
               Buy Now
             </button>
           </div>
@@ -244,7 +248,7 @@ const ProductDetails = () => {
         />
       )}
 
-      {/* Specs */}
+      {/* Specifications */}
       {specs && Object.keys(specs).length > 0 && (
         <div className={styles.pdSpecs}>
           <h3>Specifications</h3>

@@ -17,6 +17,8 @@ import Cart from "./pages/public/Cart";
 import CreateSuperAdminExtras from "./pages/admin/superAdmin/pages/CreateSuperAdminExtras";
 import SubCategoryPage from "./pages/public/SubCategoryPage";
 import Settings from "./pages/public/Settings";
+import Checkout from "./pages/public/Checkout";
+import NotFound from "./components/NotFound";
 // Layout
 import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
 
@@ -35,14 +37,23 @@ function App() {
       <CartProvider>
         <Router>
           <Routes>
-
             {/* ---------- Public Routes ---------- */}
+
             <Route
               path="/"
               element={
                 <>
                   <UserOnlyHeader />
                   <HomePage />
+                </>
+              }
+            />
+            <Route
+              path="*"
+              element={
+                <>
+                  <UserOnlyHeader />
+                  <NotFound />
                 </>
               }
             />
@@ -93,6 +104,15 @@ function App() {
                 <UserProtectedRoute>
                   <UserOnlyHeader />
                   <Settings />
+                </UserProtectedRoute>
+              }
+            />
+            <Route
+              path="/checkout"
+              element={
+                <UserProtectedRoute>
+                  <UserOnlyHeader />
+                  <Checkout />
                 </UserProtectedRoute>
               }
             />
@@ -189,7 +209,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
           </Routes>
         </Router>
       </CartProvider>

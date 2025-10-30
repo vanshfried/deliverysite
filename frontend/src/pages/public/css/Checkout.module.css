@@ -1,0 +1,418 @@
+/* === Layout === */
+.checkoutContainer {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  font-family: "Inter", system-ui, sans-serif;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+/* === Heading === */
+.checkoutTitle {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-align: center;
+  color: #1a1a1a;
+}
+
+/* === Shared Card Style === */
+.cardBase {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease-in-out;
+}
+
+.cardBase:hover {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+}
+
+/* === Items Section === */
+.itemsSection {
+  composes: cardBase;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid #f1f1f1;
+  padding: 10px 0;
+}
+
+.itemRow:last-child {
+  border-bottom: none;
+}
+
+.itemRow img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.itemInfo {
+  flex: 1;
+}
+
+.itemName {
+  font-weight: 600;
+  font-size: 15.5px;
+  color: #111;
+}
+
+.itemPrice {
+  font-size: 14px;
+  color: #555;
+}
+
+/* === Address Section === */
+.addressSection {
+  composes: cardBase;
+}
+
+.addressSection h2 {
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #111;
+}
+
+.addressList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* === Address Card === */
+.addressCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  padding: 14px 16px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.addressCard:hover {
+  border-color: #cfd8ff;
+}
+
+.addressCard.default {
+  border: 2px solid #1a8f1a;
+  background: #f3fff3;
+}
+
+.addressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.addrLabel {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.addrLine {
+  color: #333;
+  font-size: 14px;
+  margin: 6px 0;
+}
+
+/* === Edit Mode === */
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  background: #fafafa;
+  font-size: 14px;
+  transition: all 0.2s ease-in-out;
+}
+
+.input:focus {
+  border-color: #2b6fff;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(43, 111, 255, 0.1);
+  outline: none;
+}
+
+.editActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* === Edit Button (modern look) === */
+.editBtn {
+  background: #f3f6ff;
+  color: #2b6fff;
+  border: 1px solid #d6e0ff;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  align-self: flex-start;
+}
+
+.editBtn:hover {
+  background: #2b6fff;
+  color: #fff;
+  border-color: #2b6fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(43, 111, 255, 0.2);
+}
+
+.editBtn:active {
+  transform: scale(0.97);
+}
+
+.saveBtn {
+  background: #2b6fff;
+  color: #fff;
+  border: none;
+  padding: 9px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease-in-out;
+}
+
+.saveBtn:hover {
+  background: #1f56e0;
+}
+
+.cancelBtn {
+  background: transparent;
+  border: 1px solid #ddd;
+  padding: 9px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #333;
+  font-weight: 500;
+  transition: background 0.2s ease-in-out;
+}
+
+.cancelBtn:hover {
+  background: #f7f7f7;
+}
+
+/* === Add New Address === */
+.addButtonWrap {
+  margin-top: 14px;
+  text-align: left;
+}
+
+.addBtnPrimary {
+  background: #2b6fff;
+  color: #fff;
+  padding: 11px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.2s ease-in-out;
+}
+
+.addBtnPrimary:hover {
+  background: #1f56e0;
+  transform: translateY(-1px);
+}
+
+.addFormCard {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.addHeading {
+  margin: 0 0 8px 0;
+  font-size: 16.5px;
+  font-weight: 600;
+  color: #111;
+}
+
+.addFormActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* === Summary === */
+.summary {
+  composes: cardBase;
+  text-align: center;
+}
+
+.summary h3 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: #111;
+}
+
+.placeOrderBtn {
+  background: #2b6fff;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.placeOrderBtn:hover {
+  background: #1f56e0;
+  transform: translateY(-1px);
+}
+
+.error {
+  color: #d63a3a;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.success {
+  color: #1a8f1a;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+/* === Empty / Loading === */
+.emptyCheckout,
+.loading {
+  text-align: center;
+  color: #555;
+  font-size: 15px;
+  padding: 50px;
+}
+
+/* === Access Denied === */
+.accessDenied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 60px 20px;
+  max-width: 600px;
+  margin: 60px auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+.accessDenied h2 {
+  font-size: 22px;
+  color: #d63a3a;
+  margin-bottom: 10px;
+}
+
+.accessDenied p {
+  font-size: 15.5px;
+  color: #444;
+  margin-bottom: 24px;
+}
+
+/* === Go Back Button === */
+.goBackBtn {
+  background: #2b6fff;
+  color: #fff;
+  padding: 11px 18px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14.5px;
+  transition: all 0.2s ease-in-out;
+}
+
+.goBackBtn:hover {
+  background: #1f56e0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(43, 111, 255, 0.2);
+}
+
+.goBackBtn:active {
+  transform: scale(0.97);
+}
+
+/* === Animation === */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .checkoutContainer {
+    padding: 16px;
+    gap: 20px;
+  }
+
+  .itemRow img {
+    width: 60px;
+    height: 60px;
+  }
+
+  .addressCard {
+    padding: 12px;
+  }
+
+  .editActions {
+    flex-direction: column;
+  }
+
+  .addBtnPrimary,
+  .placeOrderBtn,
+  .goBackBtn {
+    width: 100%;
+  }
+
+  .cardBase {
+    padding: 14px;
+  }
+
+  .accessDenied {
+    padding: 40px 16px;
+    margin: 40px 12px;
+  }
+
+  .accessDenied h2 {
+    font-size: 20px;
+  }
+
+  .accessDenied p {
+    font-size: 14px;
+  }
+}
