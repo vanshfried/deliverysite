@@ -36,6 +36,11 @@
   transform: translateY(-6px);
   box-shadow: 0 12px 25px rgba(0,0,0,0.15);
 }
+.hpRating {
+  font-size: 0.9rem;
+  color: #ffb400; /* star color */
+  margin: 4px 0;
+}
 
 .hpImage {
   width: 100%;

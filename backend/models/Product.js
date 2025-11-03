@@ -1,4 +1,3 @@
-// backend/models/Product.js
 import mongoose from "mongoose";
 import slugify from "slugify";
 
@@ -58,8 +57,28 @@ const productSchema = new mongoose.Schema(
       },
     ],
     videos: [String],
+
+    // ---------------- Reviews & Ratings ----------------
+    reviews: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        rating: { type: Number, min: 1, max: 5, required: true },
+        comment: { type: String, trim: true },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    averageRating: { type: Number, default: 0 },
+    numReviews: { type: Number, default: 0 },
   },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
 // ---------------- Slug Middleware ----------------
@@ -82,6 +101,19 @@ productSchema.virtual("category", {
   justOne: true,
   options: { strictPopulate: false },
 });
+
+// ---------------- Instance Method ----------------
+productSchema.methods.calculateAverageRating = async function () {
+  if (this.reviews.length === 0) {
+    this.averageRating = 0;
+    this.numReviews = 0;
+  } else {
+    this.numReviews = this.reviews.length;
+    this.averageRating =
+      this.reviews.reduce((acc, r) => acc + r.rating, 0) / this.reviews.length;
+  }
+  await this.save();
+};
 
 // ---------------- Indexes ----------------
 productSchema.index({ name: 1 });

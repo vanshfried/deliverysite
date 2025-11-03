@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/api";
-import styles from "./css/HomePage.module.css"; // <-- CSS module
+import styles from "./css/HomePage.module.css";
 
 const HomePage = () => {
   const [products, setProducts] = useState([]);
@@ -40,6 +40,13 @@ const HomePage = () => {
             </div>
             <div className={styles.hpInfo}>
               <h2>{product.name}</h2>
+              
+              {/* ⭐ Add Rating Display */}
+              <p className={styles.hpRating}>
+                ⭐ {product.averageRating ? product.averageRating.toFixed(1) : "0.0"}{" "}
+                ({product.numReviews || 0})
+              </p>
+
               <p className={styles.hpPrice}>
                 {product.discountPrice > 0 ? (
                   <>

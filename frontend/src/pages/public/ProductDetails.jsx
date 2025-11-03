@@ -9,7 +9,7 @@ const ProductDetails = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { addToCart, cart } = useContext(CartContext);
-  const { userLoggedIn } = useContext(AuthContext);
+  const { userLoggedIn, user } = useContext(AuthContext);
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,6 +18,12 @@ const ProductDetails = () => {
   const [addingToCart, setAddingToCart] = useState(false);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
+
+  const [reviews, setReviews] = useState([]);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
 
   // reset state when slug changes
   useEffect(() => {
@@ -60,13 +66,18 @@ const ProductDetails = () => {
             : { data: { products: [] } },
         ]);
 
-        const subcatProducts = scRes.data.products.filter((p) => p._id !== product._id);
-        const tagProducts = tagRes.data.products.filter((p) => p._id !== product._id);
+        const subcatProducts = scRes.data.products.filter(
+          (p) => p._id !== product._id
+        );
+        const tagProducts = tagRes.data.products.filter(
+          (p) => p._id !== product._id
+        );
 
         const tagSet = new Set(product.tags?.map((t) => t._id));
         const scoreMatch = (p) => {
           const tagCount = p.tags?.filter((t) => tagSet.has(t._id)).length || 0;
-          const subcatMatch = p.subCategory?._id === product.subCategory?._id ? 1 : 0;
+          const subcatMatch =
+            p.subCategory?._id === product.subCategory?._id ? 1 : 0;
           return tagCount * 10 + subcatMatch * 5;
         };
 
@@ -84,32 +95,28 @@ const ProductDetails = () => {
     fetchSimilar();
   }, [product]);
 
-  // ---- loading & error handling ----
-  if (loading) return <div className={styles.pdContainerLoading}>Loading...</div>;
-  if (error) return <div className={styles.pdContainerError}>{error}</div>;
-  if (!product) return <div className={styles.pdContainerError}>No product found</div>;
-
-  const {
-    name,
-    description,
-    logo,
-    images,
-    price,
-    discountPrice,
-    inStock,
-    tags,
-    videos,
-    specs,
-    subCategory,
-  } = product;
-
-  const allImages = [logo, ...(images || [])].filter(Boolean);
-  const isInCart = cart.items.some((item) => item.product._id === product._id);
+  // fetch reviews
+  useEffect(() => {
+    if (!product?._id) return;
+    const fetchReviews = async () => {
+      try {
+        const res = await API.get(`/products/${product._id}/reviews`);
+        setReviews(res.data);
+      } catch (err) {
+        console.error("Error fetching reviews:", err);
+      }
+    };
+    fetchReviews();
+  }, [product]);
 
   // ---- Add to Cart ----
   const handleAddToCart = async () => {
     if (!userLoggedIn) return setShowLoginPopup(true);
-    if (!inStock || isInCart) return;
+    if (
+      !product.inStock ||
+      cart.items.some((i) => i.product._id === product._id)
+    )
+      return;
     setAddingToCart(true);
     try {
       await addToCart(product._id, 1);
@@ -119,10 +126,60 @@ const ProductDetails = () => {
     }
   };
 
-  // ---- Buy Now (with direct checkout) ----
+  // ---- Buy Now ----
   const handleBuyNow = () => {
     if (!userLoggedIn) return setShowLoginPopup(true);
     navigate("/checkout", { state: { buyNowProduct: product } });
+  };
+
+  // star touch/click
+  const handleStarClick = (val) => setRating(val);
+
+  // submit review (new or edit)
+  const handleSubmitReview = async () => {
+    if (!userLoggedIn) return setShowLoginPopup(true);
+    if (!rating || !comment.trim()) return;
+
+    setSubmitting(true);
+    try {
+      await API.post(
+        `/products/${product._id}/reviews`,
+        { rating: Number(rating), comment: comment.trim() },
+        { withCredentials: true }
+      );
+
+      const res = await API.get(`/products/${product._id}/reviews`);
+      setReviews(res.data);
+      setRating(0);
+      setComment("");
+      setEditingReviewId(null);
+    } catch (err) {
+      console.error("Error submitting review:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // edit review
+  const handleEditReview = (r) => {
+    setEditingReviewId(r._id);
+    setRating(r.rating);
+    setComment(r.comment);
+  };
+
+  // delete review
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      await API.delete(`/products/${product._id}/reviews/${reviewId}`, {
+        withCredentials: true,
+      });
+      setReviews(reviews.filter((r) => r._id !== reviewId));
+      setEditingReviewId(null);
+      setRating(0);
+      setComment("");
+    } catch (err) {
+      console.error("Error deleting review:", err);
+    }
   };
 
   // ---- Login Popup ----
@@ -145,13 +202,35 @@ const ProductDetails = () => {
     </div>
   );
 
+  if (loading)
+    return <div className={styles.pdContainerLoading}>Loading...</div>;
+  if (error) return <div className={styles.pdContainerError}>{error}</div>;
+  if (!product)
+    return <div className={styles.pdContainerError}>No product found</div>;
+
+  const {
+    name,
+    description,
+    logo,
+    images,
+    price,
+    discountPrice,
+    inStock,
+    tags,
+    videos,
+    specs,
+    subCategory,
+  } = product;
+
+  const allImages = [logo, ...(images || [])].filter(Boolean);
+  const isInCart = cart.items.some((item) => item.product._id === product._id);
+
   // ---- UI ----
   return (
     <div className={styles.pdContainer}>
       {showLoginPopup && <LoginPrompt />}
 
       <div className={styles.pdGrid}>
-        {/* Thumbnails */}
         {allImages.length > 0 && (
           <div className={styles.pdThumbnails}>
             {allImages.map((img, i) => (
@@ -166,23 +245,28 @@ const ProductDetails = () => {
           </div>
         )}
 
-        {/* Main Image */}
         {currentImage && (
           <div className={styles.pdMainImage}>
-            <img src={`${API.URL}/${currentImage}`} alt={name} className={styles.fadeIn} />
+            <img
+              src={`${API.URL}/${currentImage}`}
+              alt={name}
+              className={styles.fadeIn}
+            />
           </div>
         )}
 
-        {/* Product Info */}
         <div className={styles.pdInfo}>
           <h1>
             {name}{" "}
-            <span className={`${styles.pdStock} ${!inStock ? styles.outOfStock : ""}`}>
+            <span
+              className={`${styles.pdStock} ${
+                !inStock ? styles.outOfStock : ""
+              }`}
+            >
               ({inStock ? "In Stock" : "Out of Stock"})
             </span>
           </h1>
 
-          {/* Subcategory */}
           {subCategory?.slug && (
             <div
               className={styles.pdSubcategoryPill}
@@ -195,8 +279,13 @@ const ProductDetails = () => {
               {subCategory.name}
             </div>
           )}
+          {/* ⭐ Product Rating and Review Count */}
+          <div className={styles.pdRating}>
+            ⭐{" "}
+            {product.averageRating ? product.averageRating.toFixed(1) : "0.0"} (
+            {product.numReviews || 0})
+          </div>
 
-          {/* Tags */}
           {tags?.length > 0 && (
             <div className={styles.pdTags}>
               {tags.map((tag) => (
@@ -207,7 +296,6 @@ const ProductDetails = () => {
             </div>
           )}
 
-          {/* Price */}
           <div className={styles.pdPrice}>
             {discountPrice > 0 ? (
               <>
@@ -219,14 +307,17 @@ const ProductDetails = () => {
             )}
           </div>
 
-          {/* Action Buttons */}
           <div className={styles.pdActions}>
             <button
               className={styles.pdAddToCart}
               onClick={handleAddToCart}
               disabled={!inStock || isInCart || addingToCart}
             >
-              {isInCart ? "Added to Cart" : addingToCart ? "Adding..." : "Add to Cart"}
+              {isInCart
+                ? "Added to Cart"
+                : addingToCart
+                ? "Adding..."
+                : "Add to Cart"}
             </button>
 
             <button
@@ -240,7 +331,6 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* Description */}
       {description && (
         <div
           className={styles.pdDescription}
@@ -248,7 +338,6 @@ const ProductDetails = () => {
         />
       )}
 
-      {/* Specifications */}
       {specs && Object.keys(specs).length > 0 && (
         <div className={styles.pdSpecs}>
           <h3>Specifications</h3>
@@ -265,17 +354,103 @@ const ProductDetails = () => {
         </div>
       )}
 
-      {/* Videos */}
       {videos?.length > 0 && (
         <div className={styles.pdVideos}>
           <h3>Videos</h3>
           {videos.map((video) => (
-            <video key={video} src={`${API.URL}/${video}`} controls width="100%" />
+            <video
+              key={video}
+              src={`${API.URL}/${video}`}
+              controls
+              width="100%"
+            />
           ))}
         </div>
       )}
 
-      {/* Similar Products */}
+      {/* Reviews Section */}
+      <div className={styles.pdReviews}>
+        <h3>Customer Reviews ({reviews.length})</h3>
+
+        {userLoggedIn &&
+        reviews.some((r) => r.user?._id === user?._id) &&
+        !editingReviewId ? (
+          reviews
+            .filter((r) => r.user?._id === user?._id)
+            .map((r) => (
+              <div key={r._id} className={styles.userReviewBox}>
+                <div className={styles.starDisplay}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span
+                      key={star}
+                      className={
+                        star <= r.rating ? styles.starFilled : styles.starEmpty
+                      }
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <p>{r.comment}</p>
+                <div className={styles.reviewActions}>
+                  <button onClick={() => handleEditReview(r)}>Edit</button>
+                  <button onClick={() => handleDeleteReview(r._id)}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))
+        ) : (
+          <div className={styles.reviewForm}>
+            <div className={styles.starInput}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                  key={star}
+                  onClick={() => handleStarClick(star)}
+                  onTouchStart={() => handleStarClick(star)}
+                  className={
+                    star <= rating ? styles.starFilled : styles.starEmpty
+                  }
+                >
+                  ★
+                </span>
+              ))}
+            </div>
+            <textarea
+              placeholder="Write your review..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+            />
+            <button onClick={handleSubmitReview} disabled={submitting}>
+              {editingReviewId ? "Update Review" : "Submit Review"}
+            </button>
+          </div>
+        )}
+
+        <div className={styles.reviewList}>
+          {reviews
+            .filter((r) => !user || r.user?._id !== user?._id)
+            .map((r) => (
+              <div key={r._id} className={styles.singleReview}>
+                <div className={styles.starDisplay}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span
+                      key={star}
+                      className={
+                        star <= r.rating ? styles.starFilled : styles.starEmpty
+                      }
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <p>{r.comment}</p>
+                <small>by {r.user?.name || "Anonymous"}</small>
+              </div>
+            ))}
+        </div>
+      </div>
+
       {similarProducts.length > 0 && (
         <div className={styles.similarProducts}>
           <h3>Similar Products</h3>
@@ -294,16 +469,24 @@ const ProductDetails = () => {
                 </div>
                 <div className={styles.similarInfo}>
                   <h4>{p.name}</h4>
+                  <p className={styles.similarRating}>
+                    ⭐ {p.averageRating ? p.averageRating.toFixed(1) : "0.0"} (
+                    {p.numReviews || 0})
+                  </p>
                   <p className={styles.similarPrice}>
                     {p.discountPrice > 0 ? (
                       <>
-                        <span className={styles.similarOriginalPrice}>₹{p.price}</span>
+                        <span className={styles.similarOriginalPrice}>
+                          ₹{p.price}
+                        </span>
                         <span className={styles.similarDiscountPrice}>
                           ₹{p.discountPrice}
                         </span>
                       </>
                     ) : (
-                      <span className={styles.similarDiscountPrice}>₹{p.price}</span>
+                      <span className={styles.similarDiscountPrice}>
+                        ₹{p.price}
+                      </span>
                     )}
                   </p>
                 </div>
