@@ -13,19 +13,21 @@ import CreateProduct from "./pages/admin/pages/CreateProduct";
 import AdminProductsPage from "./pages/admin/pages/AdminProductsPage";
 import ProductDetails from "./pages/public/ProductDetails";
 import EditProduct from "./pages/admin/pages/EditProduct";
-import Cart from "./pages/public/Cart";
+import Cart from "./pages/public/privateuserpages/Cart";
 import CreateSuperAdminExtras from "./pages/admin/superAdmin/pages/CreateSuperAdminExtras";
 import SubCategoryPage from "./pages/public/SubCategoryPage";
-import Settings from "./pages/public/Settings";
-import Checkout from "./pages/public/Checkout";
+import Settings from "./pages/public/privateuserpages/Settings";
+import Checkout from "./pages/public/privateuserpages/Checkout";
 import NotFound from "./components/NotFound";
+import OrdersPage from "./pages/public/privateuserpages/Orders";
+import OrderDetail from "./pages/public/privateuserpages/OrderDetail"
 // Layout
 import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
 
 // Auth + Protected
 import { AuthProvider } from "./pages/admin/Context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoutes";
-import UserProtectedRoute from "./pages/public/UserProtectedRoute";
+import UserProtectedRoute from "./pages/public/privateuserpages/UserProtectedRoute";
 
 // User Header + Cart Context
 import UserOnlyHeader from "./pages/public/UserOnlyHeader";
@@ -95,6 +97,24 @@ function App() {
                 <UserProtectedRoute>
                   <UserOnlyHeader />
                   <Cart />
+                </UserProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <UserProtectedRoute>
+                  <UserOnlyHeader />
+                  <OrdersPage />
+                </UserProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders/:slug"
+              element={
+                <UserProtectedRoute>
+                  <UserOnlyHeader />
+                  <OrderDetail />
                 </UserProtectedRoute>
               }
             />

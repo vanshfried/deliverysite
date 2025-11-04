@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import API from "../../api/api";
-import { CartContext } from "../admin/Context/CartContext";
-import { AuthContext } from "../admin/Context/AuthContext";
+import API from "../../../api/api";
+import { CartContext } from "../../admin/Context/CartContext";
+import { AuthContext } from "../../admin/Context/AuthContext";
 import styles from "./css/Checkout.module.css";
 
 export default function Checkout() {
@@ -125,14 +125,19 @@ export default function Checkout() {
     setError("");
     try {
       const orderData = {
-        userId: user._id,
         addressId: selectedAddress,
         total,
+        paymentMethod: "COD", // or UPI if you want payment option later
         items: items.map((i) => ({
-          product: i.product._id,
+          productName: i.product.name,
           quantity: i.quantity,
+          price:
+            i.product.discountPrice > 0
+              ? i.product.discountPrice
+              : i.product.price,
         })),
       };
+
       await API.post("/orders", orderData);
       if (!buyNowProduct) clearCart();
       setSuccess("Order placed successfully ✅");

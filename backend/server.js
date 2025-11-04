@@ -13,7 +13,7 @@ import adminLogoutRoute from "./routes/admin/logout.js";
 import adminProductRoutes from "./routes/admin/products/productRoutes.js";
 import extraRoutes from "./routes/admin/products/extraRoutes.js";
 import categoryTagAdminRoutes from "./routes/admin/products/categoryTagAdminRoutes.js";
-
+import orderRoutes from "./routes/order/orderRoutes.js";
 // --- Public routes ---
 import publicProductRoutes from "./routes/public/products.js";
 
@@ -57,6 +57,8 @@ app.use("/admin/products", adminProductRoutes);
 app.use("/admin/products/extras", extraRoutes);
 app.use("/admin/products/manage", categoryTagAdminRoutes);
 
+
+app.use("/orders", orderRoutes);
 // ✅ MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI)

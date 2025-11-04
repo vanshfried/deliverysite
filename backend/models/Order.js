@@ -19,7 +19,6 @@ const OrderSchema = new mongoose.Schema(
 
     totalAmount: { type: Number, required: true },
 
-    // Payment
     paymentMethod: { type: String, enum: ["UPI", "COD"], required: true },
     paymentStatus: {
       type: String,
@@ -27,7 +26,6 @@ const OrderSchema = new mongoose.Schema(
       default: "PENDING",
     },
 
-    // Delivery location (copied from user address)
     deliveryAddress: {
       houseNo: String,
       laneOrSector: String,
@@ -39,7 +37,6 @@ const OrderSchema = new mongoose.Schema(
       },
     },
 
-    // Order status lifecycle
     status: {
       type: String,
       enum: [
@@ -53,13 +50,9 @@ const OrderSchema = new mongoose.Schema(
       default: "PENDING",
     },
 
-    // Admin who accepted/cancelled (if any)
     adminActionBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
-
-    // Per-admin archive list
     archivedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "Admin" }],
 
-    // Logs (for debugging later)
     timestampsLog: {
       createdAt: { type: Date, default: Date.now },
       acceptedAt: { type: Date },
@@ -67,6 +60,9 @@ const OrderSchema = new mongoose.Schema(
       outForDeliveryAt: { type: Date },
       deliveredAt: { type: Date },
     },
+
+    // 👇 New slug field
+    slug: { type: String, unique: true, index: true },
   },
   { timestamps: true }
 );

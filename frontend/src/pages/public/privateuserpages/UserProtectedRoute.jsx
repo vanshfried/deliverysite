@@ -1,7 +1,7 @@
 // src/components/UserProtectedRoute.jsx
 import React, { useContext, useEffect } from "react";
 import { Navigate } from "react-router-dom";
-import { AuthContext } from "../admin/Context/AuthContext";
+import { AuthContext } from "../../admin/Context/AuthContext";
 
 export default function UserProtectedRoute({ children }) {
   const { userLoggedIn, loading, fetchUser } = useContext(AuthContext);

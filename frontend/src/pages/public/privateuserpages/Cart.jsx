@@ -1,8 +1,8 @@
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import API from "../../api/api";
-import { CartContext } from "../admin/Context/CartContext";
-import { AuthContext } from "../admin/Context/AuthContext";
+import API from "../../../api/api";
+import { CartContext } from "../../admin/Context/CartContext";
+import { AuthContext } from "../../admin/Context/AuthContext";
 import styles from "./css/Cart.module.css";
 
 const Cart = () => {

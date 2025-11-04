@@ -1,0 +1,173 @@
+.ordersContainer {
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 30px;
+  color: #222;
+}
+
+.ordersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.orderCard {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.orderCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.orderId {
+  font-weight: 600;
+  color: #333;
+}
+
+.date {
+  font-size: 13px;
+  color: #777;
+  margin-top: 2px;
+}
+
+.status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status.accepted {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.status.processing {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.status.out_for_delivery {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.status.delivered {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status.cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.itemsPreview {
+  margin-top: 8px;
+  border-top: 1px solid #eee;
+  padding-top: 8px;
+  min-height: 50px;
+}
+
+.itemRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #444;
+}
+
+.itemName {
+  font-weight: 500;
+}
+
+.itemQty {
+  color: #666;
+}
+
+.moreItems {
+  font-size: 13px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  border-top: 1px dashed #eee;
+  padding-top: 8px;
+  font-size: 14px;
+}
+
+.total {
+  font-weight: 600;
+  color: #000;
+}
+
+.payment {
+  color: #555;
+  font-size: 13px;
+}
+
+.emptyOrders {
+  text-align: center;
+  margin-top: 80px;
+  color: #444;
+}
+
+.emptyImg {
+  width: 180px;
+  opacity: 0.6;
+  margin-bottom: 16px;
+}
+
+.shopNowBtn {
+  margin-top: 20px;
+  padding: 10px 22px;
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.shopNowBtn:hover {
+  background: #333;
+}
+
+.loading,
+.error {
+  text-align: center;
+  margin-top: 60px;
+  color: #555;
+}
