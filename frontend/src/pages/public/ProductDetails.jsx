@@ -256,29 +256,31 @@ const ProductDetails = () => {
         )}
 
         <div className={styles.pdInfo}>
-          <h1>
-            {name}{" "}
+          <h1>{name}</h1>
+
+          <div className={styles.pdSubcategoryRow}>
+            {subCategory?.slug && (
+              <div
+                className={styles.pdSubcategoryPill}
+                onClick={() =>
+                  navigate(`/subcategory/${subCategory.slug}`, {
+                    state: { name: subCategory.name },
+                  })
+                }
+              >
+                {subCategory.name}
+              </div>
+            )}
+
             <span
               className={`${styles.pdStock} ${
                 !inStock ? styles.outOfStock : ""
               }`}
             >
-              ({inStock ? "In Stock" : "Out of Stock"})
+              {inStock ? "In Stock" : "Out of Stock"}
             </span>
-          </h1>
+          </div>
 
-          {subCategory?.slug && (
-            <div
-              className={styles.pdSubcategoryPill}
-              onClick={() =>
-                navigate(`/subcategory/${subCategory.slug}`, {
-                  state: { name: subCategory.name },
-                })
-              }
-            >
-              {subCategory.name}
-            </div>
-          )}
           {/* ⭐ Product Rating and Review Count */}
           <div className={styles.pdRating}>
             ⭐{" "}

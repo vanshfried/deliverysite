@@ -23,10 +23,11 @@
 /* ========= GRID LAYOUT ========= */
 .pdGrid {
   display: grid;
-  grid-template-columns: 120px 1fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 120px 320px 1fr; /* fixed width for main image */
+  column-gap: 1rem; /* smaller gap horizontally */
   align-items: start;
 }
+
 
 @media (max-width: 1024px) {
   .pdGrid {
@@ -136,34 +137,50 @@
 }
 
 .pdThumbnails img {
-  width: 100%;
-  border: 2px solid transparent;
-  border-radius: 6px;
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  touch-action: manipulation;
-}
-
-.pdThumbnails img:hover {
-  transform: scale(1.05);
+  background: #fff;
 }
 
 .pdThumbnails img.active {
   border-color: #0078ff;
+  box-shadow: 0 0 0 2px rgba(0, 120, 255, 0.2);
+}
+.pdThumbnails img:hover {
+  transform: scale(1.05);
 }
 
 .pdMainImage {
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 1 / 1;
+  background: #fff;
+  border: 2px solid #e0e0e0;  /* 👈 nice light border */
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.3s ease;
 }
 
+/* 👇 Make sure the image fits nicely without changing container size */
 .pdMainImage img {
   width: 100%;
-  max-width: 450px;
-  border-radius: 10px;
+  height: 100%;
   object-fit: contain;
+  border-radius: 10px;
 }
+
+.pdMainImage:hover {
+  border-color: #0078ff; /* subtle hover highlight */
+}
+
 
 .fadeIn {
   animation: fadeIn 0.3s ease;
@@ -206,7 +223,34 @@
   margin: 0.5rem 0;
   transition: background 0.2s;
 }
+.pdSubcategoryRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem; /* spacing between tag and stock */
+  margin: 0.4rem 0 0.8rem;
+  flex-wrap: wrap;
+}
 
+.pdStock {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: green;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.pdStock::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor; /* inherits green/red automatically */
+}
+
+.outOfStock {
+  color: #b10000;
+}
 .pdSubcategoryPill:hover {
   background: #d9e6ff;
 }
@@ -447,10 +491,6 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.similarCard:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
 
 .similarImage img {
   width: 100%;
