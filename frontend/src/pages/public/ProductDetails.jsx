@@ -333,26 +333,32 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {description && (
-        <div
-          className={styles.pdDescription}
-          dangerouslySetInnerHTML={{ __html: description }}
-        />
-      )}
+      {(description || (specs && Object.keys(specs).length > 0)) && (
+        <div className={styles.pdDetailsSection}>
+          <h2 className={styles.pdDetailsHeader}>Product Details</h2>
 
-      {specs && Object.keys(specs).length > 0 && (
-        <div className={styles.pdSpecs}>
-          <h3>Specifications</h3>
-          <table>
-            <tbody>
-              {Object.entries(specs).map(([key, value]) => (
-                <tr key={key}>
-                  <td>{key}</td>
-                  <td>{value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {description && (
+            <div
+              className={styles.pdDescriptionBox}
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
+          )}
+
+          {specs && Object.keys(specs).length > 0 && (
+            <div className={styles.pdSpecs}>
+              <h3>Specifications</h3>
+              <table>
+                <tbody>
+                  {Object.entries(specs).map(([key, value]) => (
+                    <tr key={key}>
+                      <td>{key}</td>
+                      <td>{value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
