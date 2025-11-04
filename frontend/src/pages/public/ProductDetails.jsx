@@ -377,83 +377,132 @@ const ProductDetails = () => {
       )}
 
       {/* Reviews Section */}
-      <div className={styles.pdReviews}>
-        <h3>Customer Reviews ({reviews.length})</h3>
+      {/* Reviews Section */}
+      <div className={styles.reviewsSection}>
+        <h2 className={styles.reviewsHeader}>
+          Customer Reviews <span>({reviews.length})</span>
+        </h2>
 
-        {userLoggedIn &&
-        reviews.some((r) => r.user?._id === user?._id) &&
-        !editingReviewId ? (
-          reviews
-            .filter((r) => r.user?._id === user?._id)
-            .map((r) => (
-              <div key={r._id} className={styles.userReviewBox}>
-                <div className={styles.starDisplay}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <span
-                      key={star}
-                      className={
-                        star <= r.rating ? styles.starFilled : styles.starEmpty
-                      }
-                    >
-                      ★
-                    </span>
-                  ))}
+        {/* User Review Box (either show existing or form) */}
+        <div className={styles.userReviewSection}>
+          {userLoggedIn &&
+          reviews.some((r) => r.user?._id === user?._id) &&
+          !editingReviewId ? (
+            reviews
+              .filter((r) => r.user?._id === user?._id)
+              .map((r) => (
+                <div key={r._id} className={styles.userReviewCard}>
+                  <div className={styles.reviewHeader}>
+                    <div className={styles.reviewerInfo}>
+                      <div className={styles.avatar}>
+                        {r.user?.name ? r.user.name[0].toUpperCase() : "U"}
+                      </div>
+                      <div>
+                        <h4>{r.user?.name || "You"}</h4>
+                        <span className={styles.reviewDate}>
+                          {new Date(r.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className={styles.starDisplay}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span
+                          key={star}
+                          className={
+                            star <= r.rating
+                              ? styles.starFilled
+                              : styles.starEmpty
+                          }
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <p className={styles.reviewComment}>{r.comment}</p>
+
+                  <div className={styles.reviewActions}>
+                    <button onClick={() => handleEditReview(r)}>Edit</button>
+                    <button onClick={() => handleDeleteReview(r._id)}>
+                      Delete
+                    </button>
+                  </div>
                 </div>
-                <p>{r.comment}</p>
-                <div className={styles.reviewActions}>
-                  <button onClick={() => handleEditReview(r)}>Edit</button>
-                  <button onClick={() => handleDeleteReview(r._id)}>
-                    Delete
-                  </button>
-                </div>
+              ))
+          ) : (
+            <div className={styles.reviewFormCard}>
+              <h3>{editingReviewId ? "Edit Your Review" : "Write a Review"}</h3>
+
+              <div className={styles.starInput}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span
+                    key={star}
+                    onClick={() => handleStarClick(star)}
+                    onTouchStart={() => handleStarClick(star)}
+                    className={
+                      star <= rating ? styles.starFilled : styles.starEmpty
+                    }
+                  >
+                    ★
+                  </span>
+                ))}
               </div>
-            ))
-        ) : (
-          <div className={styles.reviewForm}>
-            <div className={styles.starInput}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <span
-                  key={star}
-                  onClick={() => handleStarClick(star)}
-                  onTouchStart={() => handleStarClick(star)}
-                  className={
-                    star <= rating ? styles.starFilled : styles.starEmpty
-                  }
-                >
-                  ★
-                </span>
-              ))}
-            </div>
-            <textarea
-              placeholder="Write your review..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-            <button onClick={handleSubmitReview} disabled={submitting}>
-              {editingReviewId ? "Update Review" : "Submit Review"}
-            </button>
-          </div>
-        )}
 
-        <div className={styles.reviewList}>
+              <textarea
+                placeholder="Share your thoughts about this product..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+
+              <button onClick={handleSubmitReview} disabled={submitting}>
+                {submitting
+                  ? "Submitting..."
+                  : editingReviewId
+                  ? "Update Review"
+                  : "Submit Review"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Other Reviews */}
+        <div className={styles.allReviewsList}>
           {reviews
             .filter((r) => !user || r.user?._id !== user?._id)
             .map((r) => (
-              <div key={r._id} className={styles.singleReview}>
-                <div className={styles.starDisplay}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <span
-                      key={star}
-                      className={
-                        star <= r.rating ? styles.starFilled : styles.starEmpty
-                      }
-                    >
-                      ★
-                    </span>
-                  ))}
+              <div key={r._id} className={styles.reviewCard}>
+                <div className={styles.reviewHeader}>
+                  <div className={styles.reviewerInfo}>
+                    <div className={styles.avatar}>
+                      {r.user?.name ? r.user.name[0].toUpperCase() : "A"}
+                    </div>
+                    <div>
+                      <h4>{r.user?.name || "Anonymous"}</h4>
+                      <span className={styles.reviewDate}>
+                        {new Date(r.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={styles.starDisplay}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <span
+                        key={star}
+                        className={
+                          star <= r.rating
+                            ? styles.starFilled
+                            : styles.starEmpty
+                        }
+                      >
+                        ★
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <p>{r.comment}</p>
-                <small>by {r.user?.name || "Anonymous"}</small>
+
+                <p className={styles.reviewComment}>{r.comment}</p>
               </div>
             ))}
         </div>
