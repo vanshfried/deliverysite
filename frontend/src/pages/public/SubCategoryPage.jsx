@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate, Link } from "react-router-dom";
 import API from "../../api/api";
-import styles from './css/SubCategoryPage.module.css';
+import styles from "./css/SubCategoryPage.module.css";
 
 const SubCategoryPage = () => {
   const { slug } = useParams(); // ✅ use slug instead of id
@@ -24,17 +24,22 @@ const SubCategoryPage = () => {
     fetchProducts();
   }, [slug]);
 
-  if (loading) return <p className={styles.scpLoadingText}>Loading products...</p>;
-  if (!products.length) return <p className={styles.scpLoadingText}>No products found.</p>;
+  if (loading)
+    return <p className={styles.scpLoadingText}>Loading products...</p>;
+  if (!products.length)
+    return <p className={styles.scpLoadingText}>No products found.</p>;
 
   return (
     <div className={styles.scpContainer}>
       {/* Breadcrumb */}
       <nav className={styles.scpBreadcrumb}>
-        <Link to="/">Home</Link> &gt; <span>{state?.name || "Subcategory"}</span>
+        <Link to="/">Home</Link> &gt;{" "}
+        <span>{state?.name || "Subcategory"}</span>
       </nav>
 
-      <h1 className={styles.scpTitle}>{state?.name || "Subcategory Products"}</h1>
+      <h1 className={styles.scpTitle}>
+        {state?.name || "Subcategory Products"}
+      </h1>
 
       <div className={styles.scpProductsGrid}>
         {products.map((product) => (
@@ -42,7 +47,9 @@ const SubCategoryPage = () => {
             key={product._id}
             className={styles.scpProductCard}
             onClick={() =>
-              navigate(`/product/${product.slug}`, { state: { name: product.name } })
+              navigate(`/product/${product.slug}`, {
+                state: { name: product.name },
+              })
             }
           >
             <div className={styles.scpProductImage}>
@@ -50,11 +57,23 @@ const SubCategoryPage = () => {
             </div>
             <div className={styles.scpProductInfo}>
               <h2>{product.name}</h2>
+              {/* ⭐ Add Rating Display */}
+              <p className={styles.hpRating}>
+                ⭐{" "}
+                {product.averageRating
+                  ? product.averageRating.toFixed(1)
+                  : "0.0"}{" "}
+                ({product.numReviews || 0})
+              </p>
               <p className={styles.scpPrice}>
                 {product.discountPrice > 0 ? (
                   <>
-                    <span className={styles.scpOriginalPrice}>₹{product.price}</span>
-                    <span className={styles.scpDiscountPrice}>₹{product.discountPrice}</span>
+                    <span className={styles.scpOriginalPrice}>
+                      ₹{product.price}
+                    </span>
+                    <span className={styles.scpDiscountPrice}>
+                      ₹{product.discountPrice}
+                    </span>
                   </>
                 ) : (
                   <span>₹{product.price}</span>

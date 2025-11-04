@@ -100,6 +100,12 @@
   margin-top: 50px;
 }
 
+.hpRating {
+  font-size: 0.9rem;
+  color: #ffb400; /* star color */
+  margin: 4px 0;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
   .scpProductsGrid {
