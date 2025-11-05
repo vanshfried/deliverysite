@@ -7,6 +7,7 @@ import slugify from "slugify";
 const router = express.Router();
 
 /* 📦 Place new order */
+/* 📦 Place new order */
 router.post("/", requireUser, async (req, res) => {
   try {
     const { addressId, total, items, paymentMethod } = req.body;
@@ -50,12 +51,28 @@ router.post("/", requireUser, async (req, res) => {
       },
     });
 
+    // 🔔 Emit admin notification
+    const io = req.app.get("io");
+    io.emit("new-order", {
+      userId: user._id,
+      phone: user.phone,
+      userName: user.name || "User",
+      pincode: address.pincode,
+      items: formattedItems.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        price: i.price,
+      })),
+      totalAmount: total,
+    });
+
     res.json({ success: true, message: "Order placed successfully", order });
   } catch (err) {
     console.error("ORDER CREATE ERROR:", err);
     res.status(500).json({ message: "Order failed", error: err.message });
   }
 });
+
 
 /* 📋 Get my orders */
 router.get("/my", requireUser, async (req, res) => {

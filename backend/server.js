@@ -4,6 +4,8 @@ import path from "path";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import http from "http"; // ✅ needed for socket.io server
+import { Server } from "socket.io";
 
 // --- Admin routes ---
 import createAdminRoute from "./routes/admin/createAdmin.js";
@@ -16,7 +18,7 @@ import categoryTagAdminRoutes from "./routes/admin/products/categoryTagAdminRout
 import orderRoutes from "./routes/order/orderRoutes.js";
 // --- Public routes ---
 import publicProductRoutes from "./routes/public/products.js";
-import adminUserRoutes from "./routes/admin/adminUserRoutes.js"
+import adminUserRoutes from "./routes/admin/adminUserRoutes.js";
 // --- User routes ---
 import userRoutes from "./routes/user/userRoutes.js";
 import cartRoutes from "./routes/user/cartRoutes.js";
@@ -24,11 +26,21 @@ import cartRoutes from "./routes/user/cartRoutes.js";
 dotenv.config();
 const app = express();
 
+// ✅ Create HTTP server for socket.io
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // your frontend URL
+    credentials: true,
+  },
+});
+
+// ✅ Make io accessible in routes
+app.set("io", io);
+
 // ✅ Middleware
 app.use(express.json());
 app.use(cookieParser());
-
-// ✅ ✅ Very Important: Browser cookies MUST be allowed cross-site
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -58,15 +70,26 @@ app.use("/admin/products/extras", extraRoutes);
 app.use("/admin/products/manage", categoryTagAdminRoutes);
 app.use("/api/admin", adminUserRoutes);
 
+// ✅ Order Routes
 app.use("/orders", orderRoutes);
+
 // ✅ MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
+// ✅ Socket.IO connection logs
+io.on("connection", (socket) => {
+  console.log("⚡ New client connected", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("⚡ Client disconnected", socket.id);
+  });
+});
+
 // ✅ Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
+server.listen(PORT, () =>
   console.log(`🚀 Server running on http://localhost:${PORT}`)
 );
