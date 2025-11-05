@@ -16,7 +16,7 @@ import categoryTagAdminRoutes from "./routes/admin/products/categoryTagAdminRout
 import orderRoutes from "./routes/order/orderRoutes.js";
 // --- Public routes ---
 import publicProductRoutes from "./routes/public/products.js";
-
+import adminUserRoutes from "./routes/admin/adminUserRoutes.js"
 // --- User routes ---
 import userRoutes from "./routes/user/userRoutes.js";
 import cartRoutes from "./routes/user/cartRoutes.js";
@@ -56,7 +56,7 @@ app.use("/admin/create-admin", createAdminRoute);
 app.use("/admin/products", adminProductRoutes);
 app.use("/admin/products/extras", extraRoutes);
 app.use("/admin/products/manage", categoryTagAdminRoutes);
-
+app.use("/api/admin", adminUserRoutes);
 
 app.use("/orders", orderRoutes);
 // ✅ MongoDB Connection

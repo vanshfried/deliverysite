@@ -7,6 +7,8 @@ import LoginAdmin from "./pages/admin/pages/LoginAdmin";
 import AdminDashboard from "./pages/admin/pages/AdminDashboard";
 import SuperAdminDashboard from "./pages/admin/superAdmin/pages/SuperAdminDashboard";
 import CreateAdmin from "./pages/admin/superAdmin/pages/createAdmin";
+import AdminAllUsersPage from "./pages/admin/pages/AllUsersPage";
+import AdminUserDetailsPage from "./pages/admin/pages/AdminUserDetailsPage"
 import HomePage from "./pages/public/HomePage";
 import UserLogin from "./pages/public/UserLogin";
 import CreateProduct from "./pages/admin/pages/CreateProduct";
@@ -20,7 +22,7 @@ import Settings from "./pages/public/privateuserpages/Settings";
 import Checkout from "./pages/public/privateuserpages/Checkout";
 import NotFound from "./components/NotFound";
 import OrdersPage from "./pages/public/privateuserpages/Orders";
-import OrderDetail from "./pages/public/privateuserpages/OrderDetail"
+import OrderDetail from "./pages/public/privateuserpages/OrderDetail";
 // Layout
 import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
 
@@ -28,7 +30,6 @@ import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
 import { AuthProvider } from "./pages/admin/Context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoutes";
 import UserProtectedRoute from "./pages/public/privateuserpages/UserProtectedRoute";
-
 // User Header + Cart Context
 import UserOnlyHeader from "./pages/public/UserOnlyHeader";
 import { CartProvider } from "./pages/admin/Context/CartContext";
@@ -169,6 +170,26 @@ function App() {
                 <ProtectedRoute>
                   <DynamicAdminLayout>
                     <AdminProductsPage />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute>
+                  <DynamicAdminLayout>
+                    <AdminAllUsersPage />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/user/:id"
+              element={
+                <ProtectedRoute>
+                  <DynamicAdminLayout>
+                    <AdminUserDetailsPage />
                   </DynamicAdminLayout>
                 </ProtectedRoute>
               }

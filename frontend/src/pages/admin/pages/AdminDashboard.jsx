@@ -11,6 +11,7 @@ function AdminDashboard() {
   const dashboardActions = [
     { title: "Add Product", value: "Create new products", link: "/admin/create-product" },
     { title: "View Products", value: "All products", link: "/admin/products" },
+    { title: "View Users", value: "All products", link: "/admin/users" },
   ];
 
   return (

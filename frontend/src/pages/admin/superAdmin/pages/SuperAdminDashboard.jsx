@@ -9,6 +9,8 @@ function DashboardContent() {
     { title: "Create Product", link: "/admin/create-product" },
     { title: "View Products",  link: "/admin/products" },
     { title: "SuperAdmin Extras",  link: "/admin/superadmin-extras" },
+    { title: "View Users",  link: "/admin/users" },
+    
   ];
 
   return (
