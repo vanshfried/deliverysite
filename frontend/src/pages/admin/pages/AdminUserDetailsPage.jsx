@@ -14,7 +14,19 @@ export default function AdminUserDetailsPage() {
       try {
         const res = await API.get(`/api/admin/users/${id}`);
         if (res && res.data.success) {
-          setData(res.data);
+          const { stats, orders } = res.data;
+          const biggestPurchase = orders.length
+            ? Math.max(...orders.map((o) => o.totalAmount))
+            : 0;
+          const avgSpent =
+            stats.totalOrders > 0
+              ? (stats.totalSpent / stats.totalOrders).toFixed(0)
+              : 0;
+
+          setData({
+            ...res.data,
+            extra: { biggestPurchase, avgSpent },
+          });
         }
       } catch (err) {
         console.error("❌ Failed to fetch user details:", err);
@@ -29,23 +41,89 @@ export default function AdminUserDetailsPage() {
   if (loading) return <div className={styles.loading}>Loading...</div>;
   if (!data) return <div className={styles.error}>User not found</div>;
 
-  const { user, stats, orders } = data;
+  const { user, stats, orders, extra } = data;
 
   return (
     <div className={styles.container}>
-      <button onClick={() => navigate(-1)} className={styles.backBtn}>
-        ← Back to All Users
-      </button>
+      <div className={styles.userHeader}>
+        <div className={styles.userInfo}>
+          <button onClick={() => navigate(-1)} className={styles.backBtnInline}>
+            ← Back to All Users
+          </button>
+          <div className={styles.nameRow}>
+            <h1>{user.name}</h1>
+          </div>
+          <p className={styles.phone}>{user.phone}</p>
+        </div>
+        <div className={styles.overviewStats}>
+          <div className={styles.statBox}>
+            <span>Total Orders</span>
+            <strong>{stats.totalOrders}</strong>
+          </div>
+          <div className={styles.statBox}>
+            <span>Total Spent</span>
+            <strong>₹{stats.totalSpent}</strong>
+          </div>
+          <div className={styles.statBox}>
+            <span>Average Spent / Order</span>
+            <strong>₹{extra.avgSpent}</strong>
+          </div>
+          <div className={styles.statBox}>
+            <span>Biggest Purchase</span>
+            <strong>₹{extra.biggestPurchase}</strong>
+          </div>
+        </div>
+      </div>
 
       <div className={styles.grid}>
-        {/* Left column */}
+        {/* LEFT COLUMN — ORDERS FIRST */}
         <div className={styles.left}>
           <div className={styles.card}>
-            <h2>User Info</h2>
-            <p><strong>Name:</strong> {user.name}</p>
-            <p><strong>Phone:</strong> {user.phone}</p>
+            <h2>Orders ({orders.length})</h2>
+            {orders.length === 0 ? (
+              <p className={styles.empty}>No orders found.</p>
+            ) : (
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Amount</th>
+                      <th>Payment</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders
+                      .sort(
+                        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+                      )
+                      .map((o) => (
+                        <tr
+                          key={o._id}
+                          className={
+                            o.totalAmount === extra.biggestPurchase
+                              ? styles.highlight
+                              : ""
+                          }
+                        >
+                          <td className={styles.slug}>{o.slug}</td>
+                          <td>₹{o.totalAmount}</td>
+                          <td>{o.paymentMethod}</td>
+                          <td>{o.status || "—"}</td>
+                          <td>{new Date(o.createdAt).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
+        </div>
 
+        {/* RIGHT COLUMN — ADDRESSES */}
+        <div className={styles.right}>
           <div className={styles.card}>
             <h2>Addresses</h2>
             {user.addresses.length > 0 ? (
@@ -63,53 +141,6 @@ export default function AdminUserDetailsPage() {
               ))
             ) : (
               <p className={styles.empty}>No addresses added.</p>
-            )}
-          </div>
-        </div>
-
-        {/* Right column */}
-        <div className={styles.right}>
-          <div className={styles.card}>
-            <h2>Summary</h2>
-            <div className={styles.summary}>
-              <div>
-                <p className={styles.label}>Total Orders</p>
-                <p className={styles.value}>{stats.totalOrders}</p>
-              </div>
-              <div>
-                <p className={styles.label}>Total Spent</p>
-                <p className={styles.value}>₹{stats.totalSpent}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.card}>
-            <h2>Orders</h2>
-            {orders.length === 0 ? (
-              <p className={styles.empty}>No orders found.</p>
-            ) : (
-              <div className={styles.tableWrapper}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Order Name</th>
-                      <th>Amount</th>
-                      <th>Payment</th>
-                      <th>Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((o) => (
-                      <tr key={o._id}>
-                        <td className={styles.slug}>{o.slug}</td>
-                        <td>₹{o.totalAmount}</td>
-                        <td>{o.paymentMethod}</td>
-                        <td>{new Date(o.createdAt).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
             )}
           </div>
         </div>
