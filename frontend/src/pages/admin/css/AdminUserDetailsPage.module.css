@@ -149,3 +149,65 @@
   padding: 3rem;
   font-size: 1.2rem;
 }
+/* 📦 Order details under each order row */
+.orderDetailsRow td {
+  background: #fdfdfd;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+
+.orderItems {
+  margin-bottom: 0.8rem;
+}
+
+.orderItems strong,
+.deliveryAddress strong {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #222;
+}
+
+.orderItems ul {
+  margin: 0.4rem 0 0.8rem 1.4rem;
+  padding: 0;
+}
+
+.orderItems li {
+  list-style: disc;
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.deliveryAddress {
+  font-size: 0.9rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+.deliveryAddress p {
+  margin: 0.2rem 0;
+}
+/* Make order rows clickable */
+.clickableRow {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.clickableRow:hover {
+  background: #eef6ff !important;
+}
+
+/* Small arrow indicator */
+.arrow {
+  font-size: 0.8rem;
+  margin-left: 6px;
+  color: #888;
+}
+
+.addressLabel {
+  font-weight: 600;
+  color: #007bff;
+  margin: 0.2rem 0 0.4rem 0;
+}

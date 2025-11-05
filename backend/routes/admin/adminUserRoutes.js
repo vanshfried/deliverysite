@@ -68,7 +68,6 @@ router.get("/users", async (req, res) => {
 router.get("/users/:id", async (req, res) => {
   try {
     const userId = req.params.id;
-
     const user = await User.findById(userId).lean();
     if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -91,12 +90,18 @@ router.get("/users/:id", async (req, res) => {
         totalOrders: orders.length,
         totalSpent,
       },
-      orders,
+      // orders now contain items + delivery address
+      orders: orders.map(o => ({
+        ...o,
+        items: o.items || [],
+        deliveryAddress: o.deliveryAddress || null,
+      })),
     });
   } catch (err) {
     console.error("ADMIN USER DETAIL ERROR:", err);
     res.status(500).json({ error: "Failed to fetch user details" });
   }
 });
+
 
 export default router;

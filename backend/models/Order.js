@@ -27,6 +27,7 @@ const OrderSchema = new mongoose.Schema(
     },
 
     deliveryAddress: {
+      label: String,
       houseNo: String,
       laneOrSector: String,
       landmark: String,

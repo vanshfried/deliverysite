@@ -40,9 +40,8 @@ export default function OrderDetail() {
         <button className={styles.backBtn} onClick={() => navigate("/orders")}>
           ← Back
         </button>
-        <h1>
-          Order #{order._id ? order._id.slice(-6).toUpperCase() : "UNKNOWN"}
-        </h1>
+        <h1>Order #{order.slug || "UNKNOWN"}</h1>
+
       </div>
 
       <div className={styles.grid}>
@@ -79,7 +78,7 @@ export default function OrderDetail() {
 
         {/* Delivery address */}
         <div className={styles.card}>
-          <h3>Delivery Address</h3>
+          <h3>Delivery Address :-</h3>
           <p>
             {order.deliveryAddress.houseNo}, {order.deliveryAddress.laneOrSector}
             {order.deliveryAddress.landmark

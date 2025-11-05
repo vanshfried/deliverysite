@@ -7,6 +7,7 @@ export default function AdminUserDetailsPage() {
   const { id } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [openOrders, setOpenOrders] = useState({}); // ✅ track expanded rows
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,6 +43,13 @@ export default function AdminUserDetailsPage() {
   if (!data) return <div className={styles.error}>User not found</div>;
 
   const { user, stats, orders, extra } = data;
+
+  const toggleOrder = (id) => {
+    setOpenOrders((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   return (
     <div className={styles.container}>
@@ -100,20 +108,71 @@ export default function AdminUserDetailsPage() {
                         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
                       )
                       .map((o) => (
-                        <tr
-                          key={o._id}
-                          className={
-                            o.totalAmount === extra.biggestPurchase
-                              ? styles.highlight
-                              : ""
-                          }
-                        >
-                          <td className={styles.slug}>{o.slug}</td>
-                          <td>₹{o.totalAmount}</td>
-                          <td>{o.paymentMethod}</td>
-                          <td>{o.status || "—"}</td>
-                          <td>{new Date(o.createdAt).toLocaleString()}</td>
-                        </tr>
+                        <React.Fragment key={o._id}>
+                          {/* Main Order Row */}
+                          <tr
+                            onClick={() => toggleOrder(o._id)}
+                            className={`${styles.clickableRow} ${
+                              o.totalAmount === extra.biggestPurchase
+                                ? styles.highlight
+                                : ""
+                            }`}
+                          >
+                            <td className={styles.slug}>
+                              {o.slug}{" "}
+                              <span className={styles.arrow}>
+                                {openOrders[o._id] ? "▲" : "▼"}
+                              </span>
+                            </td>
+                            <td>₹{o.totalAmount}</td>
+                            <td>{o.paymentMethod}</td>
+                            <td>{o.status || "—"}</td>
+                            <td>{new Date(o.createdAt).toLocaleString()}</td>
+                          </tr>
+
+                          {/* Items + Address Row */}
+                          {openOrders[o._id] && (
+                            <tr className={styles.orderDetailsRow}>
+                              <td colSpan="5">
+                                {/* Items */}
+                                {o.items && o.items.length > 0 ? (
+                                  <div className={styles.orderItems}>
+                                    <strong>Items:</strong>
+                                    <ul>
+                                      {o.items.map((item, idx) => (
+                                        <li key={idx}>
+                                          {item.name} × {item.quantity} — ₹
+                                          {item.price}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ) : (
+                                  <p>No items found for this order.</p>
+                                )}
+
+                                {/* Delivery Address */}
+                                {o.deliveryAddress ? (
+                                  <div className={styles.deliveryAddress}>
+                                    <strong>Delivered To:</strong>
+                                    <p>
+                                      {o.deliveryAddress.houseNo},{" "}
+                                      {o.deliveryAddress.laneOrSector}
+                                    </p>
+                                    {o.deliveryAddress.landmark && (
+                                      <p>
+                                        Landmark: {o.deliveryAddress.landmark}
+                                      </p>
+                                    )}
+                                    <p>Pincode: {o.deliveryAddress.pincode}</p>
+                                  </div>
+                                ) : (
+                                  <p>No delivery address recorded.</p>
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       ))}
                   </tbody>
                 </table>
@@ -129,6 +188,7 @@ export default function AdminUserDetailsPage() {
             {user.addresses.length > 0 ? (
               user.addresses.map((a) => (
                 <div key={a._id} className={styles.address}>
+                  <p className={styles.addressLabel}>{a.label || "No Label"}</p>
                   <p>
                     {a.houseNo}, {a.laneOrSector}
                   </p>

@@ -26,9 +26,12 @@ router.post("/", requireUser, async (req, res) => {
       price: i.price,
     }));
 
-    const firstItemName = formattedItems[0].name;
-    const uniqueId = Date.now().toString(36);
-    const slug = `${slugify(firstItemName, { lower: true })}-${uniqueId}`;
+    function generateOrderId() {
+      const unique = Math.random().toString(36).substring(2, 8).toUpperCase();
+      return `ORD${unique}`;
+    }
+
+    const slug = generateOrderId();
 
     const order = await Order.create({
       user: user._id,
@@ -38,6 +41,7 @@ router.post("/", requireUser, async (req, res) => {
       paymentStatus: "PENDING",
       slug,
       deliveryAddress: {
+        label: address.label,
         houseNo: address.houseNo,
         laneOrSector: address.laneOrSector,
         landmark: address.landmark,
@@ -76,7 +80,9 @@ router.get("/:slug", requireUser, async (req, res) => {
     }).lean();
 
     if (!order)
-      return res.status(404).json({ success: false, message: "Order not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
 
     res.json({ success: true, order });
   } catch (err) {
