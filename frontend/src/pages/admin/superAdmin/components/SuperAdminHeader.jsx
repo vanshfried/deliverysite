@@ -1,13 +1,16 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../Context/AuthContext";
 import { NotificationContext } from "../../Context/NotificationContext";
 import { Link, useNavigate } from "react-router-dom";
+import API from "../../../../api/api";
 import styles from "../css/SuperAdminHeader.module.css";
 
 export default function SuperAdminHeader() {
   const { logoutAdmin } = useContext(AuthContext);
   const { notifications, setNotifications } = useContext(NotificationContext);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -19,6 +22,29 @@ export default function SuperAdminHeader() {
     setShowDropdown(!showDropdown);
     if (!showDropdown) setNotifications([]); // mark as read
   };
+
+  // 📊 Fetch counts for pending & active orders
+  const fetchCounts = async () => {
+    try {
+      const [pendingRes, activeRes] = await Promise.all([
+        API.get("api/admin/orders/count/pending", { withCredentials: true }),
+        API.get("api/admin/orders/count/active", { withCredentials: true }),
+      ]);
+
+      setPendingCount(pendingRes.data.count || 0);
+      setActiveCount(activeRes.data.count || 0);
+    } catch (err) {
+      console.error("❌ Failed to fetch order counts:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCounts();
+
+    // 🕐 Optional: Refresh counts every 15s (lightweight)
+    const interval = setInterval(fetchCounts, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <header className={styles.superadminHeader}>
@@ -32,7 +58,20 @@ export default function SuperAdminHeader() {
         <Link to="/admin/create-product">Create Product</Link>
         <Link to="/admin/products">All Products</Link>
 
-        {/* 🔔 Notification Bell */}
+        <Link to="/admin/pending-orders" className={styles.navItemWithBadge}>
+          Pending Orders
+          {pendingCount > 0 && (
+            <span className={styles.countBadge}>{pendingCount}</span>
+          )}
+        </Link>
+
+        <Link to="/admin/active-orders" className={styles.navItemWithBadge}>
+          Active Orders
+          {activeCount > 0 && (
+            <span className={styles.countBadge}>{activeCount}</span>
+          )}
+        </Link>
+
         {/* 🔔 Notification Bell */}
         <div className={styles.notificationWrapper}>
           <button
@@ -53,7 +92,7 @@ export default function SuperAdminHeader() {
                 notifications.map((n, idx) => (
                   <div key={idx} className={styles.notificationItem}>
                     <p>
-                      <b>{n.phone}</b>{n.name} ({n.pincode}) — ₹{n.totalAmount}
+                      <b>{n.phone}</b> {n.name} ({n.pincode}) — ₹{n.totalAmount}
                     </p>
                     <ul>
                       {n.items.map((item, i) => (
@@ -68,8 +107,8 @@ export default function SuperAdminHeader() {
                   </div>
                 ))
               )}
-              <Link to="/admin/recent-orders" className={styles.viewAll}>
-                View All Orders
+              <Link to="/admin/pending-orders" className={styles.viewAll}>
+                View Pending Orders
               </Link>
             </div>
           )}

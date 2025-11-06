@@ -2,23 +2,27 @@ import mongoose from "mongoose";
 
 const OrderSchema = new mongoose.Schema(
   {
+    // 👤 Linked user
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+
+    // 🚴 Assigned delivery person (optional)
     deliveryBoy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "DeliveryBoy",
       default: null,
     },
 
+    // 📦 Order items
     items: [
       {
-        name: String,
-        quantity: Number,
-        price: Number,
+        name: { type: String, required: true },
+        quantity: { type: Number, required: true },
+        price: { type: Number, required: true },
       },
     ],
 
+    // 💰 Payment info
     totalAmount: { type: Number, required: true },
-
     paymentMethod: { type: String, enum: ["UPI", "COD"], required: true },
     paymentStatus: {
       type: String,
@@ -26,6 +30,7 @@ const OrderSchema = new mongoose.Schema(
       default: "PENDING",
     },
 
+    // 📍 Delivery address snapshot
     deliveryAddress: {
       label: String,
       houseNo: String,
@@ -38,6 +43,7 @@ const OrderSchema = new mongoose.Schema(
       },
     },
 
+    // 🚦 Order status tracking
     status: {
       type: String,
       enum: [
@@ -51,21 +57,25 @@ const OrderSchema = new mongoose.Schema(
       default: "PENDING",
     },
 
+    // 🧠 Admin actions
     adminActionBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
     archivedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "Admin" }],
 
+    // 🕓 Detailed status timestamps
     timestampsLog: {
-      createdAt: { type: Date, default: Date.now },
-      acceptedAt: { type: Date },
-      cancelledAt: { type: Date },
-      outForDeliveryAt: { type: Date },
-      deliveredAt: { type: Date },
+      acceptedAt: { type: Date, default: null },
+      cancelledAt: { type: Date, default: null },
+      outForDeliveryAt: { type: Date, default: null },
+      deliveredAt: { type: Date, default: null },
     },
 
-    // 👇 New slug field
+    // 🆔 Order identifier (used for slugs like ORD12345)
     slug: { type: String, unique: true, index: true },
   },
-  { timestamps: true }
+  { timestamps: true } // Auto adds createdAt, updatedAt
 );
+
+// ✅ Optional index for performance (admin order sorting/filtering)
+OrderSchema.index({ status: 1, createdAt: -1 });
 
 export default mongoose.model("Order", OrderSchema);

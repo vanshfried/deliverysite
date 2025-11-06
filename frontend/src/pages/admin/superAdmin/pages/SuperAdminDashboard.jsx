@@ -10,7 +10,8 @@ function DashboardContent() {
     { title: "View Products",  link: "/admin/products" },
     { title: "SuperAdmin Extras",  link: "/admin/superadmin-extras" },
     { title: "View Users",  link: "/admin/users" },
-    
+    { title: "Pending Orders", value: "Recent Orders", link: "/admin/pending-orders" },
+    { title: "Active Orders", value: "Active Orders", link: "/admin/active-orders" }
   ];
 
   return (

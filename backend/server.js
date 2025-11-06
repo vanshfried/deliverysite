@@ -4,7 +4,7 @@ import path from "path";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import http from "http"; // ✅ needed for socket.io server
+import http from "http";
 import { Server } from "socket.io";
 
 // --- Admin routes ---
@@ -15,27 +15,28 @@ import adminLogoutRoute from "./routes/admin/logout.js";
 import adminProductRoutes from "./routes/admin/products/productRoutes.js";
 import extraRoutes from "./routes/admin/products/extraRoutes.js";
 import categoryTagAdminRoutes from "./routes/admin/products/categoryTagAdminRoutes.js";
-import orderRoutes from "./routes/order/orderRoutes.js";
-// --- Public routes ---
-import publicProductRoutes from "./routes/public/products.js";
 import adminUserRoutes from "./routes/admin/adminUserRoutes.js";
-// --- User routes ---
+import orderAdminRoutes from "./routes/admin/orderAdminRoutes.js"; // ✅ You missed adding this
+
+// --- User & public routes ---
+import orderRoutes from "./routes/order/orderRoutes.js";
+import publicProductRoutes from "./routes/public/products.js";
 import userRoutes from "./routes/user/userRoutes.js";
 import cartRoutes from "./routes/user/cartRoutes.js";
 
 dotenv.config();
 const app = express();
 
-// ✅ Create HTTP server for socket.io
+// ✅ Setup HTTP + Socket.IO server
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // your frontend URL
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
   },
 });
 
-// ✅ Make io accessible in routes
+// ✅ Attach Socket.IO to Express
 app.set("io", io);
 
 // ✅ Middleware
@@ -43,24 +44,25 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], 
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// ✅ Static files
+// ✅ Serve static uploads
 app.use("/uploads", express.static(path.join(path.resolve(), "uploads")));
 
-// ✅ Public Routes
+// ✅ Public routes
 app.use("/products", publicProductRoutes);
 
-// ✅ User Routes
+// ✅ User routes
 app.use("/users", userRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/orders", orderRoutes);
 
-// ✅ Admin Routes
+// ✅ Admin routes
 app.use("/admin/login", adminLoginRoute);
 app.use("/admin/logout", adminLogoutRoute);
 app.use("/admin/me", adminMeRoute);
@@ -69,27 +71,19 @@ app.use("/admin/products", adminProductRoutes);
 app.use("/admin/products/extras", extraRoutes);
 app.use("/admin/products/manage", categoryTagAdminRoutes);
 app.use("/api/admin", adminUserRoutes);
+app.use("/api/admin/orders", orderAdminRoutes); // ✅ now linked correctly
 
-// ✅ Order Routes
-app.use("/orders", orderRoutes);
-
-// ✅ MongoDB Connection
+// ✅ MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// ✅ Socket.IO connection logs
-io.on("connection", (socket) => {
-  console.log("⚡ New client connected", socket.id);
+// ✅ Socket.IO events
 
-  socket.on("disconnect", () => {
-    console.log("⚡ Client disconnected", socket.id);
-  });
-});
 
-// ✅ Start Server
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () =>
-  console.log(`🚀 Server running on http://localhost:${PORT}`)
-);
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});

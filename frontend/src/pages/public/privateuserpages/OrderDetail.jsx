@@ -41,7 +41,6 @@ export default function OrderDetail() {
           ← Back
         </button>
         <h1>Order #{order.slug || "UNKNOWN"}</h1>
-
       </div>
 
       <div className={styles.grid}>
@@ -51,7 +50,9 @@ export default function OrderDetail() {
           <p>
             <strong>Status:</strong>{" "}
             <span
-              className={`${styles.status} ${styles[order.status.toLowerCase()]}`}
+              className={`${styles.status} ${
+                styles[order.status.toLowerCase()]
+              }`}
             >
               {order.status.replaceAll("_", " ")}
             </span>
@@ -80,7 +81,8 @@ export default function OrderDetail() {
         <div className={styles.card}>
           <h3>Delivery Address :-</h3>
           <p>
-            {order.deliveryAddress.houseNo}, {order.deliveryAddress.laneOrSector}
+            {order.deliveryAddress.houseNo},{" "}
+            {order.deliveryAddress.laneOrSector}
             {order.deliveryAddress.landmark
               ? `, ${order.deliveryAddress.landmark}`
               : ""}
@@ -107,33 +109,33 @@ export default function OrderDetail() {
         </div>
 
         {/* Timeline */}
-        <div className={styles.card}>
-          <h3>Order Timeline</h3>
-          <ul className={styles.timeline}>
+        <ul className={styles.timeline}>
+          <li>
+            <strong>Created:</strong>{" "}
+            {new Date(order.createdAt).toLocaleString()}
+          </li>
+
+          {order.timestampsLog?.acceptedAt && (
             <li>
-              <strong>Created:</strong>{" "}
-              {new Date(order.timestampsLog.createdAt).toLocaleString()}
+              <strong>Accepted:</strong>{" "}
+              {new Date(order.timestampsLog.acceptedAt).toLocaleString()}
             </li>
-            {order.timestampsLog.acceptedAt && (
-              <li>
-                <strong>Accepted:</strong>{" "}
-                {new Date(order.timestampsLog.acceptedAt).toLocaleString()}
-              </li>
-            )}
-            {order.timestampsLog.outForDeliveryAt && (
-              <li>
-                <strong>Out for Delivery:</strong>{" "}
-                {new Date(order.timestampsLog.outForDeliveryAt).toLocaleString()}
-              </li>
-            )}
-            {order.timestampsLog.deliveredAt && (
-              <li>
-                <strong>Delivered:</strong>{" "}
-                {new Date(order.timestampsLog.deliveredAt).toLocaleString()}
-              </li>
-            )}
-          </ul>
-        </div>
+          )}
+
+          {order.timestampsLog?.outForDeliveryAt && (
+            <li>
+              <strong>Out for Delivery:</strong>{" "}
+              {new Date(order.timestampsLog.outForDeliveryAt).toLocaleString()}
+            </li>
+          )}
+
+          {order.timestampsLog?.deliveredAt && (
+            <li>
+              <strong>Delivered:</strong>{" "}
+              {new Date(order.timestampsLog.deliveredAt).toLocaleString()}
+            </li>
+          )}
+        </ul>
       </div>
     </div>
   );

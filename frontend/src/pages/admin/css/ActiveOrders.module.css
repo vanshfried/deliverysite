@@ -1,0 +1,101 @@
+/* ===== Active Orders Table Styling ===== */
+
+.header {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 0.5rem;
+}
+
+.noOrders {
+  text-align: center;
+  font-size: 1rem;
+  color: #777;
+  margin-top: 2rem;
+  font-style: italic;
+}
+
+/* -------- Table Wrapper -------- */
+.tableWrapper {
+  overflow-x: auto;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* -------- Table -------- */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.table th {
+  background-color: #f4f6f8;
+  color: #444;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid #e0e0e0;
+  padding: 0.9rem 0.75rem;
+}
+
+.table td {
+  padding: 0.8rem 0.75rem;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+
+.table tr:hover {
+  background-color: #f9fbfd;
+  transition: background-color 0.2s ease;
+}
+
+/* -------- Status Badges -------- */
+.statusBadge {
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.statusProcessing {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+
+.statusOut {
+  background-color: #cce5ff;
+  color: #004085;
+  border: 1px solid #b8daff;
+}
+
+/* -------- Responsive Layout -------- */
+@media (max-width: 900px) {
+  .table th,
+  .table td {
+    font-size: 0.85rem;
+    padding: 0.6rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .header {
+    font-size: 1.4rem;
+  }
+
+  .tableWrapper {
+    box-shadow: none;
+  }
+
+  .table {
+    font-size: 0.8rem;
+  }
+}

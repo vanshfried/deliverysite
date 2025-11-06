@@ -1,13 +1,16 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../Context/AuthContext.jsx";
 import { NotificationContext } from "../Context/NotificationContext.jsx";
 import { Link, useNavigate } from "react-router-dom";
+import API from "../../../api/api";
 import styles from "../css/AdminHeader.module.css";
 
 export default function AdminHeader() {
   const { logoutAdmin } = useContext(AuthContext);
   const { notifications, setNotifications } = useContext(NotificationContext);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -20,6 +23,29 @@ export default function AdminHeader() {
     if (!showDropdown) setNotifications([]); // mark as read
   };
 
+  // 📊 Fetch counts for pending & active orders
+  const fetchCounts = async () => {
+    try {
+      const [pendingRes, activeRes] = await Promise.all([
+        API.get("api/admin/orders/count/pending", { withCredentials: true }),
+        API.get("api/admin/orders/count/active", { withCredentials: true }),
+      ]);
+
+      setPendingCount(pendingRes.data.count || 0);
+      setActiveCount(activeRes.data.count || 0);
+    } catch (err) {
+      console.error("❌ Failed to fetch order counts:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCounts();
+
+    // 🕐 optional auto-refresh every 15s
+    const interval = setInterval(fetchCounts, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <header className={styles.adminHeader}>
       <div className={styles.logoLink}>
@@ -31,6 +57,20 @@ export default function AdminHeader() {
         <Link to="/admin/products">All Products</Link>
         <Link to="/admin/users">All Users</Link>
 
+        <Link to="/admin/pending-orders" className={styles.navItemWithBadge}>
+          Pending Orders
+          {pendingCount > 0 && (
+            <span className={styles.countBadge}>{pendingCount}</span>
+          )}
+        </Link>
+
+        <Link to="/admin/active-orders" className={styles.navItemWithBadge}>
+          Active Orders
+          {activeCount > 0 && (
+            <span className={styles.countBadge}>{activeCount}</span>
+          )}
+        </Link>
+
         {/* 🔔 Notification Bell */}
         <div className={styles.notificationWrapper}>
           <button className={styles.bellBtn} onClick={toggleDropdown}>
@@ -39,6 +79,7 @@ export default function AdminHeader() {
               <span className={styles.badge}>{notifications.length}</span>
             )}
           </button>
+
           {showDropdown && (
             <div className={styles.dropdown}>
               {notifications.length === 0 ? (
@@ -63,8 +104,8 @@ export default function AdminHeader() {
                   </div>
                 ))
               )}
-              <Link to="/admin/orders" className={styles.viewAll}>
-                View All Orders
+              <Link to="/admin/pending-orders" className={styles.viewAll}>
+                View Pending Orders
               </Link>
             </div>
           )}

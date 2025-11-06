@@ -2,37 +2,43 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import React from "react";
 import "./App.css";
 
-// Pages
-import LoginAdmin from "./pages/admin/pages/LoginAdmin";
-import AdminDashboard from "./pages/admin/pages/AdminDashboard";
-import SuperAdminDashboard from "./pages/admin/superAdmin/pages/SuperAdminDashboard";
-import CreateAdmin from "./pages/admin/superAdmin/pages/createAdmin";
-import AdminAllUsersPage from "./pages/admin/pages/AllUsersPage";
-import AdminUserDetailsPage from "./pages/admin/pages/AdminUserDetailsPage"
+// 🔹 Public Pages
 import HomePage from "./pages/public/HomePage";
 import UserLogin from "./pages/public/UserLogin";
-import CreateProduct from "./pages/admin/pages/CreateProduct";
-import AdminProductsPage from "./pages/admin/pages/AdminProductsPage";
 import ProductDetails from "./pages/public/ProductDetails";
-import EditProduct from "./pages/admin/pages/EditProduct";
-import Cart from "./pages/public/privateuserpages/Cart";
-import CreateSuperAdminExtras from "./pages/admin/superAdmin/pages/CreateSuperAdminExtras";
 import SubCategoryPage from "./pages/public/SubCategoryPage";
-import Settings from "./pages/public/privateuserpages/Settings";
-import Checkout from "./pages/public/privateuserpages/Checkout";
 import NotFound from "./components/NotFound";
+
+// 🔹 Private User Pages
+import Cart from "./pages/public/privateuserpages/Cart";
+import Checkout from "./pages/public/privateuserpages/Checkout";
+import Settings from "./pages/public/privateuserpages/Settings";
 import OrdersPage from "./pages/public/privateuserpages/Orders";
 import OrderDetail from "./pages/public/privateuserpages/OrderDetail";
-// Layout
-import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
 
-// Auth + Protected
+// 🔹 Admin Pages
+import LoginAdmin from "./pages/admin/pages/LoginAdmin";
+import AdminDashboard from "./pages/admin/pages/AdminDashboard";
+import AdminProductsPage from "./pages/admin/pages/AdminProductsPage";
+import AdminAllUsersPage from "./pages/admin/pages/AllUsersPage";
+import AdminUserDetailsPage from "./pages/admin/pages/AdminUserDetailsPage";
+import CreateProduct from "./pages/admin/pages/CreateProduct";
+import EditProduct from "./pages/admin/pages/EditProduct";
+import PendingOrders from "./pages/admin/pages/PendingOrders"; // ✅ Added here
+import ActiveOrders from "./pages/admin/pages/ActiveOrders";
+
+// 🔹 Super Admin Pages
+import SuperAdminDashboard from "./pages/admin/superAdmin/pages/SuperAdminDashboard";
+import CreateAdmin from "./pages/admin/superAdmin/pages/createAdmin";
+import CreateSuperAdminExtras from "./pages/admin/superAdmin/pages/CreateSuperAdminExtras";
+
+// 🔹 Layouts & Contexts
+import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
 import { AuthProvider } from "./pages/admin/Context/AuthContext";
+import { CartProvider } from "./pages/admin/Context/CartContext";
 import ProtectedRoute from "./components/ProtectedRoutes";
 import UserProtectedRoute from "./pages/public/privateuserpages/UserProtectedRoute";
-// User Header + Cart Context
 import UserOnlyHeader from "./pages/public/UserOnlyHeader";
-import { CartProvider } from "./pages/admin/Context/CartContext";
 
 function App() {
   return (
@@ -41,22 +47,12 @@ function App() {
         <Router>
           <Routes>
             {/* ---------- Public Routes ---------- */}
-
             <Route
               path="/"
               element={
                 <>
                   <UserOnlyHeader />
                   <HomePage />
-                </>
-              }
-            />
-            <Route
-              path="*"
-              element={
-                <>
-                  <UserOnlyHeader />
-                  <NotFound />
                 </>
               }
             />
@@ -91,7 +87,7 @@ function App() {
               }
             />
 
-            {/* ✅ Cart is now protected */}
+            {/* ---------- User Protected Routes ---------- */}
             <Route
               path="/cart"
               element={
@@ -101,6 +97,17 @@ function App() {
                 </UserProtectedRoute>
               }
             />
+
+            <Route
+              path="/checkout"
+              element={
+                <UserProtectedRoute>
+                  <UserOnlyHeader />
+                  <Checkout />
+                </UserProtectedRoute>
+              }
+            />
+
             <Route
               path="/orders"
               element={
@@ -110,6 +117,7 @@ function App() {
                 </UserProtectedRoute>
               }
             />
+
             <Route
               path="/orders/:slug"
               element={
@@ -119,21 +127,13 @@ function App() {
                 </UserProtectedRoute>
               }
             />
+
             <Route
               path="/settings"
               element={
                 <UserProtectedRoute>
                   <UserOnlyHeader />
                   <Settings />
-                </UserProtectedRoute>
-              }
-            />
-            <Route
-              path="/checkout"
-              element={
-                <UserProtectedRoute>
-                  <UserOnlyHeader />
-                  <Checkout />
                 </UserProtectedRoute>
               }
             />
@@ -148,6 +148,28 @@ function App() {
                 <ProtectedRoute>
                   <DynamicAdminLayout>
                     <AdminDashboard />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ Recent Orders page for live updates */}
+            <Route
+              path="/admin/pending-orders"
+              element={
+                <ProtectedRoute>
+                  <DynamicAdminLayout>
+                    <PendingOrders />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/active-orders"
+              element={
+                <ProtectedRoute>
+                  <DynamicAdminLayout>
+                    <ActiveOrders />
                   </DynamicAdminLayout>
                 </ProtectedRoute>
               }
@@ -174,6 +196,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/admin/users"
               element={
@@ -184,6 +207,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/admin/user/:id"
               element={
@@ -230,17 +254,6 @@ function App() {
             />
 
             <Route
-              path="/admin/superadmin-products"
-              element={
-                <ProtectedRoute requireSuper>
-                  <DynamicAdminLayout>
-                    <AdminProductsPage />
-                  </DynamicAdminLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
               path="/admin/superadmin-extras"
               element={
                 <ProtectedRoute requireSuper>
@@ -248,6 +261,17 @@ function App() {
                     <CreateSuperAdminExtras />
                   </DynamicAdminLayout>
                 </ProtectedRoute>
+              }
+            />
+
+            {/* ---------- Catch-all ---------- */}
+            <Route
+              path="*"
+              element={
+                <>
+                  <UserOnlyHeader />
+                  <NotFound />
+                </>
               }
             />
           </Routes>
