@@ -1,43 +1,194 @@
-.container {
-  max-width: 500px;
-  margin: 2rem auto;
-  padding: 1.5rem;
-  border: 1px solid #ccc;
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: "Inter", sans-serif;
+  color: #333;
+}
+
+.loading, .error {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #323232;
+  color: #fff;
+  padding: 12px 20px;
   border-radius: 8px;
-  background-color: #f9f9f9;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  z-index: 1000;
+  animation: fadeInOut 3s forwards;
 }
 
-.card {
-  padding: 1rem;
-  border-radius: 6px;
-  background-color: #fff;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; }
+  10%, 90% { opacity: 1; }
 }
 
-p {
-  margin: 0.5rem 0;
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
 }
 
-.loading {
-  text-align: center;
-  margin-top: 2rem;
+.header h1 {
+  font-size: 1.8rem;
+  font-weight: 600;
 }
 
-.error {
-  color: red;
-  text-align: center;
-}
-.toggleBtn {
-  margin-left: 1rem;
-  padding: 0.3rem 0.6rem;
-  font-size: 0.9rem;
-  cursor: pointer;
-  border-radius: 4px;
+.toggleStatus {
+  padding: 10px 20px;
+  font-size: 0.95rem;
   border: none;
-  background-color: #007bff;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #ccc;
+  transition: all 0.3s ease;
+}
+
+.toggleStatus.active {
+  background-color: #4caf50;
   color: white;
 }
 
-.toggleBtn:hover {
-  background-color: #0056b3;
+.stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+
+.statCard {
+  flex: 1 1 150px;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  text-align: center;
+  transition: transform 0.2s;
+  background: #fff;
+}
+
+.statCard:hover {
+  transform: translateY(-5px);
+}
+
+.statLabel {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.accepted { border-top: 4px solid #2196f3; }
+.delivered { border-top: 4px solid #4caf50; }
+.rejected { border-top: 4px solid #f44336; }
+.total { border-top: 4px solid #ff9800; }
+.rating { border-top: 4px solid #9c27b0; }
+
+.currentOrder {
+  margin-top: 20px;
+}
+
+.orderCard {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.orderHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+
+.customerInfo p {
+  margin: 4px 0;
+}
+
+.addressCard {
+  background: #f9f9f9;
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.addressCardCompact {
+  background: #f9f9f9;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemsList h4 {
+  margin-bottom: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.itemsList p {
+  margin: 2px 0;
+}
+
+.orderFooter {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+  font-weight: 500;
+}
+
+.orderButtons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.acceptBtn, .rejectBtn {
+  flex: 1;
+  padding: 10px;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.acceptBtn {
+  background-color: #4caf50;
+  color: white;
+}
+
+.acceptBtn:hover {
+  background-color: #45a049;
+}
+
+.rejectBtn {
+  background-color: #f44336;
+  color: white;
+}
+
+.rejectBtn:hover {
+  background-color: #e53935;
+}
+
+.noOrder {
+  text-align: center;
+  color: #999;
+  font-style: italic;
 }

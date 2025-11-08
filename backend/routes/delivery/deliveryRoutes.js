@@ -11,7 +11,7 @@ const router = express.Router();
 /* -------------------------------------------------------------------------- */
 router.get("/available", requireDeliveryBoy, async (req, res) => {
   try {
-    const deliveryBoy = req.user;
+    const deliveryBoy = await DeliveryBoy.findById(req.user._id); // include rejectedOrders
 
     // 🛑 Block if delivery boy is inactive
     if (!deliveryBoy.isActive) {
@@ -29,9 +29,11 @@ router.get("/available", requireDeliveryBoy, async (req, res) => {
       });
     }
 
+    // Fetch orders excluding ones this delivery boy rejected
     const orders = await Order.find({
       status: "PROCESSING",
       deliveryBoy: null,
+      _id: { $nin: deliveryBoy.rejectedOrders || [] },
     })
       .populate("user", "name phone")
       .sort({ createdAt: -1 })
@@ -169,6 +171,51 @@ router.get("/my", requireDeliveryBoy, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch assigned orders",
+      error: err.message,
+    });
+  }
+});
+
+/* -------------------------------------------------------------------------- */
+/* ❌ PATCH: Reject/Ignore an Order                                           */
+/* -------------------------------------------------------------------------- */
+router.patch("/reject/:id", requireDeliveryBoy, async (req, res) => {
+  try {
+    const deliveryBoy = req.user;
+    const orderId = req.params.id;
+
+    // Make sure the order exists
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
+    }
+
+    // Only reject if unassigned or assigned to this delivery boy
+    if (
+      order.deliveryBoy &&
+      String(order.deliveryBoy) !== String(deliveryBoy._id)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not assigned to this order",
+      });
+    }
+
+    // Add order to delivery boy's rejectedOrders and clear currentOrder
+    await DeliveryBoy.findByIdAndUpdate(deliveryBoy._id, {
+      $addToSet: { rejectedOrders: order._id },
+      $set: { currentOrder: null },
+      $inc: { "stats.ignored": 1 },
+    });
+
+    res.json({ success: true, message: "Order rejected" });
+  } catch (err) {
+    console.error("❌ REJECT ORDER ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to reject order",
       error: err.message,
     });
   }
