@@ -304,3 +304,12 @@
     width: 100%;
   }
 }
+
+.smallMap {
+  width: 300px;      /* fixed width */
+  height: 200px;     /* fixed height */
+  margin: 10px auto; /* center inside card */
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #ccc;
+}

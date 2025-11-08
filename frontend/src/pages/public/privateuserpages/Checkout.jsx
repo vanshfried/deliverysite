@@ -38,26 +38,42 @@ export default function Checkout() {
     }
   }, [userLoggedIn, cart, location, navigate]);
 
-  /* Geolocation helper */
+  /* Geolocation helper: high-accuracy, retry if needed */
   const useMyLocation = (targetForm, setTargetForm) => {
     if (!navigator.geolocation) {
       setError("Geolocation not supported ❌");
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setTargetForm((prev) => ({
-          ...prev,
-          coords: { lat: latitude, lon: longitude },
-        }));
-        setError("");
-      },
-      () => setError("Failed to get location ❌")
-    );
+
+    const tryGetPosition = (retries = 3) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+
+          // Retry if accuracy > 20 meters
+          if (accuracy > 20 && retries > 0) {
+            tryGetPosition(retries - 1);
+            return;
+          }
+
+          setTargetForm((prev) => ({
+            ...prev,
+            coords: {
+              lat: Number(latitude.toFixed(6)),
+              lon: Number(longitude.toFixed(6)),
+            },
+            accuracy,
+          }));
+          setError("");
+        },
+        () => setError("Failed to get location ❌"),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    };
+
+    tryGetPosition();
   };
 
-  // Validate coordinates
   const isValidCoords = (addr) =>
     addr &&
     addr.coords &&
@@ -71,7 +87,7 @@ export default function Checkout() {
     const fetchAddresses = async () => {
       try {
         const res = await API.get("/users/me");
-        let uAddresses = res.data.user.addresses || [];
+        const uAddresses = res.data.user.addresses || [];
         setAddresses(uAddresses);
         if (res.data.user.defaultAddress)
           setSelectedAddress(res.data.user.defaultAddress);
@@ -81,6 +97,7 @@ export default function Checkout() {
         setLoading(false);
       }
     };
+
     fetchAddresses();
   }, [userLoggedIn]);
 
@@ -257,7 +274,7 @@ export default function Checkout() {
                           value={addr._id}
                           checked={selectedAddress === addr._id}
                           onChange={() => setSelectedAddress(addr._id)}
-                          disabled={!isValidCoords(addr)} // disable if coords missing
+                          disabled={!isValidCoords(addr)}
                         />
                         <span className={styles.addrLabel}>
                           {addr.label || "Address"}{" "}
@@ -275,12 +292,6 @@ export default function Checkout() {
                       {addr.houseNo}, {addr.laneOrSector}
                       {addr.landmark && `, ${addr.landmark}`}, {addr.pincode}
                     </p>
-                    {isValidCoords(addr) && (
-                      <p className={styles.addrLine}>
-                        Lat: {addr.coords.lat.toFixed(5)}, Lon:{" "}
-                        {addr.coords.lon.toFixed(5)}
-                      </p>
-                    )}
                   </>
                 ) : (
                   <div className={styles.editForm}>
@@ -340,18 +351,12 @@ export default function Checkout() {
                     >
                       Use My Location
                     </button>
-                    {isValidCoords(editForm) && (
-                      <p>
-                        Lat: {editForm.coords.lat.toFixed(5)}, Lon:{" "}
-                        {editForm.coords.lon.toFixed(5)}
-                      </p>
-                    )}
 
                     <div className={styles.editActions}>
                       <button
                         className={styles.saveBtn}
                         onClick={saveEdit}
-                        disabled={!isValidCoords(editForm)} // disable if no coords
+                        disabled={!isValidCoords(editForm)}
                       >
                         Save
                       </button>
@@ -432,18 +437,12 @@ export default function Checkout() {
             >
               Use My Location
             </button>
-            {isValidCoords(addForm) && (
-              <p>
-                Lat: {addForm.coords.lat.toFixed(5)}, Lon:{" "}
-                {addForm.coords.lon.toFixed(5)}
-              </p>
-            )}
 
             <div className={styles.addFormActions}>
               <button
                 className={styles.saveBtn}
                 onClick={handleAddAddress}
-                disabled={!isValidCoords(addForm)} // disable if no coords
+                disabled={!isValidCoords(addForm)}
               >
                 Save
               </button>
