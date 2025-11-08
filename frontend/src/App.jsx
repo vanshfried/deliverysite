@@ -26,11 +26,19 @@ import CreateProduct from "./pages/admin/pages/CreateProduct";
 import EditProduct from "./pages/admin/pages/EditProduct";
 import PendingOrders from "./pages/admin/pages/PendingOrders"; // ✅ Added here
 import ActiveOrders from "./pages/admin/pages/ActiveOrders";
+import DeliveryApplicants from "./pages/admin/deliverydata/pages/DeliveryApplicants";
+import AllDeliveryAgents from "./pages/admin/deliverydata/pages/AllAgents";
 
 // 🔹 Super Admin Pages
 import SuperAdminDashboard from "./pages/admin/superAdmin/pages/SuperAdminDashboard";
 import CreateAdmin from "./pages/admin/superAdmin/pages/createAdmin";
 import CreateSuperAdminExtras from "./pages/admin/superAdmin/pages/CreateSuperAdminExtras";
+
+// Deliveryboy pages
+
+import DeliveryDashboard from "./pages/delivery/jsx/pages/DeliveryDashboard";
+import DeliveryLogin from "./pages/delivery/jsx/pages/DeliveryLogin";
+import DeliverySignUp from "./pages/delivery/jsx/pages/DeliverySignUp";
 
 // 🔹 Layouts & Contexts
 import DynamicAdminLayout from "./pages/admin/components/DynamicAdminLayout";
@@ -39,6 +47,7 @@ import { CartProvider } from "./pages/admin/Context/CartContext";
 import ProtectedRoute from "./components/ProtectedRoutes";
 import UserProtectedRoute from "./pages/public/privateuserpages/UserProtectedRoute";
 import UserOnlyHeader from "./pages/public/UserOnlyHeader";
+
 
 function App() {
   return (
@@ -229,6 +238,26 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/delivery-applicants"
+              element={
+                <ProtectedRoute>
+                  <DynamicAdminLayout>
+                    <DeliveryApplicants />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/All-delivery-boys"
+              element={
+                <ProtectedRoute>
+                  <DynamicAdminLayout>
+                    <AllDeliveryAgents />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
 
             {/* ---------- Super Admin Routes ---------- */}
             <Route
@@ -274,6 +303,12 @@ function App() {
                 </>
               }
             />
+
+            {/* Delivery pages */}
+            <Route path="/delivery/signup" element={<DeliverySignUp />} />
+            <Route path="/delivery/login" element={<DeliveryLogin />} />
+            <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
+
           </Routes>
         </Router>
       </CartProvider>

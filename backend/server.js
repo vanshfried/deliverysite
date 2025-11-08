@@ -17,12 +17,17 @@ import extraRoutes from "./routes/admin/products/extraRoutes.js";
 import categoryTagAdminRoutes from "./routes/admin/products/categoryTagAdminRoutes.js";
 import adminUserRoutes from "./routes/admin/adminUserRoutes.js";
 import orderAdminRoutes from "./routes/admin/orderAdminRoutes.js"; // ✅ You missed adding this
+import adminDeliveryRoutes from "./routes/admin/delivery/adminDeliveryRoutes.js"
 
 // --- User & public routes ---
 import orderRoutes from "./routes/order/orderRoutes.js";
 import publicProductRoutes from "./routes/public/products.js";
 import userRoutes from "./routes/user/userRoutes.js";
 import cartRoutes from "./routes/user/cartRoutes.js";
+
+// --- Delivery Partner routes ---
+import deliveryAuthRoutes from "./routes/delivery/authRoutes.js";
+import deliveryOrderRoutes from "./routes/delivery/deliveryRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -46,7 +51,7 @@ app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], 
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -72,6 +77,11 @@ app.use("/admin/products/extras", extraRoutes);
 app.use("/admin/products/manage", categoryTagAdminRoutes);
 app.use("/api/admin", adminUserRoutes);
 app.use("/api/admin/orders", orderAdminRoutes); // ✅ now linked correctly
+app.use("/api/admin/delivery", adminDeliveryRoutes); // all delivery routess for admin
+
+// ✅ Delivery Partner routes
+app.use("/api/delivery", deliveryAuthRoutes); // signup + login + logout + me
+app.use("/api/delivery/orders", deliveryOrderRoutes); // delivery-specific order handling
 
 // ✅ MongoDB connection
 mongoose
@@ -80,7 +90,6 @@ mongoose
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 // ✅ Socket.IO events
-
 
 // ✅ Start server
 const PORT = process.env.PORT || 5000;

@@ -5,6 +5,36 @@ const DeliveryBoySchema = new mongoose.Schema({
   phone: { type: String, unique: true, required: true },
   passwordHash: { type: String, required: true }, // bcrypt hashed password
 
+  // 🚦 Admin approval & status control
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
+  isApproved: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true },
+
+  // 📍 Current assigned order (only one active delivery allowed)
+  currentOrder: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Order",
+    default: null,
+  },
+  // personal address
+  address: {
+    street: { type: String },
+    city: { type: String },
+    state: { type: String },
+    pincode: { type: String },
+    country: {type:String, default: "India" },
+  },
+  // 🌐 Optional service area (future expansion)
+  serviceArea: {
+    city: { type: String },
+    pincodes: [{ type: String }],
+  },
+
+  // 📊 Performance stats
   stats: {
     accepted: { type: Number, default: 0 },
     delivered: { type: Number, default: 0 },
@@ -12,17 +42,14 @@ const DeliveryBoySchema = new mongoose.Schema({
     rating: { type: Number, default: 0 },
   },
 
-  // track who created this delivery boy (admin)
+  // 🧑‍💼 Admin who created/approved
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
-
-  // optional status toggle (useful if you ever disable a delivery boy)
-  isActive: { type: Boolean, default: true },
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
 
-// automatically update updatedAt when modified
+// 🔄 Auto-update "updatedAt" timestamp
 DeliveryBoySchema.pre("save", function (next) {
   this.updatedAt = new Date();
   next();
