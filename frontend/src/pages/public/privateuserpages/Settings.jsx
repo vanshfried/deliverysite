@@ -13,7 +13,7 @@ export default function Settings() {
   const [addresses, setAddresses] = useState([]);
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({});
-  const [addMode, setAddMode] = useState(false); // new: controls Add New Address form visibility
+  const [addMode, setAddMode] = useState(false);
 
   const showToast = (message, type = "success") => {
     setToast({ show: true, message, type });
@@ -38,12 +38,39 @@ export default function Settings() {
     if (!name.trim()) return showToast("Enter a valid name", "error");
     const res = await API.put("/users/update", { name });
     if (!res) return;
-    // optional: update local user
     setUser((prev) => ({ ...prev, name }));
     showToast("Name updated ✅");
   };
 
-  // Add new address (when addMode is true)
+  // ----------------------------
+  // Geolocation helpers
+  // ----------------------------
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      return showToast("Geolocation not supported ❌", "error");
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setEditForm((prev) => ({
+          ...prev,
+          coords: { lat: latitude, lon: longitude },
+        }));
+        showToast("Location set ✅");
+      },
+      (err) => showToast("Failed to get location ❌", "error")
+    );
+  };
+
+  const isValidCoords = (addr) =>
+    addr &&
+    addr.coords &&
+    typeof addr.coords.lat === "number" &&
+    typeof addr.coords.lon === "number";
+
+  // ----------------------------
+  // Address handlers
+  // ----------------------------
   const handleAddAddress = async () => {
     if (!editForm.houseNo || !editForm.laneOrSector || !editForm.pincode) {
       return showToast("Missing required fields ❌", "error");
@@ -51,19 +78,21 @@ export default function Settings() {
     if (!/^\d{6}$/.test(editForm.pincode)) {
       return showToast("Pincode must be 6 digits ❌", "error");
     }
+    if (!isValidCoords(editForm))
+      return showToast("Please set your location ❌", "error");
 
     const res = await API.post("/users/address", editForm);
     if (!res) return;
-    // backend returns addresses (and possibly defaultAddress)
     if (res.data.addresses) setAddresses(res.data.addresses);
-    if (res.data.defaultAddress) setUser((prev) => ({ ...prev, defaultAddress: res.data.defaultAddress }));
+    if (res.data.defaultAddress)
+      setUser((prev) => ({ ...prev, defaultAddress: res.data.defaultAddress }));
     setEditForm({});
     setAddMode(false);
     showToast("Address added ✅");
   };
 
   const startEdit = (addr) => {
-    setAddMode(false); // hide add form while editing
+    setAddMode(false);
     setEditId(addr._id);
     setEditForm({ ...addr });
   };
@@ -75,6 +104,8 @@ export default function Settings() {
     if (!/^\d{6}$/.test(editForm.pincode)) {
       return showToast("Pincode must be 6 digits ❌", "error");
     }
+    if (!isValidCoords(editForm))
+      return showToast("Please set your location ❌", "error");
 
     const res = await API.put(`/users/address/${editId}`, editForm);
     if (!res) return;
@@ -89,13 +120,13 @@ export default function Settings() {
     setEditForm({});
   };
 
-  // Note: backend route is /users/address/default/:id
   const setDefaultAddress = async (id) => {
     const res = await API.put(`/users/address/default/${id}`);
     if (!res) return;
     if (res.data.addresses) setAddresses(res.data.addresses);
-    if (res.data.defaultAddress) setUser((prev) => ({ ...prev, defaultAddress: res.data.defaultAddress }));
-    else fetchUser(); // fallback
+    if (res.data.defaultAddress)
+      setUser((prev) => ({ ...prev, defaultAddress: res.data.defaultAddress }));
+    else fetchUser();
     showToast("Default updated ✅");
   };
 
@@ -103,7 +134,8 @@ export default function Settings() {
     const res = await API.delete(`/users/address/${id}`);
     if (!res) return;
     if (res.data.addresses) setAddresses(res.data.addresses);
-    if (res.data.defaultAddress) setUser((prev) => ({ ...prev, defaultAddress: res.data.defaultAddress }));
+    if (res.data.defaultAddress)
+      setUser((prev) => ({ ...prev, defaultAddress: res.data.defaultAddress }));
     else fetchUser();
     showToast("Removed ✅");
   };
@@ -118,10 +150,8 @@ export default function Settings() {
     window.location.href = "/";
   };
 
-  // helpers
   const isDefault = (addr) => {
     if (!user) return false;
-    // user.defaultAddress contains ObjectId or null
     return String(user.defaultAddress) === String(addr._id);
   };
 
@@ -129,132 +159,180 @@ export default function Settings() {
 
   return (
     <div className={styles.settingsLayout}>
-      {/* toast */}
       {toast.show && (
         <div className={`${styles.toast} ${styles[toast.type]}`}>
           {toast.message}
         </div>
       )}
 
-      {/* Sidebar */}
       <aside className={styles.sidebar}>
         <button
-          onClick={() => { setActiveTab("account"); setEditId(null); setAddMode(false); }}
+          onClick={() => {
+            setActiveTab("account");
+            setEditId(null);
+            setAddMode(false);
+          }}
           className={activeTab === "account" ? styles.activeTab : ""}
         >
           Account
         </button>
-
         <button
-          onClick={() => { setActiveTab("addresses"); setEditId(null); setAddMode(false); }}
+          onClick={() => {
+            setActiveTab("addresses");
+            setEditId(null);
+            setAddMode(false);
+          }}
           className={activeTab === "addresses" ? styles.activeTab : ""}
         >
           Addresses
         </button>
-
         <button
-          onClick={() => { setActiveTab("delete"); setEditId(null); setAddMode(false); }}
+          onClick={() => {
+            setActiveTab("delete");
+            setEditId(null);
+            setAddMode(false);
+          }}
           className={activeTab === "delete" ? styles.activeTab : ""}
         >
           Delete Account
         </button>
-
         <button className={styles.logoutBtn} onClick={logout}>
           Logout
         </button>
       </aside>
 
-      {/* Content */}
       <main className={styles.content}>
-
-        {/* Account */}
         {activeTab === "account" && (
           <section className={styles.section}>
             <h2>Profile</h2>
             <p className={styles.phoneDisplay}>📞 {user.phone}</p>
-
             <label>Full Name</label>
             <input
               className={styles.input}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
-            <button className={styles.btn} onClick={updateName}>Save</button>
+            <button className={styles.btn} onClick={updateName}>
+              Save
+            </button>
 
-            {/* show default address preview */}
             {user.defaultAddress && (
               <div className={styles.defaultInfo}>
                 <strong>Default delivery:</strong>{" "}
                 {(() => {
-                  const da = addresses.find(a => String(a._id) === String(user.defaultAddress));
+                  const da = addresses.find(
+                    (a) => String(a._id) === String(user.defaultAddress)
+                  );
                   if (!da) return <span>Not set</span>;
-                  return <span>{da.label || "Address"} — {da.houseNo}, {da.laneOrSector} ({da.pincode})</span>;
+                  return (
+                    <span>
+                      {da.label || "Address"} — {da.houseNo}, {da.laneOrSector}{" "}
+                      ({da.pincode})
+                    </span>
+                  );
                 })()}
               </div>
             )}
           </section>
         )}
 
-        {/* Addresses */}
         {activeTab === "addresses" && (
           <section className={styles.section}>
             <h2>Saved Addresses</h2>
 
-            {/* existing addresses */}
-            {addresses.length === 0 && <p className={styles.emptyText}>No addresses added yet.</p>}
+            {addresses.length === 0 && (
+              <p className={styles.emptyText}>No addresses added yet.</p>
+            )}
 
             {addresses.map((addr) => (
               <div
                 key={addr._id}
-                className={`${styles.addressCard} ${isDefault(addr) ? styles.defaultAddressCard : ""}`}
+                className={`${styles.addressCard} ${
+                  isDefault(addr) ? styles.defaultAddressCard : ""
+                }`}
               >
                 {editId !== addr._id ? (
                   <>
                     <div className={styles.cardHeader}>
-                      <strong className={styles.addrLabel}>{addr.label || "Address"}</strong>
-                      {isDefault(addr) && <span className={styles.defaultBadge}>Default</span>}
+                      <strong className={styles.addrLabel}>
+                        {addr.label || "Address"}
+                      </strong>
+                      {isDefault(addr) && (
+                        <span className={styles.defaultBadge}>Default</span>
+                      )}
                     </div>
-
-                    <p className={styles.addrLine}>{addr.houseNo}, {addr.laneOrSector}</p>
-                    {addr.landmark && <p className={styles.addrLine}>{addr.landmark}</p>}
+                    <p className={styles.addrLine}>
+                      {addr.houseNo}, {addr.laneOrSector}
+                    </p>
+                    {addr.landmark && (
+                      <p className={styles.addrLine}>{addr.landmark}</p>
+                    )}
                     <p className={styles.addrLine}>{addr.pincode}</p>
-
+                    {addr.coords && (
+                      <p className={styles.addrLine}>
+                        Lat: {addr.coords.lat.toFixed(5)}, Lon:{" "}
+                        {addr.coords.lon.toFixed(5)}
+                      </p>
+                    )}
                     <div className={styles.cardActions}>
                       {!isDefault(addr) && (
-                        <button className={styles.setDefaultBtn} onClick={() => setDefaultAddress(addr._id)}>
+                        <button
+                          className={styles.setDefaultBtn}
+                          onClick={() => setDefaultAddress(addr._id)}
+                        >
                           Set Default
                         </button>
                       )}
-                      <button className={styles.editBtn} onClick={() => startEdit(addr)}>Edit</button>
-                      <button className={styles.deleteBtn} onClick={() => removeAddress(addr._id)}>Remove</button>
+                      <button
+                        className={styles.editBtn}
+                        onClick={() => startEdit(addr)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() => removeAddress(addr._id)}
+                      >
+                        Remove
+                      </button>
                     </div>
                   </>
                 ) : (
                   <>
-                    {/* inline edit */}
                     <input
                       placeholder="Label"
                       className={styles.input}
                       value={editForm.label || ""}
-                      onChange={(e) => setEditForm({ ...editForm, label: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, label: e.target.value })
+                      }
                     />
                     <input
                       placeholder="House No"
                       className={styles.input}
                       value={editForm.houseNo || ""}
-                      onChange={(e) => setEditForm({ ...editForm, houseNo: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, houseNo: e.target.value })
+                      }
                     />
                     <input
                       placeholder="Lane / Sector"
                       className={styles.input}
                       value={editForm.laneOrSector || ""}
-                      onChange={(e) => setEditForm({ ...editForm, laneOrSector: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          laneOrSector: e.target.value,
+                        })
+                      }
                     />
                     <input
                       placeholder="Landmark"
                       className={styles.input}
                       value={editForm.landmark || ""}
-                      onChange={(e) => setEditForm({ ...editForm, landmark: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, landmark: e.target.value })
+                      }
                     />
                     <input
                       placeholder="Pincode"
@@ -262,58 +340,92 @@ export default function Settings() {
                       maxLength="6"
                       inputMode="numeric"
                       value={editForm.pincode || ""}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, "");
-                        setEditForm({ ...editForm, pincode: val });
-                      }}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          pincode: e.target.value.replace(/\D/g, ""),
+                        })
+                      }
                     />
 
+                    <button
+                      className={styles.useLocationBtn}
+                      onClick={useMyLocation}
+                    >
+                      Use My Location
+                    </button>
+                    {editForm.coords && (
+                      <p>
+                        Lat: {editForm.coords.lat.toFixed(5)}, Lon:{" "}
+                        {editForm.coords.lon.toFixed(5)}
+                      </p>
+                    )}
+
                     <div className={styles.cardActions}>
-                      <button className={styles.saveBtn} onClick={saveEdit}>Save</button>
-                      <button className={styles.cancelBtn} onClick={cancelEdit}>Cancel</button>
+                      <button
+                        className={styles.saveBtn}
+                        onClick={editId ? saveEdit : handleAddAddress}
+                        disabled={!isValidCoords(editForm)}
+                      >
+                        Save
+                      </button>
+                      <button className={styles.cancelBtn} onClick={cancelEdit}>
+                        Cancel
+                      </button>
                     </div>
                   </>
                 )}
               </div>
             ))}
 
-            {/* Add New Address button (hidden while editing or when max reached) */}
             {addresses.length < 3 && editId === null && !addMode && (
               <div className={styles.addButtonWrap}>
-                <button className={styles.addBtnPrimary} onClick={() => { setAddMode(true); setEditForm({}); }}>
+                <button
+                  className={styles.addBtnPrimary}
+                  onClick={() => {
+                    setAddMode(true);
+                    setEditForm({});
+                  }}
+                >
                   + Add New Address
                 </button>
               </div>
             )}
 
-            {/* Add New Address form (visible when addMode true) */}
             {addMode && editId === null && (
               <div className={styles.addFormCard}>
                 <h3 className={styles.addHeading}>Add New Address</h3>
-
                 <input
                   className={styles.input}
                   placeholder="Label (Home / Office)"
                   value={editForm.label || ""}
-                  onChange={(e) => setEditForm({ ...editForm, label: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, label: e.target.value })
+                  }
                 />
                 <input
                   className={styles.input}
                   placeholder="House No *"
                   value={editForm.houseNo || ""}
-                  onChange={(e) => setEditForm({ ...editForm, houseNo: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, houseNo: e.target.value })
+                  }
                 />
                 <input
                   className={styles.input}
                   placeholder="Lane / Sector *"
                   value={editForm.laneOrSector || ""}
-                  onChange={(e) => setEditForm({ ...editForm, laneOrSector: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, laneOrSector: e.target.value })
+                  }
                 />
                 <input
                   className={styles.input}
                   placeholder="Landmark"
                   value={editForm.landmark || ""}
-                  onChange={(e) => setEditForm({ ...editForm, landmark: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, landmark: e.target.value })
+                  }
                 />
                 <input
                   className={styles.input}
@@ -321,22 +433,50 @@ export default function Settings() {
                   maxLength="6"
                   inputMode="numeric"
                   value={editForm.pincode || ""}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, "");
-                    setEditForm({ ...editForm, pincode: val });
-                  }}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      pincode: e.target.value.replace(/\D/g, ""),
+                    })
+                  }
                 />
 
+                <button
+                  className={styles.useLocationBtn}
+                  onClick={useMyLocation}
+                >
+                  Use My Location
+                </button>
+                {editForm.coords && (
+                  <p>
+                    Lat: {editForm.coords.lat.toFixed(5)}, Lon:{" "}
+                    {editForm.coords.lon.toFixed(5)}
+                  </p>
+                )}
+
                 <div className={styles.addFormActions}>
-                  <button className={styles.btnAdd} onClick={handleAddAddress}>Save</button>
-                  <button className={styles.cancelBtn} onClick={() => { setAddMode(false); setEditForm({}); }}>Cancel</button>
+                  <button
+                    className={styles.btnAdd}
+                    onClick={handleAddAddress}
+                    disabled={!isValidCoords(editForm)}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className={styles.cancelBtn}
+                    onClick={() => {
+                      setAddMode(false);
+                      setEditForm({});
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             )}
           </section>
         )}
 
-        {/* Delete Account */}
         {activeTab === "delete" && (
           <section className={styles.sectionDanger}>
             <h2>Delete Account</h2>

@@ -144,16 +144,26 @@ router.post("/address", requireUser, async (req, res) => {
 });
 
 // ✅ Edit Address
+// ✅ Edit Address (fixed to handle coords)
 router.put("/address/:id", requireUser, async (req, res) => {
   try {
     const allowed = ["label", "houseNo", "laneOrSector", "landmark", "pincode"];
     const updates = {};
 
+    // Update regular fields
     allowed.forEach(f => {
       if (req.body[f] !== undefined) {
         updates[`addresses.$.${f}`] = String(req.body[f]);
       }
     });
+
+    // ✅ Update coordinates if provided
+    if (req.body.coords !== undefined && req.body.coords.lat !== undefined && req.body.coords.lon !== undefined) {
+      updates[`addresses.$.coords`] = {
+        lat: Number(req.body.coords.lat),
+        lon: Number(req.body.coords.lon)
+      };
+    }
 
     const updated = await User.findOneAndUpdate(
       { _id: req.user._id, "addresses._id": req.params.id },
@@ -164,10 +174,12 @@ router.put("/address/:id", requireUser, async (req, res) => {
     if (!updated) return res.status(404).json({ error: "Address not found" });
 
     res.json({ success: true, addresses: updated.addresses });
-  } catch {
+  } catch (err) {
+    console.error("ADDRESS UPDATE ERROR:", err);
     res.status(500).json({ error: "Address update failed" });
   }
 });
+
 
 // ✅ Delete Address
 router.delete("/address/:id", requireUser, async (req, res) => {

@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import API from "../../api/api";
 import styles from "../../css/DeliveryDashboard.module.css";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 
 export default function DeliveryDashboard() {
   const [deliveryBoy, setDeliveryBoy] = useState(null);
@@ -18,18 +20,45 @@ export default function DeliveryDashboard() {
     msgTimeoutRef.current = setTimeout(() => setMsg(""), duration);
   };
 
+  // Fetch profile and check for current order
   const fetchProfile = async () => {
     try {
       const res = await API.get("/api/delivery/me");
       if (!mountedRef.current) return;
-      if (res?.data?.success) setDeliveryBoy(res.data.deliveryBoy);
-      else showMessage(res?.data?.error || "Failed to fetch profile");
+      if (res?.data?.success) {
+        const deliveryBoyData = res.data.deliveryBoy;
+        setDeliveryBoy(deliveryBoyData);
+        // Fetch current order if exists
+        if (deliveryBoyData.currentOrder) {
+          fetchCurrentOrder(deliveryBoyData.currentOrder);
+        }
+      } else showMessage(res?.data?.error || "Failed to fetch profile");
     } catch (err) {
       if (!mountedRef.current) return;
       showMessage(err.response?.data?.error || "Something went wrong");
     } finally {
       if (!mountedRef.current) return;
       setLoading(false);
+    }
+  };
+
+  const fetchCurrentOrder = async (orderId) => {
+    setOrderLoading(true);
+    try {
+      const res = await API.get("/api/delivery/orders/my");
+      if (!mountedRef.current) return;
+
+      const activeOrder = res.data.orders.find((o) => o._id === orderId);
+      setCurrentOrder(activeOrder || null);
+    } catch (err) {
+      if (!mountedRef.current) return;
+      showMessage(
+        err.response?.data?.message || "Failed to fetch active order"
+      );
+      setCurrentOrder(null);
+    } finally {
+      if (!mountedRef.current) return;
+      setOrderLoading(false);
     }
   };
 
@@ -80,21 +109,20 @@ export default function DeliveryDashboard() {
 
       if (res?.data?.success) {
         showMessage(res.data.message);
-
-        // Clear the current order immediately so the UI updates
         setCurrentOrder(null);
 
-        // Refresh profile stats after decision
+        // Refresh profile stats
         const profileRes = await API.get("/api/delivery/me");
         if (profileRes?.data?.success) {
           setDeliveryBoy(profileRes.data.deliveryBoy);
+          if (profileRes.data.deliveryBoy.currentOrder) {
+            fetchCurrentOrder(profileRes.data.deliveryBoy.currentOrder);
+          }
         }
 
-        // Fetch the next available order
+        // Fetch next available order
         fetchNextOrder();
-      } else {
-        showMessage(res?.data?.message || `Failed to ${decision} order`);
-      }
+      } else showMessage(res?.data?.message || `Failed to ${decision} order`);
     } catch (err) {
       if (!mountedRef.current) return;
       showMessage(err.response?.data?.message || "Request failed");
@@ -111,28 +139,16 @@ export default function DeliveryDashboard() {
   }, []);
 
   useEffect(() => {
-    if (deliveryBoy?.isActive) fetchNextOrder();
-    else setCurrentOrder(null);
+    if (deliveryBoy?.isActive && !deliveryBoy?.currentOrder) fetchNextOrder();
+    else if (!deliveryBoy?.isActive) setCurrentOrder(null);
   }, [deliveryBoy?.isActive]);
-
-  if (loading) return <p className={styles.loading}>Loading...</p>;
-  if (!deliveryBoy)
-    return <p className={styles.error}>{msg || "No profile found"}</p>;
-
-  const { stats } = deliveryBoy;
-  const totalOrders = stats.accepted + stats.delivered + stats.ignored;
 
   const renderAddress = (address) => {
     if (!address) return <p className={styles.noOrder}>No address</p>;
-
-    // Extract address fields
     const { label, houseNo, laneOrSector, landmark, pincode, coords } = address;
-
-    // Combine them in one line
     const addressLine = [label, houseNo, laneOrSector, landmark, pincode]
-      .filter(Boolean) // remove null/undefined
+      .filter(Boolean)
       .join(", ");
-
     return (
       <div className={styles.addressCardCompact}>
         {addressLine}
@@ -146,6 +162,38 @@ export default function DeliveryDashboard() {
     );
   };
 
+  const indiaBounds = [
+    [6.5546079, 68.1113787], // Southwest corner
+    [35.6745457, 97.395561], // Northeast corner
+  ];
+
+  const renderMap = (coords) => {
+    if (!coords) return null;
+    return (
+      <div className={styles.mapContainer}>
+        <MapContainer
+          center={[coords.lat, coords.lon]}
+          zoom={5}
+          minZoom={5}
+          maxBounds={indiaBounds} // restrict view to India
+          style={{ height: "300px", width: "100%" }}
+        >
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <Marker position={[coords.lat, coords.lon]}>
+            <Popup>Drop Location</Popup>
+          </Marker>
+        </MapContainer>
+      </div>
+    );
+  };
+
+  if (loading) return <p className={styles.loading}>Loading...</p>;
+  if (!deliveryBoy)
+    return <p className={styles.error}>{msg || "No profile found"}</p>;
+
+  const { stats } = deliveryBoy;
+  const totalOrders = stats.accepted + stats.delivered + stats.ignored;
+
   return (
     <div className={styles.dashboard}>
       {msg && <div className={styles.toast}>{msg}</div>}
@@ -157,6 +205,7 @@ export default function DeliveryDashboard() {
             deliveryBoy.isActive ? styles.active : ""
           }`}
           onClick={toggleStatus}
+          disabled={!!deliveryBoy.currentOrder}
         >
           {deliveryBoy.isActive ? "Go Inactive" : "Go Active"}
         </button>
@@ -203,6 +252,8 @@ export default function DeliveryDashboard() {
               </div>
 
               {renderAddress(currentOrder.deliveryAddress)}
+              {currentOrder.deliveryAddress?.coords &&
+                renderMap(currentOrder.deliveryAddress.coords)}
 
               {currentOrder.items?.length > 0 && (
                 <div className={styles.itemsList}>
@@ -225,18 +276,22 @@ export default function DeliveryDashboard() {
               </div>
 
               <div className={styles.orderButtons}>
-                <button
-                  className={styles.acceptBtn}
-                  onClick={() => handleOrderDecision("accept")}
-                >
-                  Accept
-                </button>
-                <button
-                  className={styles.rejectBtn}
-                  onClick={() => handleOrderDecision("reject")}
-                >
-                  Reject
-                </button>
+                {!deliveryBoy.currentOrder && (
+                  <>
+                    <button
+                      className={styles.acceptBtn}
+                      onClick={() => handleOrderDecision("accept")}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      className={styles.rejectBtn}
+                      onClick={() => handleOrderDecision("reject")}
+                    >
+                      Reject
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ) : (

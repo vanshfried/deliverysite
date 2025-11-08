@@ -7,7 +7,7 @@ import styles from "./css/Checkout.module.css";
 
 export default function Checkout() {
   const { cart, clearCart } = useContext(CartContext);
-  const { userLoggedIn, user } = useContext(AuthContext);
+  const { userLoggedIn } = useContext(AuthContext);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -23,9 +23,9 @@ export default function Checkout() {
   const [placingOrder, setPlacingOrder] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [accessDenied, setAccessDenied] = useState(false); // 👈 new state
+  const [accessDenied, setAccessDenied] = useState(false);
 
-  /* 🚫 Prevent direct access if not coming from cart or buy now */
+  /* Prevent direct access if not coming from cart or buy now */
   useEffect(() => {
     if (!userLoggedIn) return navigate("/login");
 
@@ -34,19 +34,47 @@ export default function Checkout() {
     const hasCartItems = cart?.items?.length > 0;
 
     if (!fromBuyNow && !fromCart && !hasCartItems) {
-      setAccessDenied(true); // 👈 instead of redirect
+      setAccessDenied(true);
     }
   }, [userLoggedIn, cart, location, navigate]);
+
+  /* Geolocation helper */
+  const useMyLocation = (targetForm, setTargetForm) => {
+    if (!navigator.geolocation) {
+      setError("Geolocation not supported ❌");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setTargetForm((prev) => ({
+          ...prev,
+          coords: { lat: latitude, lon: longitude },
+        }));
+        setError("");
+      },
+      () => setError("Failed to get location ❌")
+    );
+  };
+
+  // Validate coordinates
+  const isValidCoords = (addr) =>
+    addr &&
+    addr.coords &&
+    typeof addr.coords.lat === "number" &&
+    typeof addr.coords.lon === "number";
 
   // Fetch addresses
   useEffect(() => {
     if (!userLoggedIn) return;
+
     const fetchAddresses = async () => {
       try {
         const res = await API.get("/users/me");
-        const u = res.data.user;
-        setAddresses(u.addresses || []);
-        if (u.defaultAddress) setSelectedAddress(u.defaultAddress);
+        let uAddresses = res.data.user.addresses || [];
+        setAddresses(uAddresses);
+        if (res.data.user.defaultAddress)
+          setSelectedAddress(res.data.user.defaultAddress);
       } catch (err) {
         console.error("Address fetch error:", err);
       } finally {
@@ -56,11 +84,9 @@ export default function Checkout() {
     fetchAddresses();
   }, [userLoggedIn]);
 
-  // Determine items
   const items = buyNowProduct
     ? [{ product: buyNowProduct, quantity: 1 }]
     : cart?.items || [];
-
   const total = items.reduce(
     (sum, item) =>
       sum +
@@ -76,6 +102,7 @@ export default function Checkout() {
     if (addresses.length >= 3) return;
     if (!addForm.houseNo || !addForm.laneOrSector || !addForm.pincode)
       return setError("Missing required fields ❌");
+    if (!isValidCoords(addForm)) return setError("Please set your location ❌");
 
     try {
       const res = await API.post("/users/address", addForm);
@@ -85,7 +112,7 @@ export default function Checkout() {
       setAddMode(false);
       setError("");
     } catch {
-      setError("Failed to add address");
+      setError("Failed to add address ❌");
     }
   };
 
@@ -101,6 +128,8 @@ export default function Checkout() {
       return setError("Missing required fields ❌");
     if (!/^\d{6}$/.test(editForm.pincode))
       return setError("Pincode must be 6 digits ❌");
+    if (!isValidCoords(editForm))
+      return setError("Please set your location ❌");
 
     try {
       const res = await API.put(`/users/address/${editId}`, editForm);
@@ -120,14 +149,18 @@ export default function Checkout() {
 
   // Place order
   const handlePlaceOrder = async () => {
-    if (!selectedAddress) return setError("Please select an address");
+    if (!selectedAddress) return setError("Please select an address ❌");
+    const addr = addresses.find((a) => a._id === selectedAddress);
+    if (!addr || !isValidCoords(addr))
+      return setError("Selected address has no coordinates ❌");
+
     setPlacingOrder(true);
     setError("");
     try {
       const orderData = {
         addressId: selectedAddress,
         total,
-        paymentMethod: "COD", // or UPI if you want payment option later
+        paymentMethod: "COD",
         items: items.map((i) => ({
           productName: i.product.name,
           quantity: i.quantity,
@@ -149,8 +182,8 @@ export default function Checkout() {
     }
   };
 
-  /* === Early returns === */
-  if (accessDenied) {
+  /* Early returns */
+  if (accessDenied)
     return (
       <div className={styles.accessDenied}>
         <h2>We're Sorry</h2>
@@ -166,18 +199,17 @@ export default function Checkout() {
         </button>
       </div>
     );
-  }
 
   if (loading) return <p className={styles.loading}>Loading...</p>;
   if (items.length === 0)
     return <div className={styles.emptyCheckout}>No items to checkout.</div>;
 
-  /* === MAIN CHECKOUT UI === */
+  /* MAIN CHECKOUT UI */
   return (
     <div className={styles.checkoutContainer}>
       <h1 className={styles.checkoutTitle}>Checkout</h1>
 
-      {/* === Items === */}
+      {/* Items */}
       <div className={styles.itemsSection}>
         {items.map((item) => (
           <div key={item.product._id} className={styles.itemRow}>
@@ -202,112 +234,135 @@ export default function Checkout() {
         ))}
       </div>
 
-      {/* === Address Section === */}
+      {/* Address Section */}
       <div className={styles.addressSection}>
         <h2>Delivery Address</h2>
 
         {addresses.length > 0 && !addMode && (
-          <>
-            <div className={styles.addressList}>
-              {addresses.map((addr) => (
-                <div
-                  key={addr._id}
-                  className={`${styles.addressCard} ${
-                    selectedAddress === addr._id ? styles.default : ""
-                  }`}
-                >
-                  {editId !== addr._id ? (
-                    <>
-                      <div className={styles.addressHeader}>
-                        <label>
-                          <input
-                            type="radio"
-                            name="address"
-                            value={addr._id}
-                            checked={selectedAddress === addr._id}
-                            onChange={() => setSelectedAddress(addr._id)}
-                          />
-                          <span className={styles.addrLabel}>
-                            {addr.label || "Address"}
-                          </span>
-                        </label>
-                        <button
-                          className={styles.editBtn}
-                          onClick={() => startEdit(addr)}
-                        >
-                          Edit
-                        </button>
-                      </div>
-                      <p className={styles.addrLine}>
-                        {addr.houseNo}, {addr.laneOrSector}
-                        {addr.landmark && `, ${addr.landmark}`}, {addr.pincode}
-                      </p>
-                    </>
-                  ) : (
-                    <div className={styles.editForm}>
-                      <input
-                        className={styles.input}
-                        placeholder="Label"
-                        value={editForm.label || ""}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, label: e.target.value })
-                        }
-                      />
-                      <input
-                        className={styles.input}
-                        placeholder="House No"
-                        value={editForm.houseNo || ""}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, houseNo: e.target.value })
-                        }
-                      />
-                      <input
-                        className={styles.input}
-                        placeholder="Lane / Sector"
-                        value={editForm.laneOrSector || ""}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            laneOrSector: e.target.value,
-                          })
-                        }
-                      />
-                      <input
-                        className={styles.input}
-                        placeholder="Landmark"
-                        value={editForm.landmark || ""}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, landmark: e.target.value })
-                        }
-                      />
-                      <input
-                        className={styles.input}
-                        placeholder="Pincode"
-                        maxLength="6"
-                        inputMode="numeric"
-                        value={editForm.pincode || ""}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, "");
-                          setEditForm({ ...editForm, pincode: val });
-                        }}
-                      />
-                      <div className={styles.editActions}>
-                        <button className={styles.saveBtn} onClick={saveEdit}>
-                          Save
-                        </button>
-                        <button
-                          className={styles.cancelBtn}
-                          onClick={cancelEdit}
-                        >
-                          Cancel
-                        </button>
-                      </div>
+          <div className={styles.addressList}>
+            {addresses.map((addr) => (
+              <div
+                key={addr._id}
+                className={`${styles.addressCard} ${
+                  selectedAddress === addr._id ? styles.default : ""
+                }`}
+              >
+                {editId !== addr._id ? (
+                  <>
+                    <div className={styles.addressHeader}>
+                      <label>
+                        <input
+                          type="radio"
+                          name="address"
+                          value={addr._id}
+                          checked={selectedAddress === addr._id}
+                          onChange={() => setSelectedAddress(addr._id)}
+                          disabled={!isValidCoords(addr)} // disable if coords missing
+                        />
+                        <span className={styles.addrLabel}>
+                          {addr.label || "Address"}{" "}
+                          {!isValidCoords(addr) && "(Location not set)"}
+                        </span>
+                      </label>
+                      <button
+                        className={styles.editBtn}
+                        onClick={() => startEdit(addr)}
+                      >
+                        Edit
+                      </button>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                    <p className={styles.addrLine}>
+                      {addr.houseNo}, {addr.laneOrSector}
+                      {addr.landmark && `, ${addr.landmark}`}, {addr.pincode}
+                    </p>
+                    {isValidCoords(addr) && (
+                      <p className={styles.addrLine}>
+                        Lat: {addr.coords.lat.toFixed(5)}, Lon:{" "}
+                        {addr.coords.lon.toFixed(5)}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <div className={styles.editForm}>
+                    <input
+                      className={styles.input}
+                      placeholder="Label"
+                      value={editForm.label || ""}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, label: e.target.value })
+                      }
+                    />
+                    <input
+                      className={styles.input}
+                      placeholder="House No"
+                      value={editForm.houseNo || ""}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, houseNo: e.target.value })
+                      }
+                    />
+                    <input
+                      className={styles.input}
+                      placeholder="Lane / Sector"
+                      value={editForm.laneOrSector || ""}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          laneOrSector: e.target.value,
+                        })
+                      }
+                    />
+                    <input
+                      className={styles.input}
+                      placeholder="Landmark"
+                      value={editForm.landmark || ""}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, landmark: e.target.value })
+                      }
+                    />
+                    <input
+                      className={styles.input}
+                      placeholder="Pincode"
+                      maxLength="6"
+                      inputMode="numeric"
+                      value={editForm.pincode || ""}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          pincode: e.target.value.replace(/\D/g, ""),
+                        })
+                      }
+                    />
 
+                    {/* Use My Location */}
+                    <button
+                      className={styles.useLocationBtn}
+                      onClick={() => useMyLocation(editForm, setEditForm)}
+                    >
+                      Use My Location
+                    </button>
+                    {isValidCoords(editForm) && (
+                      <p>
+                        Lat: {editForm.coords.lat.toFixed(5)}, Lon:{" "}
+                        {editForm.coords.lon.toFixed(5)}
+                      </p>
+                    )}
+
+                    <div className={styles.editActions}>
+                      <button
+                        className={styles.saveBtn}
+                        onClick={saveEdit}
+                        disabled={!isValidCoords(editForm)} // disable if no coords
+                      >
+                        Save
+                      </button>
+                      <button className={styles.cancelBtn} onClick={cancelEdit}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
             {addresses.length < 3 && editId === null && (
               <div className={styles.addButtonWrap}>
                 <button
@@ -318,10 +373,10 @@ export default function Checkout() {
                 </button>
               </div>
             )}
-          </>
+          </div>
         )}
 
-        {(addresses.length === 0 || addMode) && addresses.length < 3 ? (
+        {(addresses.length === 0 || addMode) && addresses.length < 3 && (
           <div className={styles.addFormCard}>
             <h4 className={styles.addHeading}>Add New Address</h4>
             <input
@@ -362,13 +417,34 @@ export default function Checkout() {
               maxLength="6"
               inputMode="numeric"
               value={addForm.pincode || ""}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, "");
-                setAddForm({ ...addForm, pincode: val });
-              }}
+              onChange={(e) =>
+                setAddForm({
+                  ...addForm,
+                  pincode: e.target.value.replace(/\D/g, ""),
+                })
+              }
             />
+
+            {/* Use My Location */}
+            <button
+              className={styles.useLocationBtn}
+              onClick={() => useMyLocation(addForm, setAddForm)}
+            >
+              Use My Location
+            </button>
+            {isValidCoords(addForm) && (
+              <p>
+                Lat: {addForm.coords.lat.toFixed(5)}, Lon:{" "}
+                {addForm.coords.lon.toFixed(5)}
+              </p>
+            )}
+
             <div className={styles.addFormActions}>
-              <button className={styles.saveBtn} onClick={handleAddAddress}>
+              <button
+                className={styles.saveBtn}
+                onClick={handleAddAddress}
+                disabled={!isValidCoords(addForm)} // disable if no coords
+              >
                 Save
               </button>
               <button
@@ -379,10 +455,10 @@ export default function Checkout() {
               </button>
             </div>
           </div>
-        ) : null}
+        )}
       </div>
 
-      {/* === Summary === */}
+      {/* Summary */}
       <div className={styles.summary}>
         <h3>Total: ₹{total.toFixed(2)}</h3>
         {error && <p className={styles.error}>{error}</p>}
