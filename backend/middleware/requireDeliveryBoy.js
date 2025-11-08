@@ -1,3 +1,4 @@
+// backend\middleware\requireDeliveryBoy.js
 import jwt from "jsonwebtoken";
 import DeliveryBoy from "../models/DeliveryBoy.js";
 
@@ -51,17 +52,10 @@ export async function requireDeliveryBoy(req, res, next) {
         });
     }
 
-    if (!deliveryBoy.isActive) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "Your account has been deactivated by admin",
-        });
-    }
+    // ⚡ Removed isActive check entirely
 
     req.user = deliveryBoy;
-    req.deliveryBoyId = deliveryBoy._id; // optional shortcut
+    req.deliveryBoyId = deliveryBoy._id;
     next();
   } catch (err) {
     console.error("❌ requireDeliveryBoy middleware error:", err);

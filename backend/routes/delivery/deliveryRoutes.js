@@ -6,13 +6,19 @@ import { requireDeliveryBoy } from "../../middleware/requireDeliveryBoy.js";
 const router = express.Router();
 
 /* -------------------------------------------------------------------------- */
-/* 🚀 GET: All Orders Available for Delivery Partner                          */
+/* 🚀 GET: All Available Orders for Delivery Partner                          */
 /* -------------------------------------------------------------------------- */
-// ✅ Show only admin-approved (PROCESSING) orders with no assigned deliveryBoy
-// ✅ Hide if this deliveryBoy already has an active `currentOrder`
 router.get("/available", requireDeliveryBoy, async (req, res) => {
   try {
     const deliveryBoy = req.user;
+
+    // 🛑 Block if delivery boy is inactive
+    if (!deliveryBoy.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is inactive. Activate to see available orders.",
+      });
+    }
 
     // 🛑 Block if they already have an ongoing delivery
     if (deliveryBoy.currentOrder) {
@@ -48,13 +54,17 @@ router.get("/available", requireDeliveryBoy, async (req, res) => {
 /* -------------------------------------------------------------------------- */
 /* 🛵 PATCH: Accept an Order                                                  */
 /* -------------------------------------------------------------------------- */
-// ✅ Assign delivery boy to order
-// ✅ Set `currentOrder` to this order
 router.patch("/accept/:id", requireDeliveryBoy, async (req, res) => {
   try {
     const deliveryBoy = req.user;
 
-    // 🛑 Prevent accepting another order while one is active
+    if (!deliveryBoy.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Activate your account to accept orders.",
+      });
+    }
+
     if (deliveryBoy.currentOrder) {
       return res.status(403).json({
         success: false,
@@ -64,7 +74,9 @@ router.patch("/accept/:id", requireDeliveryBoy, async (req, res) => {
 
     const order = await Order.findById(req.params.id);
     if (!order)
-      return res.status(404).json({ success: false, message: "Order not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
 
     if (order.status !== "PROCESSING" || order.deliveryBoy)
       return res.status(400).json({
@@ -72,13 +84,13 @@ router.patch("/accept/:id", requireDeliveryBoy, async (req, res) => {
         message: "Order not available for delivery assignment",
       });
 
-    // ✅ Assign order
+    // Assign order
     order.deliveryBoy = deliveryBoy._id;
     order.status = "OUT_FOR_DELIVERY";
     order.timestampsLog.outForDeliveryAt = new Date();
     await order.save();
 
-    // ✅ Update delivery boy
+    // Update delivery boy
     await DeliveryBoy.findByIdAndUpdate(deliveryBoy._id, {
       $inc: { "stats.accepted": 1 },
       $set: { currentOrder: order._id },
@@ -98,15 +110,15 @@ router.patch("/accept/:id", requireDeliveryBoy, async (req, res) => {
 /* -------------------------------------------------------------------------- */
 /* 📦 PATCH: Mark Order as Delivered                                          */
 /* -------------------------------------------------------------------------- */
-// ✅ Marks the order delivered
-// ✅ Clears `currentOrder` from deliveryBoy
 router.patch("/delivered/:id", requireDeliveryBoy, async (req, res) => {
   try {
     const deliveryBoy = req.user;
 
     const order = await Order.findById(req.params.id);
     if (!order)
-      return res.status(404).json({ success: false, message: "Order not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
 
     if (String(order.deliveryBoy) !== String(deliveryBoy._id))
       return res.status(403).json({
