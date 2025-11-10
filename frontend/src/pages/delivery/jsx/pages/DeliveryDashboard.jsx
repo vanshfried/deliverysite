@@ -1,8 +1,50 @@
 import React, { useEffect, useState, useRef } from "react";
 import API from "../../api/api";
 import styles from "../../css/DeliveryDashboard.module.css";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMapEvents,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+
+// MapPicker for delivery location
+function MapPicker({ coords, setCoords }) {
+  const [position, setPosition] = useState(coords);
+
+  const LocationMarker = () => {
+    useMapEvents({
+      click(e) {
+        const { lat, lng } = e.latlng;
+        setPosition({ lat, lon: lng });
+        setCoords({ lat, lon: lng });
+      },
+    });
+
+    return position ? (
+      <Marker position={[position.lat, position.lon]}>
+        <Popup>Delivery Location</Popup>
+      </Marker>
+    ) : null;
+  };
+
+  return (
+    <MapContainer
+      center={[position.lat, position.lon]}
+      zoom={15}
+      minZoom={5}
+      style={{ height: "300px", width: "100%" }}
+    >
+      <TileLayer
+        url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+        subdomains={["mt0", "mt1", "mt2", "mt3"]}
+      />
+      <LocationMarker />
+    </MapContainer>
+  );
+}
 
 export default function DeliveryDashboard() {
   const [deliveryBoy, setDeliveryBoy] = useState(null);
@@ -20,15 +62,16 @@ export default function DeliveryDashboard() {
     msgTimeoutRef.current = setTimeout(() => setMsg(""), duration);
   };
 
-  // Fetch profile and check for current order
+  // Fetch delivery boy profile
   const fetchProfile = async () => {
     try {
       const res = await API.get("/api/delivery/me");
       if (!mountedRef.current) return;
+
       if (res?.data?.success) {
         const deliveryBoyData = res.data.deliveryBoy;
         setDeliveryBoy(deliveryBoyData);
-        // Fetch current order if exists
+
         if (deliveryBoyData.currentOrder) {
           fetchCurrentOrder(deliveryBoyData.currentOrder);
         }
@@ -104,7 +147,6 @@ export default function DeliveryDashboard() {
 
     try {
       const res = await API.patch(endpoint);
-
       if (!mountedRef.current) return;
 
       if (res?.data?.success) {
@@ -127,6 +169,33 @@ export default function DeliveryDashboard() {
       if (!mountedRef.current) return;
       showMessage(err.response?.data?.message || "Request failed");
     }
+  };
+
+  const useMyLocation = (setCoords) => {
+    if (!navigator.geolocation) {
+      return showMessage("Geolocation not supported ❌");
+    }
+
+    showMessage("Fetching location...");
+    const tryGetPosition = (retries = 3) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          if (accuracy > 20 && retries > 0) {
+            tryGetPosition(retries - 1);
+            return;
+          }
+          setCoords({
+            lat: Number(latitude.toFixed(6)),
+            lon: Number(longitude.toFixed(6)),
+          });
+          showMessage("Location fetched ✅", 2000);
+        },
+        () => showMessage("Failed to get location ❌"),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    };
+    tryGetPosition();
   };
 
   useEffect(() => {
@@ -162,25 +231,28 @@ export default function DeliveryDashboard() {
     );
   };
 
-  const indiaBounds = [
-    [6.5546079, 68.1113787], // Southwest corner
-    [35.6745457, 97.395561], // Northeast corner
-  ];
-
   const renderMap = (coords) => {
     if (!coords) return null;
+
     return (
       <div className={styles.mapContainer}>
         <MapContainer
           center={[coords.lat, coords.lon]}
-          zoom={5}
+          zoom={15}
           minZoom={5}
-          maxBounds={indiaBounds} // restrict view to India
           style={{ height: "300px", width: "100%" }}
+          scrollWheelZoom={false} // disable zoom scrolling
+          doubleClickZoom={false} // disable double click zoom
+          dragging={false} // disable dragging
+          touchZoom={false} // disable touch zoom
+          keyboard={false} // disable keyboard controls
         >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <TileLayer
+            url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+            subdomains={["mt0", "mt1", "mt2", "mt3"]}
+          />
           <Marker position={[coords.lat, coords.lon]}>
-            <Popup>Drop Location</Popup>
+            <Popup>Delivery Location</Popup>
           </Marker>
         </MapContainer>
       </div>

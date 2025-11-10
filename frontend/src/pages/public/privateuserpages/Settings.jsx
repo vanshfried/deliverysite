@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import API from "../../../api/api";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./css/Settings.module.css";
@@ -27,6 +27,7 @@ export default function Settings() {
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [addMode, setAddMode] = useState(false);
+  const [addForm, setAddForm] = useState({});
 
   const showToast = (message, type = "success") => {
     setToast({ show: true, message, type });
@@ -38,38 +39,90 @@ export default function Settings() {
   }, []);
 
   const fetchUser = async () => {
-    const res = await API.get("/users/me");
-    if (!res) return setLoading(false);
-    const u = res.data.user;
-    setUser(u);
-    setName(u.name || "");
-    setAddresses(u.addresses || []);
-    setLoading(false);
+    try {
+      const res = await API.get("/users/me");
+      const u = res.data.user;
+      setUser(u);
+      setName(u.name || "");
+      setAddresses(u.addresses || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateName = async () => {
     if (!name.trim()) return showToast("Enter a valid name", "error");
-    const res = await API.put("/users/update", { name });
-    if (!res) return;
-    setUser((prev) => ({ ...prev, name }));
-    showToast("Name updated ✅");
+    try {
+      await API.put("/users/update", { name });
+      setUser((prev) => ({ ...prev, name }));
+      showToast("Name updated ✅");
+    } catch {
+      showToast("Failed to update name ❌", "error");
+    }
   };
 
-  const useMyLocation = () => {
-    if (!navigator.geolocation) {
-      return showToast("Geolocation not supported ❌", "error");
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setEditForm((prev) => ({
-          ...prev,
-          coords: { lat: latitude, lon: longitude },
-        }));
-        showToast("Location set ✅");
-      },
-      () => showToast("Failed to get location ❌", "error")
+  // ------------------ MapPicker ------------------
+  const MapPicker = ({ coords, setCoords }) => {
+    const [position, setPosition] = useState(coords || { lat: 28, lon: 78 });
+
+    const LocationMarker = () => {
+      useMapEvents({
+        click(e) {
+          const { lat, lng } = e.latlng;
+          setPosition({ lat, lon: lng });
+          setCoords({ lat, lon: lng });
+        },
+      });
+      return position ? (
+        <Marker position={[position.lat, position.lon]} />
+      ) : null;
+    };
+
+    return (
+      <MapContainer
+        center={[position.lat, position.lon]}
+        zoom={15}
+        style={{ height: "250px", width: "100%", marginBottom: "1rem" }}
+      >
+        <TileLayer
+          url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+          subdomains={["mt0", "mt1", "mt2", "mt3"]}
+        />
+        <LocationMarker />
+      </MapContainer>
     );
+  };
+
+  const useMyLocation = (targetForm, setTargetForm) => {
+    if (!navigator.geolocation)
+      return showToast("Geolocation not supported ❌", "error");
+
+    showToast("Fetching location...");
+    const tryGetPosition = (retries = 3) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          if (accuracy > 20 && retries > 0) {
+            tryGetPosition(retries - 1);
+            return;
+          }
+          setTargetForm((prev) => ({
+            ...prev,
+            coords: {
+              lat: Number(latitude.toFixed(6)),
+              lon: Number(longitude.toFixed(6)),
+            },
+            accuracy,
+          }));
+          showToast("Location set ✅");
+        },
+        () => showToast("Failed to get location ❌", "error"),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    };
+    tryGetPosition();
   };
 
   const isValidCoords = (addr) =>
@@ -78,22 +131,29 @@ export default function Settings() {
     typeof addr.coords.lat === "number" &&
     typeof addr.coords.lon === "number";
 
-  // ---------------------------- Address handlers ----------------------------
+  // ------------------ Address Handlers ------------------
   const handleAddAddress = async () => {
-    if (!editForm.houseNo || !editForm.laneOrSector || !editForm.pincode)
+    if (!addForm.houseNo || !addForm.laneOrSector || !addForm.pincode)
       return showToast("Missing required fields ❌", "error");
-    if (!/^\d{6}$/.test(editForm.pincode))
+    if (!/^\d{6}$/.test(addForm.pincode))
       return showToast("Pincode must be 6 digits ❌", "error");
-    if (!isValidCoords(editForm)) return showToast("Set location ❌", "error");
+    if (!isValidCoords(addForm))
+      return showToast("Pick location on map ❌", "error");
 
-    const res = await API.post("/users/address", editForm);
-    if (!res) return;
-    if (res.data.addresses) setAddresses(res.data.addresses);
-    if (res.data.defaultAddress)
-      setUser((prev) => ({ ...prev, defaultAddress: res.data.defaultAddress }));
-    setEditForm({});
-    setAddMode(false);
-    showToast("Address added ✅");
+    try {
+      const res = await API.post("/users/address", addForm);
+      if (res.data.addresses) setAddresses(res.data.addresses);
+      if (res.data.defaultAddress)
+        setUser((prev) => ({
+          ...prev,
+          defaultAddress: res.data.defaultAddress,
+        }));
+      setAddForm({});
+      setAddMode(false);
+      showToast("Address added ✅");
+    } catch {
+      showToast("Failed to add address ❌", "error");
+    }
   };
 
   const startEdit = (addr) => {
@@ -107,36 +167,50 @@ export default function Settings() {
       return showToast("Missing required fields ❌", "error");
     if (!/^\d{6}$/.test(editForm.pincode))
       return showToast("Pincode must be 6 digits ❌", "error");
-    if (!isValidCoords(editForm)) return showToast("Set location ❌", "error");
+    if (!isValidCoords(editForm))
+      return showToast("Pick location on map ❌", "error");
 
-    const res = await API.put(`/users/address/${editId}`, editForm);
-    if (!res) return;
-    if (res.data.addresses) setAddresses(res.data.addresses);
-    setEditId(null);
-    setEditForm({});
-    showToast("Updated ✅");
+    try {
+      const res = await API.put(`/users/address/${editId}`, editForm);
+      if (res.data.addresses) setAddresses(res.data.addresses);
+      setEditId(null);
+      setEditForm({});
+      showToast("Address updated ✅");
+    } catch {
+      showToast("Failed to update address ❌", "error");
+    }
   };
 
   const cancelEdit = () => {
     setEditId(null);
     setEditForm({});
     setAddMode(false);
+    setAddForm({});
   };
 
   const setDefaultAddress = async (id) => {
-    const res = await API.put(`/users/address/default/${id}`);
-    if (!res) return;
-    if (res.data.addresses) setAddresses(res.data.addresses);
-    if (res.data.defaultAddress)
-      setUser((prev) => ({ ...prev, defaultAddress: res.data.defaultAddress }));
-    showToast("Default updated ✅");
+    try {
+      const res = await API.put(`/users/address/default/${id}`);
+      if (res.data.addresses) setAddresses(res.data.addresses);
+      if (res.data.defaultAddress)
+        setUser((prev) => ({
+          ...prev,
+          defaultAddress: res.data.defaultAddress,
+        }));
+      showToast("Default updated ✅");
+    } catch {
+      showToast("Failed to set default ❌", "error");
+    }
   };
 
   const removeAddress = async (id) => {
-    const res = await API.delete(`/users/address/${id}`);
-    if (!res) return;
-    if (res.data.addresses) setAddresses(res.data.addresses);
-    showToast("Removed ✅");
+    try {
+      const res = await API.delete(`/users/address/${id}`);
+      if (res.data.addresses) setAddresses(res.data.addresses);
+      showToast("Removed ✅");
+    } catch {
+      showToast("Failed to remove ❌", "error");
+    }
   };
 
   const deleteAccount = async () => {
@@ -166,8 +240,7 @@ export default function Settings() {
         <button
           onClick={() => {
             setActiveTab("account");
-            setEditId(null);
-            setAddMode(false);
+            cancelEdit();
           }}
           className={activeTab === "account" ? styles.activeTab : ""}
         >
@@ -176,8 +249,7 @@ export default function Settings() {
         <button
           onClick={() => {
             setActiveTab("addresses");
-            setEditId(null);
-            setAddMode(false);
+            cancelEdit();
           }}
           className={activeTab === "addresses" ? styles.activeTab : ""}
         >
@@ -186,8 +258,7 @@ export default function Settings() {
         <button
           onClick={() => {
             setActiveTab("delete");
-            setEditId(null);
-            setAddMode(false);
+            cancelEdit();
           }}
           className={activeTab === "delete" ? styles.activeTab : ""}
         >
@@ -199,6 +270,7 @@ export default function Settings() {
       </aside>
 
       <main className={styles.content}>
+        {/* === Account Tab === */}
         {activeTab === "account" && (
           <section className={styles.section}>
             <h2>Profile</h2>
@@ -233,13 +305,12 @@ export default function Settings() {
           </section>
         )}
 
+        {/* === Addresses Tab === */}
         {activeTab === "addresses" && (
           <section className={styles.section}>
             <h2>Saved Addresses</h2>
-            {addresses.length === 0 && (
-              <p className={styles.emptyText}>No addresses added yet.</p>
-            )}
 
+            {/* List Addresses */}
             {addresses.map((addr) => (
               <div
                 key={addr._id}
@@ -247,62 +318,7 @@ export default function Settings() {
                   isDefault(addr) ? styles.defaultAddressCard : ""
                 }`}
               >
-                {editId !== addr._id ? (
-                  <>
-                    <div className={styles.cardHeader}>
-                      <strong className={styles.addrLabel}>
-                        {addr.label || "Address"}
-                      </strong>
-                      {isDefault(addr) && (
-                        <span className={styles.defaultBadge}>Default</span>
-                      )}
-                    </div>
-                    <p className={styles.addrLine}>
-                      {addr.houseNo}, {addr.laneOrSector}
-                    </p>
-                    {addr.landmark && (
-                      <p className={styles.addrLine}>{addr.landmark}</p>
-                    )}
-                    <p className={styles.addrLine}>{addr.pincode}</p>
-                    {addr.coords && (
-                      <div className={styles.smallMap}>
-                        <MapContainer
-                          center={[addr.coords.lat, addr.coords.lon]}
-                          zoom={16}
-                          style={{ height: "100%", width: "100%" }}
-                          scrollWheelZoom={false}
-                        >
-                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                          <Marker position={[addr.coords.lat, addr.coords.lon]}>
-                            <Popup>{addr.label || "Address"}</Popup>
-                          </Marker>
-                        </MapContainer>
-                      </div>
-                    )}
-                    <div className={styles.cardActions}>
-                      {!isDefault(addr) && (
-                        <button
-                          className={styles.setDefaultBtn}
-                          onClick={() => setDefaultAddress(addr._id)}
-                        >
-                          Set Default
-                        </button>
-                      )}
-                      <button
-                        className={styles.editBtn}
-                        onClick={() => startEdit(addr)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className={styles.deleteBtn}
-                        onClick={() => removeAddress(addr._id)}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </>
-                ) : (
+                {editId === addr._id ? (
                   <>
                     <input
                       placeholder="Label"
@@ -352,39 +368,22 @@ export default function Settings() {
                         })
                       }
                     />
-
+                    <MapPicker
+                      coords={editForm.coords}
+                      setCoords={(coords) =>
+                        setEditForm({ ...editForm, coords })
+                      }
+                    />
                     <button
                       className={styles.useLocationBtn}
-                      onClick={useMyLocation}
+                      onClick={() => useMyLocation(editForm, setEditForm)}
                     >
                       Use My Location
                     </button>
-
-                    {editForm.coords && (
-                      <div className={styles.smallMap}>
-                        <MapContainer
-                          center={[editForm.coords.lat, editForm.coords.lon]}
-                          zoom={16}
-                          style={{ height: "100%", width: "100%" }}
-                          scrollWheelZoom={false}
-                        >
-                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                          <Marker
-                            position={[
-                              editForm.coords.lat,
-                              editForm.coords.lon,
-                            ]}
-                          >
-                            <Popup>{editForm.label || "Address"}</Popup>
-                          </Marker>
-                        </MapContainer>
-                      </div>
-                    )}
-
                     <div className={styles.cardActions}>
                       <button
                         className={styles.saveBtn}
-                        onClick={editId ? saveEdit : handleAddAddress}
+                        onClick={saveEdit}
                         disabled={!isValidCoords(editForm)}
                       >
                         Save
@@ -394,26 +393,141 @@ export default function Settings() {
                       </button>
                     </div>
                   </>
+                ) : (
+                  <>
+                    <div className={styles.cardHeader}>
+                      <strong className={styles.addrLabel}>
+                        {addr.label || "Address"}
+                      </strong>
+                      {isDefault(addr) && (
+                        <span className={styles.defaultBadge}>Default</span>
+                      )}
+                    </div>
+                    <p className={styles.addrLine}>
+                      {addr.houseNo}, {addr.laneOrSector}
+                    </p>
+                    {addr.landmark && (
+                      <p className={styles.addrLine}>{addr.landmark}</p>
+                    )}
+                    <p className={styles.addrLine}>{addr.pincode}</p>
+                    <div className={styles.cardActions}>
+                      {!isDefault(addr) && (
+                        <button
+                          className={styles.setDefaultBtn}
+                          onClick={() => setDefaultAddress(addr._id)}
+                        >
+                          Set Default
+                        </button>
+                      )}
+                      <button
+                        className={styles.editBtn}
+                        onClick={() => startEdit(addr)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() => removeAddress(addr._id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
             ))}
 
-            {addresses.length < 3 && editId === null && !addMode && (
-              <div className={styles.addButtonWrap}>
-                <button
-                  className={styles.addBtnPrimary}
-                  onClick={() => {
-                    setAddMode(true);
-                    setEditForm({});
-                  }}
-                >
-                  + Add New Address
-                </button>
-              </div>
+            {/* Add Address */}
+            {addresses.length < 3 && editId === null && (
+              <>
+                {!addMode && (
+                  <div className={styles.addButtonWrap}>
+                    <button
+                      className={styles.addBtnPrimary}
+                      onClick={() => setAddMode(true)}
+                    >
+                      + Add New Address
+                    </button>
+                  </div>
+                )}
+                {addMode && (
+                  <div className={styles.addFormCard}>
+                    <h4 className={styles.addHeading}>Add New Address</h4>
+                    <input
+                      className={styles.input}
+                      placeholder="Label (Home / Office)"
+                      value={addForm.label || ""}
+                      onChange={(e) =>
+                        setAddForm({ ...addForm, label: e.target.value })
+                      }
+                    />
+                    <input
+                      className={styles.input}
+                      placeholder="House No *"
+                      value={addForm.houseNo || ""}
+                      onChange={(e) =>
+                        setAddForm({ ...addForm, houseNo: e.target.value })
+                      }
+                    />
+                    <input
+                      className={styles.input}
+                      placeholder="Lane / Sector *"
+                      value={addForm.laneOrSector || ""}
+                      onChange={(e) =>
+                        setAddForm({ ...addForm, laneOrSector: e.target.value })
+                      }
+                    />
+                    <input
+                      className={styles.input}
+                      placeholder="Landmark"
+                      value={addForm.landmark || ""}
+                      onChange={(e) =>
+                        setAddForm({ ...addForm, landmark: e.target.value })
+                      }
+                    />
+                    <input
+                      className={styles.input}
+                      placeholder="Pincode *"
+                      maxLength="6"
+                      inputMode="numeric"
+                      value={addForm.pincode || ""}
+                      onChange={(e) =>
+                        setAddForm({
+                          ...addForm,
+                          pincode: e.target.value.replace(/\D/g, ""),
+                        })
+                      }
+                    />
+                    <MapPicker
+                      coords={addForm.coords}
+                      setCoords={(coords) => setAddForm({ ...addForm, coords })}
+                    />
+                    <button
+                      className={styles.useLocationBtn}
+                      onClick={() => useMyLocation(addForm, setAddForm)}
+                    >
+                      Use My Location
+                    </button>
+                    <div className={styles.cardActions}>
+                      <button
+                        className={styles.saveBtn}
+                        onClick={handleAddAddress}
+                        disabled={!isValidCoords(addForm)}
+                      >
+                        Save
+                      </button>
+                      <button className={styles.cancelBtn} onClick={cancelEdit}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </section>
         )}
 
+        {/* === Delete Tab === */}
         {activeTab === "delete" && (
           <section className={styles.sectionDanger}>
             <h2>Delete Account</h2>

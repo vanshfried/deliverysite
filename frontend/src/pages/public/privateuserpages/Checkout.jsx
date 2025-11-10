@@ -5,6 +5,10 @@ import { CartContext } from "../../admin/Context/CartContext";
 import { AuthContext } from "../../admin/Context/AuthContext";
 import styles from "./css/Checkout.module.css";
 
+// Leaflet imports
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+
 export default function Checkout() {
   const { cart, clearCart } = useContext(CartContext);
   const { userLoggedIn } = useContext(AuthContext);
@@ -38,19 +42,19 @@ export default function Checkout() {
     }
   }, [userLoggedIn, cart, location, navigate]);
 
-  /* Geolocation helper: high-accuracy, retry if needed */
+  /* Geolocation helper */
   const useMyLocation = (targetForm, setTargetForm) => {
     if (!navigator.geolocation) {
       setError("Geolocation not supported ❌");
       return;
     }
 
+    setError("Fetching location...");
     const tryGetPosition = (retries = 3) => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude, accuracy } = position.coords;
 
-          // Retry if accuracy > 20 meters
           if (accuracy > 20 && retries > 0) {
             tryGetPosition(retries - 1);
             return;
@@ -74,13 +78,48 @@ export default function Checkout() {
     tryGetPosition();
   };
 
+  /* Map Picker component using Google Maps tiles */
+  const MapPicker = ({ coords, setCoords }) => {
+    const [position, setPosition] = useState(
+      coords || { lat: 28, lon: 78 }
+    );
+
+    const LocationMarker = () => {
+      useMapEvents({
+        click(e) {
+          const { lat, lng } = e.latlng;
+          setPosition({ lat, lon: lng });
+          setCoords({ lat, lon: lng });
+        },
+      });
+      return position ? (
+        <Marker position={[position.lat, position.lon]} />
+      ) : null;
+    };
+
+    return (
+      <MapContainer
+        center={[position.lat, position.lon]}
+        zoom={15}
+        style={{ height: "250px", width: "100%", marginBottom: "1rem" }}
+      >
+        {/* Google Maps tiles */}
+        <TileLayer
+          url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+          subdomains={["mt0", "mt1", "mt2", "mt3"]}
+        />
+        <LocationMarker />
+      </MapContainer>
+    );
+  };
+
   const isValidCoords = (addr) =>
     addr &&
     addr.coords &&
     typeof addr.coords.lat === "number" &&
     typeof addr.coords.lon === "number";
 
-  // Fetch addresses
+  /* Fetch addresses */
   useEffect(() => {
     if (!userLoggedIn) return;
 
@@ -114,12 +153,14 @@ export default function Checkout() {
     0
   );
 
-  // Add address
+  // Add, edit, cancel, place order handlers remain the same, just using MapPicker
+
   const handleAddAddress = async () => {
     if (addresses.length >= 3) return;
     if (!addForm.houseNo || !addForm.laneOrSector || !addForm.pincode)
       return setError("Missing required fields ❌");
-    if (!isValidCoords(addForm)) return setError("Please set your location ❌");
+    if (!isValidCoords(addForm))
+      return setError("Please pick your location on the map ❌");
 
     try {
       const res = await API.post("/users/address", addForm);
@@ -133,7 +174,6 @@ export default function Checkout() {
     }
   };
 
-  // Edit address
   const startEdit = (addr) => {
     setEditId(addr._id);
     setEditForm({ ...addr });
@@ -146,7 +186,7 @@ export default function Checkout() {
     if (!/^\d{6}$/.test(editForm.pincode))
       return setError("Pincode must be 6 digits ❌");
     if (!isValidCoords(editForm))
-      return setError("Please set your location ❌");
+      return setError("Please pick your location on the map ❌");
 
     try {
       const res = await API.put(`/users/address/${editId}`, editForm);
@@ -164,7 +204,6 @@ export default function Checkout() {
     setEditForm({});
   };
 
-  // Place order
   const handlePlaceOrder = async () => {
     if (!selectedAddress) return setError("Please select an address ❌");
     const addr = addresses.find((a) => a._id === selectedAddress);
@@ -199,7 +238,6 @@ export default function Checkout() {
     }
   };
 
-  /* Early returns */
   if (accessDenied)
     return (
       <div className={styles.accessDenied}>
@@ -220,6 +258,8 @@ export default function Checkout() {
   if (loading) return <p className={styles.loading}>Loading...</p>;
   if (items.length === 0)
     return <div className={styles.emptyCheckout}>No items to checkout.</div>;
+
+  /* MAIN CHECKOUT UI */
 
   /* MAIN CHECKOUT UI */
   return (
@@ -344,7 +384,15 @@ export default function Checkout() {
                       }
                     />
 
-                    {/* Use My Location */}
+                    {/* Map Picker for Edit */}
+                    <MapPicker
+                      coords={editForm.coords}
+                      setCoords={(coords) =>
+                        setEditForm({ ...editForm, coords })
+                      }
+                    />
+
+                    {/* GPS button fallback */}
                     <button
                       className={styles.useLocationBtn}
                       onClick={() => useMyLocation(editForm, setEditForm)}
@@ -430,7 +478,13 @@ export default function Checkout() {
               }
             />
 
-            {/* Use My Location */}
+            {/* Map Picker for Add */}
+            <MapPicker
+              coords={addForm.coords}
+              setCoords={(coords) => setAddForm({ ...addForm, coords })}
+            />
+
+            {/* GPS button fallback */}
             <button
               className={styles.useLocationBtn}
               onClick={() => useMyLocation(addForm, setAddForm)}
