@@ -6,26 +6,39 @@ import {
   TileLayer,
   Marker,
   Popup,
+  Polyline,
   useMapEvents,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
-// MapPicker for delivery location
-function MapPicker({ coords, setCoords }) {
+// ------------------------ Leaflet Default Icon Fix ------------------------
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
+
+// ------------------------ MapPicker Component ------------------------
+function MapPicker({ coords, setCoords, label, shrink }) {
   const [position, setPosition] = useState(coords);
 
   const LocationMarker = () => {
     useMapEvents({
       click(e) {
         const { lat, lng } = e.latlng;
-        setPosition({ lat, lon: lng });
-        setCoords({ lat, lon: lng });
+        const newCoords = { lat, lon: lng };
+        setPosition(newCoords);
+        setCoords(newCoords);
       },
     });
-
     return position ? (
       <Marker position={[position.lat, position.lon]}>
-        <Popup>Delivery Location</Popup>
+        <Popup>{label}</Popup>
       </Marker>
     ) : null;
   };
@@ -35,7 +48,7 @@ function MapPicker({ coords, setCoords }) {
       center={[position.lat, position.lon]}
       zoom={15}
       minZoom={5}
-      style={{ height: "300px", width: "100%" }}
+      className={`${styles.mapContainer} ${shrink ? styles.shrink : ""}`}
     >
       <TileLayer
         url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
@@ -46,35 +59,74 @@ function MapPicker({ coords, setCoords }) {
   );
 }
 
+// ------------------------ Main Dashboard Component ------------------------
 export default function DeliveryDashboard() {
   const [deliveryBoy, setDeliveryBoy] = useState(null);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState("");
   const [currentOrder, setCurrentOrder] = useState(null);
   const [orderLoading, setOrderLoading] = useState(false);
+  const [liveCoords, setLiveCoords] = useState({ lat: 20.5937, lon: 78.9629 });
+  const [mapShrink, setMapShrink] = useState(false);
 
   const msgTimeoutRef = useRef(null);
   const mountedRef = useRef(true);
+  const watchIdRef = useRef(null);
 
+  // ------------------------ Helper Functions ------------------------
   const showMessage = (text, duration = 3000) => {
     setMsg(text);
     if (msgTimeoutRef.current) clearTimeout(msgTimeoutRef.current);
     msgTimeoutRef.current = setTimeout(() => setMsg(""), duration);
   };
 
-  // Fetch delivery boy profile
+  const updateLiveLocation = async ({ lat, lon }) => {
+    try {
+      await API.patch("/api/delivery/orders/location", { lat, lon });
+    } catch (err) {
+      console.error("Failed to update location", err);
+    }
+  };
+
+  const startTracking = () => {
+    if (!navigator.geolocation)
+      return showMessage("Geolocation not supported ❌");
+    showMessage("Tracking live location...");
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        if (accuracy > 50) return;
+        const coords = {
+          lat: Number(latitude.toFixed(6)),
+          lon: Number(longitude.toFixed(6)),
+        };
+        setLiveCoords(coords);
+        updateLiveLocation(coords);
+      },
+      () => showMessage("Failed to get live location ❌"),
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    );
+  };
+
+  const stopTracking = () => {
+    if (watchIdRef.current)
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    watchIdRef.current = null;
+  };
+
+  // ------------------------ API Calls ------------------------
   const fetchProfile = async () => {
     try {
       const res = await API.get("/api/delivery/me");
       if (!mountedRef.current) return;
-
       if (res?.data?.success) {
-        const deliveryBoyData = res.data.deliveryBoy;
-        setDeliveryBoy(deliveryBoyData);
-
-        if (deliveryBoyData.currentOrder) {
-          fetchCurrentOrder(deliveryBoyData.currentOrder);
+        const data = res.data.deliveryBoy;
+        setDeliveryBoy(data);
+        if (data.location?.coordinates) {
+          const [lon, lat] = data.location.coordinates;
+          setLiveCoords({ lat, lon });
         }
+        if (data.currentOrder) fetchCurrentOrder(data.currentOrder);
       } else showMessage(res?.data?.error || "Failed to fetch profile");
     } catch (err) {
       if (!mountedRef.current) return;
@@ -90,7 +142,6 @@ export default function DeliveryDashboard() {
     try {
       const res = await API.get("/api/delivery/orders/my");
       if (!mountedRef.current) return;
-
       const activeOrder = res.data.orders.find((o) => o._id === orderId);
       setCurrentOrder(activeOrder || null);
     } catch (err) {
@@ -139,7 +190,6 @@ export default function DeliveryDashboard() {
 
   const handleOrderDecision = async (decision) => {
     if (!currentOrder) return;
-
     const endpoint =
       decision === "accept"
         ? `/api/delivery/orders/accept/${currentOrder._id}`
@@ -148,21 +198,10 @@ export default function DeliveryDashboard() {
     try {
       const res = await API.patch(endpoint);
       if (!mountedRef.current) return;
-
       if (res?.data?.success) {
         showMessage(res.data.message);
         setCurrentOrder(null);
-
-        // Refresh profile stats
-        const profileRes = await API.get("/api/delivery/me");
-        if (profileRes?.data?.success) {
-          setDeliveryBoy(profileRes.data.deliveryBoy);
-          if (profileRes.data.deliveryBoy.currentOrder) {
-            fetchCurrentOrder(profileRes.data.deliveryBoy.currentOrder);
-          }
-        }
-
-        // Fetch next available order
+        await fetchProfile();
         fetchNextOrder();
       } else showMessage(res?.data?.message || `Failed to ${decision} order`);
     } catch (err) {
@@ -171,47 +210,7 @@ export default function DeliveryDashboard() {
     }
   };
 
-  const useMyLocation = (setCoords) => {
-    if (!navigator.geolocation) {
-      return showMessage("Geolocation not supported ❌");
-    }
-
-    showMessage("Fetching location...");
-    const tryGetPosition = (retries = 3) => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude, accuracy } = position.coords;
-          if (accuracy > 20 && retries > 0) {
-            tryGetPosition(retries - 1);
-            return;
-          }
-          setCoords({
-            lat: Number(latitude.toFixed(6)),
-            lon: Number(longitude.toFixed(6)),
-          });
-          showMessage("Location fetched ✅", 2000);
-        },
-        () => showMessage("Failed to get location ❌"),
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-      );
-    };
-    tryGetPosition();
-  };
-
-  useEffect(() => {
-    mountedRef.current = true;
-    fetchProfile();
-    return () => {
-      mountedRef.current = false;
-      if (msgTimeoutRef.current) clearTimeout(msgTimeoutRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (deliveryBoy?.isActive && !deliveryBoy?.currentOrder) fetchNextOrder();
-    else if (!deliveryBoy?.isActive) setCurrentOrder(null);
-  }, [deliveryBoy?.isActive]);
-
+  // ------------------------ Map & Address Rendering ------------------------
   const renderAddress = (address) => {
     if (!address) return <p className={styles.noOrder}>No address</p>;
     const { label, houseNo, laneOrSector, landmark, pincode, coords } = address;
@@ -221,7 +220,7 @@ export default function DeliveryDashboard() {
     return (
       <div className={styles.addressCardCompact}>
         {addressLine}
-        {coords && typeof coords === "object" && (
+        {coords && (
           <span>
             {" "}
             | Lat: {coords.lat}, Lon: {coords.lon}
@@ -231,33 +230,53 @@ export default function DeliveryDashboard() {
     );
   };
 
-  const renderMap = (coords) => {
-    if (!coords) return null;
-
+  const renderMap = (orderCoords) => {
+    if (!orderCoords) return null;
+    const polylinePositions = [
+      [liveCoords.lat, liveCoords.lon],
+      [orderCoords.lat, orderCoords.lon],
+    ];
     return (
-      <div className={styles.mapContainer}>
-        <MapContainer
-          center={[coords.lat, coords.lon]}
-          zoom={15}
-          minZoom={5}
-          style={{ height: "300px", width: "100%" }}
-          scrollWheelZoom={false} // disable zoom scrolling
-          doubleClickZoom={false} // disable double click zoom
-          dragging={false} // disable dragging
-          touchZoom={false} // disable touch zoom
-          keyboard={false} // disable keyboard controls
-        >
-          <TileLayer
-            url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
-            subdomains={["mt0", "mt1", "mt2", "mt3"]}
-          />
-          <Marker position={[coords.lat, coords.lon]}>
-            <Popup>Delivery Location</Popup>
-          </Marker>
-        </MapContainer>
-      </div>
+      <MapContainer
+        center={[orderCoords.lat, orderCoords.lon]}
+        zoom={15}
+        className={`${styles.mapContainer} ${mapShrink ? styles.shrink : ""}`}
+      >
+        <TileLayer
+          url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+          subdomains={["mt0", "mt1", "mt2", "mt3"]}
+        />
+        <Marker position={[orderCoords.lat, orderCoords.lon]}>
+          <Popup>Delivery Location</Popup>
+        </Marker>
+        <Marker position={[liveCoords.lat, liveCoords.lon]}>
+          <Popup>My Live Location</Popup>
+        </Marker>
+        <Polyline positions={polylinePositions} color="#2196f3" />
+      </MapContainer>
     );
   };
+
+  // ------------------------ Lifecycle ------------------------
+  useEffect(() => {
+    mountedRef.current = true;
+    fetchProfile();
+    return () => {
+      mountedRef.current = false;
+      if (msgTimeoutRef.current) clearTimeout(msgTimeoutRef.current);
+      stopTracking();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (deliveryBoy?.isActive) {
+      startTracking();
+      if (!deliveryBoy?.currentOrder) fetchNextOrder();
+    } else {
+      stopTracking();
+      setCurrentOrder(null);
+    }
+  }, [deliveryBoy?.isActive]);
 
   if (loading) return <p className={styles.loading}>Loading...</p>;
   if (!deliveryBoy)
@@ -266,6 +285,7 @@ export default function DeliveryDashboard() {
   const { stats } = deliveryBoy;
   const totalOrders = stats.accepted + stats.delivered + stats.ignored;
 
+  // ------------------------ Render ------------------------
   return (
     <div className={styles.dashboard}>
       {msg && <div className={styles.toast}>{msg}</div>}
@@ -313,7 +333,6 @@ export default function DeliveryDashboard() {
                   <strong>Status:</strong> {currentOrder.status}
                 </span>
               </div>
-
               <div className={styles.customerInfo}>
                 <p>
                   <strong>Customer:</strong> {currentOrder.user?.name}
@@ -322,30 +341,9 @@ export default function DeliveryDashboard() {
                   <strong>Phone:</strong> {currentOrder.user?.phone}
                 </p>
               </div>
-
               {renderAddress(currentOrder.deliveryAddress)}
               {currentOrder.deliveryAddress?.coords &&
                 renderMap(currentOrder.deliveryAddress.coords)}
-
-              {currentOrder.items?.length > 0 && (
-                <div className={styles.itemsList}>
-                  <h4>Items</h4>
-                  {currentOrder.items.map((i, idx) => (
-                    <p key={idx}>
-                      {i.name} × {i.quantity}
-                    </p>
-                  ))}
-                </div>
-              )}
-
-              <div className={styles.orderFooter}>
-                <span>
-                  <strong>Total:</strong> ₹{currentOrder.totalAmount}
-                </span>
-                <span>
-                  <strong>Payment:</strong> {currentOrder.paymentMethod}
-                </span>
-              </div>
 
               <div className={styles.orderButtons}>
                 {!deliveryBoy.currentOrder && (
@@ -371,6 +369,50 @@ export default function DeliveryDashboard() {
           )}
         </section>
       )}
+
+      <section className={styles.locationPicker}>
+        <h2>Manual Location Fallback</h2>
+        <MapPicker
+          coords={liveCoords}
+          setCoords={setLiveCoords}
+          label="My Location"
+          shrink={mapShrink}
+        />
+        <div className={styles.locationButtons}>
+          <button
+            className={styles.getLiveBtn}
+            onClick={() => {
+              if (!navigator.geolocation)
+                return showMessage("Geolocation not supported");
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  const coords = {
+                    lat: Number(pos.coords.latitude.toFixed(6)),
+                    lon: Number(pos.coords.longitude.toFixed(6)),
+                  };
+                  setLiveCoords(coords);
+                  updateLiveLocation(coords);
+                  showMessage("Live location updated ✅");
+                },
+                () => showMessage("Failed to get live location ❌"),
+                { enableHighAccuracy: true }
+              );
+            }}
+          >
+            Get Live Location
+          </button>
+          <button
+            className={styles.saveLocationBtn}
+            onClick={() => {
+              updateLiveLocation(liveCoords);
+              showMessage("Location saved ✅");
+              setMapShrink(true); // shrink map after save
+            }}
+          >
+            Save Location
+          </button>
+        </div>
+      </section>
     </div>
   );
 }

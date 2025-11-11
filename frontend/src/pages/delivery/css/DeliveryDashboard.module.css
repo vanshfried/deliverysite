@@ -1,50 +1,63 @@
+/* ------------------------ General Layout ------------------------ */
 .dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  width: 100%;
+  padding: 15px;
   font-family: "Inter", sans-serif;
   color: #333;
+  background-color: #f4f5f7;
+  min-height: 100vh;
 }
 
-.loading, .error {
+.loading,
+.error {
   text-align: center;
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #666;
+  margin-top: 50px;
 }
 
+/* ------------------------ Toast ------------------------ */
 .toast {
   position: fixed;
   top: 20px;
-  right: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   background: #323232;
   color: #fff;
   padding: 12px 20px;
   border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   z-index: 1000;
   animation: fadeInOut 3s forwards;
 }
 
 @keyframes fadeInOut {
-  0%, 100% { opacity: 0; }
-  10%, 90% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0;
+  }
+  10%,
+  90% {
+    opacity: 1;
+  }
 }
 
+/* ------------------------ Header ------------------------ */
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .header h1 {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 600;
 }
 
 .toggleStatus {
-  padding: 10px 20px;
-  font-size: 0.95rem;
+  padding: 8px 15px;
+  font-size: 0.9rem;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -54,46 +67,59 @@
 
 .toggleStatus.active {
   background-color: #4caf50;
-  color: white;
+  color: #fff;
 }
 
+/* ------------------------ Stats ------------------------ */
 .stats {
   display: flex;
-  gap: 20px;
   flex-wrap: wrap;
-  margin-bottom: 40px;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .statCard {
-  flex: 1 1 150px;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  flex: 1 1 45%;
+  padding: 15px;
+  border-radius: 10px;
   text-align: center;
-  transition: transform 0.2s;
   background: #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s;
 }
 
 .statCard:hover {
-  transform: translateY(-5px);
+  transform: translateY(-3px);
 }
 
 .statLabel {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #666;
 }
 
 .statValue {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 600;
 }
 
-.accepted { border-top: 4px solid #2196f3; }
-.delivered { border-top: 4px solid #4caf50; }
-.rejected { border-top: 4px solid #f44336; }
-.total { border-top: 4px solid #ff9800; }
-.rating { border-top: 4px solid #9c27b0; }
+/* Stat colors */
+.accepted {
+  border-top: 4px solid #2196f3;
+}
+.delivered {
+  border-top: 4px solid #4caf50;
+}
+.rejected {
+  border-top: 4px solid #f44336;
+}
+.total {
+  border-top: 4px solid #ff9800;
+}
+.rating {
+  border-top: 4px solid #9c27b0;
+}
 
+/* ------------------------ Order Section ------------------------ */
 .currentOrder {
   margin-top: 20px;
 }
@@ -101,94 +127,157 @@
 .orderCard {
   background: #fff;
   border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  padding: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   margin-bottom: 20px;
 }
 
 .orderHeader {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   font-weight: 500;
+  flex-wrap: wrap;
 }
 
 .customerInfo p {
   margin: 4px 0;
+  font-size: 0.9rem;
 }
 
-.addressCard {
-  background: #f9f9f9;
-  padding: 10px 15px;
-  border-radius: 8px;
-  margin: 15px 0;
-  font-size: 0.9rem;
-  line-height: 1.4;
-}
+.addressCard,
 .addressCardCompact {
   background: #f9f9f9;
-  padding: 10px 15px;
+  padding: 10px 12px;
   border-radius: 8px;
+  margin: 10px 0;
   font-size: 0.9rem;
   color: #555;
+}
+
+.addressCardCompact {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .itemsList h4 {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   font-size: 1rem;
   font-weight: 600;
 }
 
 .itemsList p {
   margin: 2px 0;
+  font-size: 0.9rem;
 }
 
 .orderFooter {
   display: flex;
   justify-content: space-between;
-  margin-top: 15px;
+  margin-top: 10px;
   font-weight: 500;
+  flex-wrap: wrap;
 }
 
+/* ------------------------ Buttons ------------------------ */
 .orderButtons {
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  margin-top: 15px;
+  margin-top: 10px;
 }
 
-.acceptBtn, .rejectBtn {
-  flex: 1;
+.acceptBtn,
+.rejectBtn,
+.getLiveBtn,
+.saveLocationBtn {
   padding: 10px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s;
+  width: 100%;
 }
 
 .acceptBtn {
   background-color: #4caf50;
-  color: white;
+  color: #fff;
 }
-
 .acceptBtn:hover {
   background-color: #45a049;
 }
-
 .rejectBtn {
   background-color: #f44336;
-  color: white;
+  color: #fff;
 }
-
 .rejectBtn:hover {
   background-color: #e53935;
 }
+.getLiveBtn {
+  background-color: #2196f3;
+  color: #fff;
+}
+.getLiveBtn:hover {
+  background-color: #1976d2;
+}
+.saveLocationBtn {
+  background-color: #ff9800;
+  color: #fff;
+}
+.saveLocationBtn:hover {
+  background-color: #fb8c00;
+}
 
+/* ------------------------ Map Section ------------------------ */
+.mapContainer {
+  width: 100%;
+  height: 250px;
+  border-radius: 10px;
+  margin: 10px 0;
+  transition: height 0.3s ease;
+}
+
+.mapContainer.shrink {
+  height: 150px;
+}
+
+/* ------------------------ Location Picker ------------------------ */
+.locationPicker {
+  margin-top: 20px;
+}
+
+.locationButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* ------------------------ No Orders ------------------------ */
 .noOrder {
   text-align: center;
   color: #999;
   font-style: italic;
+}
+
+/* ------------------------ Media Queries ------------------------ */
+@media (min-width: 600px) {
+  .header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .statCard {
+    flex: 1 1 30%;
+  }
+  .orderButtons {
+    flex-direction: row;
+    gap: 10px;
+  }
+  .locationButtons {
+    flex-direction: row;
+    gap: 10px;
+  }
 }

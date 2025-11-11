@@ -39,14 +39,29 @@ const DeliveryBoySchema = new mongoose.Schema({
     rating: { type: Number, default: 0 },
   },
 
-  // ✅ New field to track rejected orders
   rejectedOrders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Order" }],
 
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
 
+  // ✅ New field for live location
+  location: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      default: "Point",
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      default: [0, 0],
+    },
+  },
+
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
+
+// Geo index for location (needed for geospatial queries)
+DeliveryBoySchema.index({ location: "2dsphere" });
 
 // Auto-update updatedAt timestamp
 DeliveryBoySchema.pre("save", function (next) {
@@ -55,4 +70,3 @@ DeliveryBoySchema.pre("save", function (next) {
 });
 
 export default mongoose.model("DeliveryBoy", DeliveryBoySchema);
-

@@ -40,9 +40,9 @@ router.post("/signup", async (req, res) => {
       name,
       phone,
       passwordHash,
-      isApproved: false, // admin approves later
+      isApproved: false,
       status: "pending",
-      isActive: true, // default active
+      isActive: true,
     });
 
     res.status(201).json({
@@ -92,7 +92,6 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // ✅ Generate JWT & store in secure cookie
     const token = jwt.sign({ id: deliveryBoy._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
@@ -101,7 +100,7 @@ router.post("/login", async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.json({
@@ -112,6 +111,7 @@ router.post("/login", async (req, res) => {
         name: deliveryBoy.name,
         phone: deliveryBoy.phone,
         isActive: deliveryBoy.isActive,
+        location: deliveryBoy.location, // ✅ include saved location
       },
     });
   } catch (err) {
@@ -142,7 +142,8 @@ router.post("/logout", async (req, res) => {
 /* -------------------------------------------------------------------------- */
 router.get("/me", requireDeliveryBoy, async (req, res) => {
   try {
-    const deliveryBoy = req.user;
+    const deliveryBoy = await DeliveryBoy.findById(req.user._id).lean();
+
     res.json({
       success: true,
       deliveryBoy: {
@@ -153,6 +154,7 @@ router.get("/me", requireDeliveryBoy, async (req, res) => {
         isActive: deliveryBoy.isActive,
         stats: deliveryBoy.stats,
         currentOrder: deliveryBoy.currentOrder,
+        location: deliveryBoy.location, // ✅ include location here
       },
     });
   } catch (err) {
@@ -167,8 +169,6 @@ router.get("/me", requireDeliveryBoy, async (req, res) => {
 router.patch("/status", requireDeliveryBoy, async (req, res) => {
   try {
     const deliveryBoy = req.user;
-
-    // Toggle isActive
     deliveryBoy.isActive = !deliveryBoy.isActive;
     await deliveryBoy.save();
 
@@ -182,6 +182,7 @@ router.patch("/status", requireDeliveryBoy, async (req, res) => {
         name: deliveryBoy.name,
         phone: deliveryBoy.phone,
         isActive: deliveryBoy.isActive,
+        location: deliveryBoy.location, // ✅ include location here too
       },
     });
   } catch (err) {

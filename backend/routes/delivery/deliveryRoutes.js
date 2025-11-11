@@ -220,5 +220,46 @@ router.patch("/reject/:id", requireDeliveryBoy, async (req, res) => {
     });
   }
 });
+/* -------------------------------------------------------------------------- */
+/* 📍 PATCH: Update Delivery Boy Live Location                                  */
+/* -------------------------------------------------------------------------- */
+router.patch("/location", requireDeliveryBoy, async (req, res) => {
+  try {
+    const { lat, lon } = req.body;
+
+    if (typeof lat !== "number" || typeof lon !== "number") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid coordinates",
+      });
+    }
+
+    const deliveryBoy = await DeliveryBoy.findByIdAndUpdate(
+      req.user._id,
+      {
+        $set: {
+          location: {
+            type: "Point",
+            coordinates: [lon, lat], // GeoJSON [lng, lat]
+          },
+        },
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: "Location updated successfully",
+      location: deliveryBoy.location,
+    });
+  } catch (err) {
+    console.error("❌ UPDATE LOCATION ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update location",
+      error: err.message,
+    });
+  }
+});
 
 export default router;
