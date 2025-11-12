@@ -31,7 +31,7 @@ import AllDeliveryAgents from "./pages/admin/deliverydata/pages/AllAgents";
 
 // 🔹 Super Admin Pages
 import SuperAdminDashboard from "./pages/admin/superAdmin/pages/SuperAdminDashboard";
-import CreateAdmin from "./pages/admin/superAdmin/pages/createAdmin";
+import CreateAdmin from "./pages/admin/superAdmin/pages/CreateAdmin";
 import CreateSuperAdminExtras from "./pages/admin/superAdmin/pages/CreateSuperAdminExtras";
 
 // Deliveryboy pages
