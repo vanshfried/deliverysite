@@ -264,9 +264,18 @@ export default function DeliveryDashboard() {
       const res = await API.patch(endpoint);
       if (res?.data?.success) {
         showMessage(res.data.message);
-        setCurrentOrder(null);
+
+        // FIXED: After accepting, fetch the profile which includes currentOrder
         await fetchProfile();
-        fetchNextOrder();
+
+        if (decision === "accept") {
+          // If accepted, fetch the current order details
+          fetchCurrentOrder(currentOrder._id);
+        } else {
+          // If rejected, clear and fetch next available order
+          setCurrentOrder(null);
+          fetchNextOrder();
+        }
       } else showMessage(res?.data?.message || `Failed to ${decision} order`);
     } catch {
       showMessage("Request failed");
@@ -288,12 +297,20 @@ export default function DeliveryDashboard() {
   useEffect(() => {
     if (deliveryBoy?.isActive && locationSet) {
       startTracking();
-      if (!deliveryBoy?.currentOrder) fetchNextOrder();
+
+      // FIXED: Check if delivery person has a current order
+      if (deliveryBoy?.currentOrder) {
+        // Fetch the current order they're working on
+        fetchCurrentOrder(deliveryBoy.currentOrder);
+      } else {
+        // No current order, fetch next available
+        fetchNextOrder();
+      }
     } else {
       stopTracking();
       setCurrentOrder(null);
     }
-  }, [deliveryBoy?.isActive, locationSet]);
+  }, [deliveryBoy?.isActive, locationSet, deliveryBoy?.currentOrder]);
 
   // ------------------------ Helpers ------------------------
   const renderAddress = (a) => {
@@ -432,7 +449,13 @@ export default function DeliveryDashboard() {
                 setLocationSet(true);
                 setMapShrink(true);
                 showMessage("Location saved ✅");
-                fetchNextOrder();
+
+                // Check if there's a current order after setting location
+                if (deliveryBoy?.currentOrder) {
+                  fetchCurrentOrder(deliveryBoy.currentOrder);
+                } else {
+                  fetchNextOrder();
+                }
               }}
             >
               Save Location
@@ -444,7 +467,9 @@ export default function DeliveryDashboard() {
       {/* Orders */}
       {locationSet && deliveryBoy.isActive && (
         <section className={styles.currentOrder}>
-          <h2>Current Order</h2>
+          <h2>
+            {deliveryBoy.currentOrder ? "Active Order" : "Next Available Order"}
+          </h2>
           {orderLoading ? (
             <p>Loading order...</p>
           ) : currentOrder ? (
@@ -477,7 +502,7 @@ export default function DeliveryDashboard() {
                 renderMap(currentOrder.deliveryAddress.coords)}
 
               <div className={styles.orderButtons}>
-                {!deliveryBoy.currentOrder && (
+                {!deliveryBoy.currentOrder ? (
                   <>
                     <button
                       className={styles.acceptBtn}
@@ -492,6 +517,10 @@ export default function DeliveryDashboard() {
                       Reject
                     </button>
                   </>
+                ) : (
+                  <div className={styles.activeOrderNote}>
+                    <p>✓ You are currently working on this order</p>
+                  </div>
                 )}
               </div>
             </div>
