@@ -11,7 +11,8 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-
+import delIMG from "../../images/delivery.png";
+import ORDImg from "../../images/order.jpg";
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -20,6 +21,19 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
   shadowUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
+const deliveryIcon = L.icon({
+  iconUrl: delIMG,
+  iconSize: [40, 40], // adjust size as needed
+  iconAnchor: [20, 40], // point of the icon which will correspond to marker's location
+  popupAnchor: [0, -40], // where the popup shows relative to the icon
+});
+
+const orderIcon = L.icon({
+  iconUrl: ORDImg,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40],
 });
 
 // ------------------------ Map Picker ------------------------
@@ -346,12 +360,18 @@ export default function DeliveryDashboard() {
           subdomains={["mt0", "mt1", "mt2", "mt3"]}
         />
 
-        <Marker position={[coords.lat, coords.lon]}>
-          <Popup>Delivery Location</Popup>
+        <Marker position={[liveCoords.lat, liveCoords.lon]} icon={deliveryIcon}>
+          <Popup>My Live Location</Popup>
         </Marker>
 
-        <Marker position={[liveCoords.lat, liveCoords.lon]}>
-          <Popup>My Live Location</Popup>
+        <Marker
+          position={[
+            currentOrder.deliveryAddress.coords.lat,
+            currentOrder.deliveryAddress.coords.lon,
+          ]}
+          icon={orderIcon}
+        >
+          <Popup>Delivery Location</Popup>
         </Marker>
 
         {/* REAL ROUTE HERE */}
