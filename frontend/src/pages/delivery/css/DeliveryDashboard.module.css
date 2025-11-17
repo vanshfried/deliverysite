@@ -257,6 +257,14 @@
   margin-top: 10px;
 }
 
+.distanceInfo {
+  margin: 10px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+
 /* ------------------------ No Orders ------------------------ */
 .noOrder {
   text-align: center;
