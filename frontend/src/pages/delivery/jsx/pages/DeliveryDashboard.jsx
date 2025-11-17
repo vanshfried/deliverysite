@@ -35,7 +35,6 @@ function MapPicker({ coords, setCoords, label, shrink }) {
         setCoords(newCoords);
       },
     });
-
     return position ? (
       <Marker position={[position.lat, position.lon]}>
         <Popup>{label}</Popup>
@@ -59,6 +58,7 @@ function MapPicker({ coords, setCoords, label, shrink }) {
   );
 }
 
+// ------------------------ Main Component ------------------------
 export default function DeliveryDashboard() {
   const [deliveryBoy, setDeliveryBoy] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -70,6 +70,8 @@ export default function DeliveryDashboard() {
   const [locationSet, setLocationSet] = useState(false);
   const [locationAllowed, setLocationAllowed] = useState(true);
   const [distanceKm, setDistanceKm] = useState(null);
+
+  // NEW STATE FOR ROUTE
   const [route, setRoute] = useState([]);
   const [routeLoading, setRouteLoading] = useState(false);
 
@@ -92,7 +94,7 @@ export default function DeliveryDashboard() {
     }
   };
 
-  // ------------------------ ROUTE FETCHER ------------------------
+  // ------------------------ ROUTE FETCHER (REAL ROAD ROUTING) ------------------------
   const fetchRoute = async (from, to) => {
     if (!from || !to) return;
 
@@ -110,14 +112,16 @@ export default function DeliveryDashboard() {
       }
 
       const routeData = json.routes[0];
-      setDistanceKm((routeData.distance / 1000).toFixed(2));
 
-      const coordinates = routeData.geometry.coordinates.map((c) => [
-        c[1],
-        c[0],
-      ]);
+      // extract distance in km
+      const km = routeData.distance / 1000;
+      setDistanceKm(km.toFixed(2));
 
-      setRoute(coordinates);
+      // convert geometry
+      const coordinates = routeData.geometry.coordinates;
+      const formatted = coordinates.map((c) => [c[1], c[0]]);
+
+      setRoute(formatted);
     } catch (err) {
       console.error("Route fetch failed:", err);
       setRoute([]);
@@ -133,7 +137,6 @@ export default function DeliveryDashboard() {
       setLocationAllowed(false);
       return showMessage("Geolocation not supported ❌");
     }
-
     showMessage("Tracking live location...");
     setLocationAllowed(true);
 
@@ -142,24 +145,27 @@ export default function DeliveryDashboard() {
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude, longitude, accuracy } = pos.coords;
-        if (accuracy < bestAccuracy) {
+        if (accuracy < bestAccuracy || bestAccuracy === Infinity) {
           bestAccuracy = accuracy;
-
           const coords = {
             lat: Number(latitude.toFixed(6)),
             lon: Number(longitude.toFixed(6)),
           };
-
           setLiveCoords(coords);
           updateLiveLocation(coords);
 
           if (currentOrder?.deliveryAddress?.coords) {
             fetchRoute(coords, currentOrder.deliveryAddress.coords);
           }
+
+          if (accuracy > 100)
+            showMessage(`GPS accuracy: ±${Math.round(accuracy)}m ⚠️`);
+          else
+            showMessage(`Live location accurate ±${Math.round(accuracy)}m ✅`);
         }
       },
       (err) => {
-        console.error("Location error", err);
+        console.error("Location fetch failed:", err);
         setLocationAllowed(false);
         showMessage("Your location is off — turn it on or set manually ⚠️");
       },
@@ -178,23 +184,18 @@ export default function DeliveryDashboard() {
     try {
       const res = await API.get("/api/delivery/me");
       if (!mountedRef.current) return;
-
       if (res?.data?.success) {
-        const boy = res.data.deliveryBoy;
-        setDeliveryBoy(boy);
+        const data = res.data.deliveryBoy;
+        setDeliveryBoy(data);
 
-        if (boy.currentOrder) fetchCurrentOrder(boy.currentOrder);
-
-        if (boy.location?.coordinates) {
-          const [lon, lat] = boy.location.coordinates;
+        if (data.location?.coordinates) {
+          const [lon, lat] = data.location.coordinates;
           setLiveCoords({ lat, lon });
           setLocationSet(true);
         }
-      } else {
-        showMessage("Failed to load profile");
-      }
-    } catch {
-      showMessage("Unable to load profile");
+      } else showMessage(res?.data?.error || "Failed to fetch profile");
+    } catch (err) {
+      showMessage(err.response?.data?.error || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -205,27 +206,37 @@ export default function DeliveryDashboard() {
     try {
       const res = await API.get("/api/delivery/orders/available");
       if (!mountedRef.current) return;
-
       const nextOrder = res?.data?.orders?.[0] || null;
       setCurrentOrder(nextOrder);
 
       if (nextOrder?.deliveryAddress?.coords) {
         fetchRoute(liveCoords, nextOrder.deliveryAddress.coords);
       }
-    } catch {
-      showMessage("Failed to load orders");
+
+      if (!nextOrder) showMessage("No pending orders");
+    } catch (err) {
+      showMessage(err.response?.data?.message || "Failed to fetch orders");
     } finally {
       setOrderLoading(false);
     }
   };
 
   const fetchCurrentOrder = async (orderId) => {
+    setOrderLoading(true);
     try {
       const res = await API.get("/api/delivery/orders/my");
+      if (!mountedRef.current) return;
       const activeOrder = res.data.orders.find((o) => o._id === orderId);
-      setCurrentOrder(activeOrder);
+      setCurrentOrder(activeOrder || null);
+
+      if (activeOrder?.deliveryAddress?.coords) {
+        fetchRoute(liveCoords, activeOrder.deliveryAddress.coords);
+      }
     } catch {
-      showMessage("Failed to load current order");
+      showMessage("Failed to fetch active order");
+      setCurrentOrder(null);
+    } finally {
+      setOrderLoading(false);
     }
   };
 
@@ -234,34 +245,29 @@ export default function DeliveryDashboard() {
       const res = await API.patch("/api/delivery/status", {
         isActive: !deliveryBoy.isActive,
       });
-
       if (res?.data?.success) {
         setDeliveryBoy((p) => ({ ...p, isActive: !p.isActive }));
         showMessage(res.data.message);
-      }
+      } else showMessage(res?.data?.error || "Failed to update status");
     } catch {
-      showMessage("Status update failed");
+      showMessage("Request failed");
     }
   };
 
   const handleOrderDecision = async (decision) => {
     if (!currentOrder) return;
-
     const endpoint =
       decision === "accept"
         ? `/api/delivery/orders/accept/${currentOrder._id}`
         : `/api/delivery/orders/reject/${currentOrder._id}`;
-
     try {
       const res = await API.patch(endpoint);
-
       if (res?.data?.success) {
         showMessage(res.data.message);
-
-        await fetchProfile(); // refresh currentOrder status
-      } else {
-        showMessage("Failed to update order");
-      }
+        setCurrentOrder(null);
+        await fetchProfile();
+        fetchNextOrder();
+      } else showMessage(res?.data?.message || `Failed to ${decision} order`);
     } catch {
       showMessage("Request failed");
     }
@@ -274,8 +280,8 @@ export default function DeliveryDashboard() {
     startTracking();
     return () => {
       mountedRef.current = false;
-      stopTracking();
       if (msgTimeoutRef.current) clearTimeout(msgTimeoutRef.current);
+      stopTracking();
     };
   }, []);
 
@@ -284,19 +290,17 @@ export default function DeliveryDashboard() {
       startTracking();
       if (!deliveryBoy?.currentOrder) fetchNextOrder();
     } else {
-      setCurrentOrder(null);
       stopTracking();
+      setCurrentOrder(null);
     }
   }, [deliveryBoy?.isActive, locationSet]);
 
-  // ------------------------ RENDER HELPERS ------------------------
+  // ------------------------ Helpers ------------------------
   const renderAddress = (a) => {
-    if (!a) return null;
-
+    if (!a) return <p className={styles.noOrder}>No address</p>;
     const line = [a.label, a.houseNo, a.laneOrSector, a.landmark, a.pincode]
       .filter(Boolean)
       .join(", ");
-
     return (
       <div className={styles.addressCardCompact}>
         {line}
@@ -310,6 +314,7 @@ export default function DeliveryDashboard() {
     );
   };
 
+  // ------------------------ MAP WITH REAL ROUTE ------------------------
   const renderMap = (coords) => {
     if (!coords) return null;
 
@@ -325,23 +330,25 @@ export default function DeliveryDashboard() {
         />
 
         <Marker position={[coords.lat, coords.lon]}>
-          <Popup>Delivery Address</Popup>
+          <Popup>Delivery Location</Popup>
         </Marker>
 
         <Marker position={[liveCoords.lat, liveCoords.lon]}>
-          <Popup>You</Popup>
+          <Popup>My Live Location</Popup>
         </Marker>
 
+        {/* REAL ROUTE HERE */}
         {!routeLoading && route.length > 0 && (
-          <Polyline positions={route} weight={5} />
+          <Polyline positions={route} color="#1976d2" weight={5} />
         )}
       </MapContainer>
     );
   };
 
-  // ------------------------ MAIN UI ------------------------
-  if (loading) return <p>Loading...</p>;
-  if (!deliveryBoy) return <p>Error loading profile</p>;
+  // ------------------------ RENDER ------------------------
+  if (loading) return <p className={styles.loading}>Loading...</p>;
+  if (!deliveryBoy)
+    return <p className={styles.error}>{msg || "No profile found"}</p>;
 
   const { stats } = deliveryBoy;
   const totalOrders = stats.accepted + stats.delivered + stats.ignored;
@@ -357,7 +364,7 @@ export default function DeliveryDashboard() {
             deliveryBoy.isActive ? styles.active : ""
           }`}
           onClick={toggleStatus}
-          disabled={!!deliveryBoy.currentOrder} // NEW: disable when having an order
+          disabled={!!deliveryBoy.currentOrder}
         >
           {deliveryBoy.isActive ? "Go Inactive" : "Go Active"}
         </button>
@@ -387,21 +394,18 @@ export default function DeliveryDashboard() {
               ? "Set your starting location"
               : "Your location is off — turn it on or set manually ⚠️"}
           </h2>
-
           <MapPicker
             coords={liveCoords}
             setCoords={setLiveCoords}
             label="My Location"
             shrink={mapShrink}
           />
-
           <div className={styles.locationButtons}>
             <button
               className={styles.getLiveBtn}
               onClick={() => {
                 if (!navigator.geolocation)
                   return showMessage("Geolocation not supported");
-
                 navigator.geolocation.getCurrentPosition(
                   (pos) => {
                     const coords = {
@@ -409,24 +413,26 @@ export default function DeliveryDashboard() {
                       lon: Number(pos.coords.longitude.toFixed(6)),
                     };
                     setLiveCoords(coords);
-                    showMessage("Live location updated ✓");
+                    showMessage("Live location updated ✅");
                   },
-                  () => showMessage("Failed to fetch live location"),
+                  () => {
+                    setLocationAllowed(false);
+                    showMessage("Your location is off — set manually ⚠️");
+                  },
                   { enableHighAccuracy: true }
                 );
               }}
             >
               Get Live Location
             </button>
-
             <button
               className={styles.saveLocationBtn}
               onClick={() => {
                 updateLiveLocation(liveCoords);
                 setLocationSet(true);
                 setMapShrink(true);
+                showMessage("Location saved ✅");
                 fetchNextOrder();
-                showMessage("Location saved ✓");
               }}
             >
               Save Location
@@ -435,11 +441,10 @@ export default function DeliveryDashboard() {
         </section>
       )}
 
-      {/* Current Order */}
+      {/* Orders */}
       {locationSet && deliveryBoy.isActive && (
         <section className={styles.currentOrder}>
           <h2>Current Order</h2>
-
           {orderLoading ? (
             <p>Loading order...</p>
           ) : currentOrder ? (
@@ -452,7 +457,6 @@ export default function DeliveryDashboard() {
                   <strong>Status:</strong> {currentOrder.status}
                 </span>
               </div>
-
               <div className={styles.customerInfo}>
                 <p>
                   <strong>Customer:</strong> {currentOrder.user?.name}
@@ -463,14 +467,12 @@ export default function DeliveryDashboard() {
               </div>
 
               {renderAddress(currentOrder.deliveryAddress)}
-
               {distanceKm && (
                 <p className={styles.distanceInfo}>
                   <strong>Distance:</strong> {distanceKm} km
                 </p>
               )}
 
-              {/* Always show map now */}
               {currentOrder.deliveryAddress?.coords &&
                 renderMap(currentOrder.deliveryAddress.coords)}
 
@@ -497,6 +499,61 @@ export default function DeliveryDashboard() {
             <p className={styles.noOrder}>No pending orders</p>
           )}
         </section>
+      )}
+
+      {/* Collapsible Location */}
+      {locationSet && (
+        <details className={styles.locationPicker}>
+          <summary>Update My Location</summary>
+          <MapPicker
+            coords={liveCoords}
+            setCoords={setLiveCoords}
+            label="My Location"
+            shrink={mapShrink}
+          />
+          <div className={styles.locationButtons}>
+            <button
+              className={styles.getLiveBtn}
+              onClick={() => {
+                if (!navigator.geolocation)
+                  return showMessage("Geolocation not supported");
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => {
+                    const coords = {
+                      lat: Number(pos.coords.latitude.toFixed(6)),
+                      lon: Number(pos.coords.longitude.toFixed(6)),
+                    };
+                    setLiveCoords(coords);
+                    updateLiveLocation(coords);
+                    showMessage("Live location updated ✅");
+
+                    if (currentOrder?.deliveryAddress?.coords) {
+                      fetchRoute(coords, currentOrder.deliveryAddress.coords);
+                    }
+                  },
+                  () => showMessage("Failed to get live location ❌"),
+                  { enableHighAccuracy: true }
+                );
+              }}
+            >
+              Get Live Location
+            </button>
+            <button
+              className={styles.saveLocationBtn}
+              onClick={() => {
+                updateLiveLocation(liveCoords);
+                showMessage("Location saved ✅");
+                setMapShrink(true);
+
+                if (currentOrder?.deliveryAddress?.coords) {
+                  fetchRoute(liveCoords, currentOrder.deliveryAddress.coords);
+                }
+              }}
+            >
+              Save Location
+            </button>
+          </div>
+        </details>
       )}
     </div>
   );
