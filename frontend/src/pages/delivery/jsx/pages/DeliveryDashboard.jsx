@@ -70,6 +70,10 @@ export default function DeliveryDashboard() {
   const [locationSet, setLocationSet] = useState(false);
   const [locationAllowed, setLocationAllowed] = useState(true);
 
+  // NEW STATE FOR ROUTE
+  const [route, setRoute] = useState([]);
+  const [routeLoading, setRouteLoading] = useState(false);
+
   const msgTimeoutRef = useRef(null);
   const mountedRef = useRef(true);
   const watchIdRef = useRef(null);
@@ -89,6 +93,37 @@ export default function DeliveryDashboard() {
     }
   };
 
+  // ------------------------ ROUTE FETCHER (REAL ROAD ROUTING) ------------------------
+  const fetchRoute = async (from, to) => {
+    if (!from || !to) return;
+
+    const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
+
+    try {
+      setRouteLoading(true);
+      const res = await fetch(url);
+      const json = await res.json();
+
+      if (!json.routes || !json.routes[0]) {
+        setRoute([]);
+        return;
+      }
+
+      const coordinates = json.routes[0].geometry.coordinates;
+
+      // Convert GeoJSON [lon, lat] → Leaflet [lat, lon]
+      const formatted = coordinates.map((c) => [c[1], c[0]]);
+
+      setRoute(formatted);
+    } catch (err) {
+      console.error("Route fetch failed:", err);
+      setRoute([]);
+    } finally {
+      setRouteLoading(false);
+    }
+  };
+
+  // ------------------------ GEO TRACKING ------------------------
   const startTracking = () => {
     if (!navigator.geolocation) {
       setLocationAllowed(false);
@@ -110,6 +145,11 @@ export default function DeliveryDashboard() {
           };
           setLiveCoords(coords);
           updateLiveLocation(coords);
+
+          if (currentOrder?.deliveryAddress?.coords) {
+            fetchRoute(coords, currentOrder.deliveryAddress.coords);
+          }
+
           if (accuracy > 100)
             showMessage(`GPS accuracy: ±${Math.round(accuracy)}m ⚠️`);
           else
@@ -140,7 +180,6 @@ export default function DeliveryDashboard() {
         const data = res.data.deliveryBoy;
         setDeliveryBoy(data);
 
-        // Prefill saved coords
         if (data.location?.coordinates) {
           const [lon, lat] = data.location.coordinates;
           setLiveCoords({ lat, lon });
@@ -161,6 +200,11 @@ export default function DeliveryDashboard() {
       if (!mountedRef.current) return;
       const nextOrder = res?.data?.orders?.[0] || null;
       setCurrentOrder(nextOrder);
+
+      if (nextOrder?.deliveryAddress?.coords) {
+        fetchRoute(liveCoords, nextOrder.deliveryAddress.coords);
+      }
+
       if (!nextOrder) showMessage("No pending orders");
     } catch (err) {
       showMessage(err.response?.data?.message || "Failed to fetch orders");
@@ -176,6 +220,10 @@ export default function DeliveryDashboard() {
       if (!mountedRef.current) return;
       const activeOrder = res.data.orders.find((o) => o._id === orderId);
       setCurrentOrder(activeOrder || null);
+
+      if (activeOrder?.deliveryAddress?.coords) {
+        fetchRoute(liveCoords, activeOrder.deliveryAddress.coords);
+      }
     } catch {
       showMessage("Failed to fetch active order");
       setCurrentOrder(null);
@@ -258,12 +306,10 @@ export default function DeliveryDashboard() {
     );
   };
 
+  // ------------------------ MAP WITH REAL ROUTE ------------------------
   const renderMap = (coords) => {
     if (!coords) return null;
-    const path = [
-      [liveCoords.lat, liveCoords.lon],
-      [coords.lat, coords.lon],
-    ];
+
     return (
       <MapContainer
         center={[coords.lat, coords.lon]}
@@ -274,17 +320,24 @@ export default function DeliveryDashboard() {
           url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
           subdomains={["mt0", "mt1", "mt2", "mt3"]}
         />
+
         <Marker position={[coords.lat, coords.lon]}>
           <Popup>Delivery Location</Popup>
         </Marker>
+
         <Marker position={[liveCoords.lat, liveCoords.lon]}>
           <Popup>My Live Location</Popup>
         </Marker>
-        <Polyline positions={path} color="#2196f3" />
+
+        {/* REAL ROUTE HERE */}
+        {!routeLoading && route.length > 0 && (
+          <Polyline positions={route} color="#1976d2" weight={5} />
+        )}
       </MapContainer>
     );
   };
 
+  // ------------------------ RENDER ------------------------
   if (loading) return <p className={styles.loading}>Loading...</p>;
   if (!deliveryBoy)
     return <p className={styles.error}>{msg || "No profile found"}</p>;
@@ -292,7 +345,6 @@ export default function DeliveryDashboard() {
   const { stats } = deliveryBoy;
   const totalOrders = stats.accepted + stats.delivered + stats.ignored;
 
-  // ------------------------ JSX ------------------------
   return (
     <div className={styles.dashboard}>
       {msg && <div className={styles.toast}>{msg}</div>}
@@ -310,7 +362,7 @@ export default function DeliveryDashboard() {
         </button>
       </header>
 
-      {/* ✅ STATS SECTION FIXED */}
+      {/* Stats */}
       <section className={styles.stats}>
         {[
           { label: "Accepted", value: stats.accepted, color: "accepted" },
@@ -405,7 +457,9 @@ export default function DeliveryDashboard() {
                   <strong>Phone:</strong> {currentOrder.user?.phone}
                 </p>
               </div>
+
               {renderAddress(currentOrder.deliveryAddress)}
+
               {currentOrder.deliveryAddress?.coords &&
                 renderMap(currentOrder.deliveryAddress.coords)}
 
@@ -459,6 +513,10 @@ export default function DeliveryDashboard() {
                     setLiveCoords(coords);
                     updateLiveLocation(coords);
                     showMessage("Live location updated ✅");
+
+                    if (currentOrder?.deliveryAddress?.coords) {
+                      fetchRoute(coords, currentOrder.deliveryAddress.coords);
+                    }
                   },
                   () => showMessage("Failed to get live location ❌"),
                   { enableHighAccuracy: true }
@@ -473,6 +531,10 @@ export default function DeliveryDashboard() {
                 updateLiveLocation(liveCoords);
                 showMessage("Location saved ✅");
                 setMapShrink(true);
+
+                if (currentOrder?.deliveryAddress?.coords) {
+                  fetchRoute(liveCoords, currentOrder.deliveryAddress.coords);
+                }
               }}
             >
               Save Location
