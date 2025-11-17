@@ -69,6 +69,7 @@ export default function DeliveryDashboard() {
   const [mapShrink, setMapShrink] = useState(false);
   const [locationSet, setLocationSet] = useState(false);
   const [locationAllowed, setLocationAllowed] = useState(true);
+  const [distanceKm, setDistanceKm] = useState(null);
 
   // NEW STATE FOR ROUTE
   const [route, setRoute] = useState([]);
@@ -106,18 +107,25 @@ export default function DeliveryDashboard() {
 
       if (!json.routes || !json.routes[0]) {
         setRoute([]);
+        setDistanceKm(null);
         return;
       }
 
-      const coordinates = json.routes[0].geometry.coordinates;
+      const routeData = json.routes[0];
 
-      // Convert GeoJSON [lon, lat] → Leaflet [lat, lon]
+      // extract distance in km
+      const km = routeData.distance / 1000;
+      setDistanceKm(km.toFixed(2));
+
+      // convert geometry
+      const coordinates = routeData.geometry.coordinates;
       const formatted = coordinates.map((c) => [c[1], c[0]]);
 
       setRoute(formatted);
     } catch (err) {
       console.error("Route fetch failed:", err);
       setRoute([]);
+      setDistanceKm(null);
     } finally {
       setRouteLoading(false);
     }
@@ -459,6 +467,11 @@ export default function DeliveryDashboard() {
               </div>
 
               {renderAddress(currentOrder.deliveryAddress)}
+              {distanceKm && (
+                <p className={styles.distanceInfo}>
+                  <strong>Distance:</strong> {distanceKm} km
+                </p>
+              )}
 
               {currentOrder.deliveryAddress?.coords &&
                 renderMap(currentOrder.deliveryAddress.coords)}
