@@ -14,7 +14,9 @@ router.post("/", requireUser, async (req, res) => {
 
     // ✅ Basic validation
     if (!addressId || !Array.isArray(items) || items.length === 0 || !total) {
-      return res.status(400).json({ message: "Missing or invalid order details" });
+      return res
+        .status(400)
+        .json({ message: "Missing or invalid order details" });
     }
 
     const user = await User.findById(req.user._id);
@@ -31,7 +33,10 @@ router.post("/", requireUser, async (req, res) => {
     }));
 
     // 🆔 Generate a short readable order ID
-    const slug = `ORD${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const slug = `ORD${Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase()}`;
 
     // 💾 Save to DB
     const order = await Order.create({
@@ -106,16 +111,38 @@ router.get("/my", requireUser, async (req, res) => {
 /* -------------------------------------------------------------------------- */
 router.get("/:slug", requireUser, async (req, res) => {
   try {
+    // Fetch order and populate deliveryBoy basic info
     const order = await Order.findOne({
       slug: req.params.slug,
       user: req.user._id,
-    }).lean();
+    })
+      .populate("deliveryBoy", "name phone location") // populate live location too
+      .lean();
 
     if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
-    res.json({ success: true, order });
+    // Extract delivery boy coordinates in a frontend-friendly format
+    let deliveryBoyLocation = null;
+    if (order.deliveryBoy && order.deliveryBoy.location) {
+      const coords = order.deliveryBoy.location.coordinates;
+      deliveryBoyLocation = {
+        lat: coords[1], // latitude
+        lon: coords[0], // longitude
+      };
+    }
+
+    // Add location separately to the response for convenience
+    res.json({
+      success: true,
+      order: {
+        ...order,
+        deliveryBoyLocation,
+      },
+    });
   } catch (err) {
     console.error("FETCH ORDER BY SLUG ERROR:", err);
     res.status(500).json({
@@ -125,5 +152,4 @@ router.get("/:slug", requireUser, async (req, res) => {
     });
   }
 });
-
 export default router;

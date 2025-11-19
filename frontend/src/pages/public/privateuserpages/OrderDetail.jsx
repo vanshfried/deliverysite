@@ -3,7 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import API from "../../../api/api";
 import { AuthContext } from "../../admin/Context/AuthContext";
 import styles from "./css/OrderDetail.module.css";
-
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+} from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 export default function OrderDetail() {
   const { slug } = useParams(); // ✅ using slug now
   const { userLoggedIn } = useContext(AuthContext);
@@ -12,6 +19,7 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [route, setRoute] = useState([]);
 
   useEffect(() => {
     if (!userLoggedIn) return navigate("/login");
@@ -29,6 +37,32 @@ export default function OrderDetail() {
 
     fetchOrder();
   }, [slug, userLoggedIn, navigate]);
+  useEffect(() => {
+    const fetchRoute = async () => {
+      if (!order?.deliveryBoyLocation || !order?.deliveryAddress?.coords)
+        return;
+
+      const from = order.deliveryBoyLocation;
+      const to = order.deliveryAddress.coords;
+      const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
+
+      try {
+        const res = await fetch(url);
+        const json = await res.json();
+        if (json.routes?.[0]) {
+          const coords = json.routes[0].geometry.coordinates.map((c) => [
+            c[1],
+            c[0],
+          ]);
+          setRoute(coords);
+        }
+      } catch (err) {
+        console.error("Route fetch failed:", err);
+      }
+    };
+
+    fetchRoute();
+  }, [order]);
 
   if (loading) return <p className={styles.loading}>Loading order...</p>;
   if (error) return <p className={styles.error}>{error}</p>;
@@ -137,6 +171,50 @@ export default function OrderDetail() {
           )}
         </ul>
       </div>
+      {(order.deliveryBoyLocation || order.deliveryAddress?.coords) && (
+        <div className={styles.card}>
+          <h3>Delivery Tracking</h3>
+          <MapContainer
+            center={[
+              order.deliveryAddress?.coords?.lat || 0,
+              order.deliveryAddress?.coords?.lon || 0,
+            ]}
+            zoom={13}
+            style={{ height: "300px", width: "100%" }}
+          >
+            <TileLayer
+              url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+              subdomains={["mt0", "mt1", "mt2", "mt3"]}
+            />
+
+            {/* Delivery Address Marker */}
+            {order.deliveryAddress?.coords && (
+              <Marker
+                position={[
+                  order.deliveryAddress.coords.lat,
+                  order.deliveryAddress.coords.lon,
+                ]}
+              >
+                <Popup>Delivery Address</Popup>
+              </Marker>
+            )}
+
+            {/* Delivery Boy Marker */}
+            {order.deliveryBoyLocation && (
+              <Marker
+                position={[
+                  order.deliveryBoyLocation.lat,
+                  order.deliveryBoyLocation.lon,
+                ]}
+              >
+                <Popup>{order.deliveryBoy?.name || "Delivery Boy"}</Popup>
+              </Marker>
+            )}
+            {route.length > 0 && <Polyline positions={route} color="blue" />}
+
+          </MapContainer>
+        </div>
+      )}
     </div>
   );
 }
