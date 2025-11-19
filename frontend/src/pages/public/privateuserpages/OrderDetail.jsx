@@ -175,11 +175,26 @@ export default function OrderDetail() {
         <div className={styles.card}>
           <h3>Delivery Tracking</h3>
           <MapContainer
-            center={[
-              order.deliveryAddress?.coords?.lat || 0,
-              order.deliveryAddress?.coords?.lon || 0,
-            ]}
-            zoom={13}
+            bounds={
+              order.deliveryBoyLocation && order.deliveryAddress?.coords
+                ? [
+                    [
+                      order.deliveryBoyLocation.lat,
+                      order.deliveryBoyLocation.lon,
+                    ],
+                    [
+                      order.deliveryAddress.coords.lat,
+                      order.deliveryAddress.coords.lon,
+                    ],
+                  ]
+                : [
+                    [
+                      order.deliveryAddress?.coords?.lat || 0,
+                      order.deliveryAddress?.coords?.lon || 0,
+                    ],
+                  ]
+            }
+            scrollWheelZoom={true}
             style={{ height: "300px", width: "100%" }}
           >
             <TileLayer
@@ -195,7 +210,7 @@ export default function OrderDetail() {
                   order.deliveryAddress.coords.lon,
                 ]}
               >
-                <Popup>Delivery Address</Popup>
+                <Popup>Your Delivery Address</Popup>
               </Marker>
             )}
 
@@ -207,11 +222,14 @@ export default function OrderDetail() {
                   order.deliveryBoyLocation.lon,
                 ]}
               >
-                <Popup>{order.deliveryBoy?.name || "Delivery Boy"}</Popup>
+                <Popup>{order.deliveryBoy?.name || "Delivery Boy"} Live Location</Popup>
               </Marker>
             )}
-            {route.length > 0 && <Polyline positions={route} color="blue" />}
 
+            {/* Polyline Route */}
+            {route.length > 0 && (
+              <Polyline positions={route} color="#1976d2" weight={5} />
+            )}
           </MapContainer>
         </div>
       )}
