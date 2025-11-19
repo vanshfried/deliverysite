@@ -195,7 +195,7 @@ export default function OrderDetail() {
                   ]
             }
             scrollWheelZoom={true}
-            style={{ height: "300px", width: "100%" }}
+            style={{ height: "300px", width: "100%", borderRadius: "10px" }}
           >
             <TileLayer
               url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
@@ -222,13 +222,15 @@ export default function OrderDetail() {
                   order.deliveryBoyLocation.lon,
                 ]}
               >
-                <Popup>{order.deliveryBoy?.name || "Delivery Boy"} Live Location</Popup>
+                <Popup>
+                  {order.deliveryBoy?.name || "Delivery Boy"} Live Location
+                </Popup>
               </Marker>
             )}
 
             {/* Polyline Route */}
             {route.length > 0 && (
-              <Polyline positions={route} color="#1976d2" weight={5} />
+              <Polyline positions={route} color="#1e88e5" weight={4} />
             )}
           </MapContainer>
         </div>
