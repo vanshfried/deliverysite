@@ -29,6 +29,14 @@ import cartRoutes from "./routes/user/cartRoutes.js";
 import deliveryAuthRoutes from "./routes/delivery/authRoutes.js";
 import deliveryOrderRoutes from "./routes/delivery/deliveryRoutes.js";
 
+// Store and Store OWners
+import storeOwnerAuthRoutes from "./routes/Store/storeOwnerAuth.js";
+import storeAdminRoutes from "./routes/admin/store/storeAdminRoutes.js";
+
+
+
+
+
 dotenv.config();
 const app = express();
 
@@ -83,6 +91,9 @@ app.use("/api/admin/delivery", adminDeliveryRoutes); // all delivery routess for
 app.use("/api/delivery", deliveryAuthRoutes); // signup + login + logout + me
 app.use("/api/delivery/orders", deliveryOrderRoutes); // delivery-specific order handling
 
+//store and store owners 
+app.use("/store-owner", storeOwnerAuthRoutes);
+app.use("/admin/store", storeAdminRoutes);
 // ✅ MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)

@@ -28,6 +28,7 @@ import PendingOrders from "./pages/admin/pages/PendingOrders"; // ✅ Added here
 import ActiveOrders from "./pages/admin/pages/ActiveOrders";
 import DeliveryApplicants from "./pages/admin/deliverydata/pages/DeliveryApplicants";
 import AllDeliveryAgents from "./pages/admin/deliverydata/pages/AllAgents";
+import AdminStoreApplications from "./pages/admin/store/jsx/AdminStoreApplications";
 
 // 🔹 Super Admin Pages
 import SuperAdminDashboard from "./pages/admin/superAdmin/pages/SuperAdminDashboard";
@@ -48,6 +49,11 @@ import ProtectedRoute from "./components/ProtectedRoutes";
 import UserProtectedRoute from "./pages/public/privateuserpages/UserProtectedRoute";
 import UserOnlyHeader from "./pages/public/UserOnlyHeader";
 
+//Store Pages
+import StoreOwnerDashboard from "./pages/Store/store-owner/Dashboard";
+import StoreOwnerSignup from "./pages/Store/store-owner/Signup";
+import StoreOwnerLogin from "./pages/Store/store-owner/Login";
+import StoreOwnerProtectedRoute from "./pages/Store/store-owner/StoreOwnerProtectedRoute";
 
 function App() {
   return (
@@ -258,6 +264,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/store-applications"
+              element={
+                <ProtectedRoute>
+                  <DynamicAdminLayout>
+                    <AdminStoreApplications />
+                  </DynamicAdminLayout>
+                </ProtectedRoute>
+              }
+            />
 
             {/* ---------- Super Admin Routes ---------- */}
             <Route
@@ -309,6 +325,20 @@ function App() {
             <Route path="/delivery/login" element={<DeliveryLogin />} />
             <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
 
+            {/* Store PAges all of them below */}
+            {/* Store Owner Auth */}
+            <Route path="/store-owner/signup" element={<StoreOwnerSignup />} />
+            <Route path="/store-owner/login" element={<StoreOwnerLogin />} />
+
+            {/* Protected (will need middleware later) */}
+            <Route
+              path="/store-owner/dashboard"
+              element={
+                <StoreOwnerProtectedRoute>
+                  <StoreOwnerDashboard />
+                </StoreOwnerProtectedRoute>
+              }
+            />
           </Routes>
         </Router>
       </CartProvider>
