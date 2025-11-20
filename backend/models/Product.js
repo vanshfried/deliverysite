@@ -11,6 +11,13 @@ const productSchema = new mongoose.Schema(
       maxlength: 100,
       unique: true,
     },
+    store: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      required: true,
+      index: true,
+    },
+
     slug: {
       type: String,
       unique: true,

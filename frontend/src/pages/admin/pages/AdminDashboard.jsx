@@ -15,7 +15,8 @@ function AdminDashboard() {
     { title: "Pending Orders", value: "Recent Orders", link: "/admin/pending-orders" },
     { title: "Active Orders", value: "Active Orders", link: "/admin/active-orders" },
     { title: "Delivery Applicants", value: "Delivery Applicants", link: "/admin/delivery-applicants" },
-    { title: "All Delivery Boys", value: "All Delivery Boys", link: "/admin/All-delivery-boys" }
+    { title: "All Delivery Boys", value: "All Delivery Boys", link: "/admin/All-delivery-boys" },
+    { title: "All Store Applications", value: "All Delivery Boys", link: "/admin/store-applications" }
   ];
 
   return (

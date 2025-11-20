@@ -8,6 +8,7 @@ const API = axios.create({
   baseURL: import.meta.env.VITE_URL,
   withCredentials: true, // ✅ required for cookies
 });
+export const getAllStores = () => API.get("/stores");
 
 // Update login-state from AuthContext
 export const setUserLoggedInFlag = (flag) => {

@@ -32,8 +32,9 @@ import deliveryOrderRoutes from "./routes/delivery/deliveryRoutes.js";
 // Store and Store OWners
 import storeOwnerAuthRoutes from "./routes/Store/storeOwnerAuth.js";
 import storeAdminRoutes from "./routes/admin/store/storeAdminRoutes.js";
-
-
+import storeProductRoutes from "./routes/Store/storeProducts.js";
+import storeProfileRoutes from "./routes/Store/storeProfile.js";
+import publicStoreRoutes from "./routes/Store/publicStores.js";
 
 
 
@@ -94,6 +95,9 @@ app.use("/api/delivery/orders", deliveryOrderRoutes); // delivery-specific order
 //store and store owners 
 app.use("/store-owner", storeOwnerAuthRoutes);
 app.use("/admin/store", storeAdminRoutes);
+app.use("/store-owner/store-products", storeProductRoutes);
+app.use("/store-owner/store-profile", storeProfileRoutes);
+app.use("/stores", publicStoreRoutes);
 // ✅ MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)

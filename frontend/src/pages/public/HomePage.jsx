@@ -4,59 +4,54 @@ import API from "../../api/api";
 import styles from "./css/HomePage.module.css";
 
 const HomePage = () => {
-  const [products, setProducts] = useState([]);
+  const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchStores = async () => {
       try {
-        const res = await API.get("/products");
-        setProducts(res.data.products || []);
+        const res = await API.get("/stores");
+        setStores(res.data.stores || []);
       } catch (err) {
-        console.error("Error fetching products:", err);
+        console.error("Error fetching stores:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
+
+    fetchStores();
   }, []);
 
-  if (loading) return <p className={styles.hpLoading}>Loading products...</p>;
-  if (!products.length) return <p className={styles.hpLoading}>No products found.</p>;
+  if (loading) return <p className={styles.hpLoading}>Loading stores...</p>;
+  if (!stores.length)
+    return <p className={styles.hpLoading}>No stores found.</p>;
 
   return (
     <div className={styles.hpContainer}>
-      <h1>Our Products</h1>
+      <h1>Stores</h1>
+
       <div className={styles.hpGrid}>
-        {products.map((product) => (
+        {stores.map((store) => (
           <div
-            key={product._id}
+            key={store._id}
             className={styles.hpCard}
-            onClick={() => navigate(`/product/${product.slug}`)}
+            onClick={() => navigate(`/store/${store._id}`)}
           >
             <div className={styles.hpImage}>
-              <img src={`${API.URL}/${product.logo}`} alt={product.name} />
+              <img
+                src={
+                  store.storeImage?.startsWith("data:image")
+                    ? store.storeImage // base64 (working)
+                    : `${API.URL}/uploads/${store.storeImage}` // file (future-proof)
+                }
+                alt={store.storeName}
+              />
             </div>
-            <div className={styles.hpInfo}>
-              <h2>{product.name}</h2>
-              
-              {/* ⭐ Add Rating Display */}
-              <p className={styles.hpRating}>
-                ⭐ {product.averageRating ? product.averageRating.toFixed(1) : "0.0"}{" "}
-                ({product.numReviews || 0})
-              </p>
 
-              <p className={styles.hpPrice}>
-                {product.discountPrice > 0 ? (
-                  <>
-                    <span className={styles.hpOriginalPrice}>₹{product.price}</span>
-                    <span className={styles.hpDiscountPrice}>₹{product.discountPrice}</span>
-                  </>
-                ) : (
-                  <span className={styles.hpDiscountPrice}>₹{product.price}</span>
-                )}
-              </p>
+            <div className={styles.hpInfo}>
+              <h2>{store.storeName}</h2>
+              <p>{store.address || "No address added yet"}</p>
             </div>
           </div>
         ))}

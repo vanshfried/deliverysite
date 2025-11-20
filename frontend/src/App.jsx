@@ -54,6 +54,7 @@ import StoreOwnerDashboard from "./pages/Store/store-owner/Dashboard";
 import StoreOwnerSignup from "./pages/Store/store-owner/Signup";
 import StoreOwnerLogin from "./pages/Store/store-owner/Login";
 import StoreOwnerProtectedRoute from "./pages/Store/store-owner/StoreOwnerProtectedRoute";
+import StoreProfileEdit from "./pages/Store/store-owner/StoreProfileEdit";
 
 function App() {
   return (
@@ -309,17 +310,6 @@ function App() {
               }
             />
 
-            {/* ---------- Catch-all ---------- */}
-            <Route
-              path="*"
-              element={
-                <>
-                  <UserOnlyHeader />
-                  <NotFound />
-                </>
-              }
-            />
-
             {/* Delivery pages */}
             <Route path="/delivery/signup" element={<DeliverySignUp />} />
             <Route path="/delivery/login" element={<DeliveryLogin />} />
@@ -337,6 +327,25 @@ function App() {
                 <StoreOwnerProtectedRoute>
                   <StoreOwnerDashboard />
                 </StoreOwnerProtectedRoute>
+              }
+            />
+            <Route
+              path="/store-owner/store-profile"
+              element={
+                <StoreOwnerProtectedRoute>
+                  <StoreProfileEdit />
+                </StoreOwnerProtectedRoute>
+              }
+            />
+
+            {/* ---------- Catch-all ---------- */}
+            <Route
+              path="*"
+              element={
+                <>
+                  <UserOnlyHeader />
+                  <NotFound />
+                </>
               }
             />
           </Routes>

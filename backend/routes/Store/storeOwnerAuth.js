@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import StoreOwner from "../../models/StoreOwner.js";
 import { setTokenCookie } from "../../utils/setStoreTokenCookie.js";
 import storeOwnerAuth from "../../middleware/storeOwnerAuth.js";
+import Store from "../../models/Store.js";
 const router = express.Router();
 
 // ----------------------------
@@ -97,18 +98,27 @@ router.post("/logout", (req, res) => {
 });
 
 // Store Owner Me
-router.get("/me", storeOwnerAuth, (req, res) => {
-  const owner = req.storeOwner;
+router.get("/me", storeOwnerAuth, async (req, res) => {
+  try {
+    const owner = req.storeOwner;
 
-  res.json({
-    owner: {
-      id: owner._id,
-      fullName: owner.fullName,
-      storeName: owner.storeName,
-      phone: owner.phone,
-      status: owner.status,
-    },
-  });
+    // Get store linked with owner
+    const store = await Store.findOne({ ownerId: owner._id });
+
+    res.json({
+      owner: {
+        id: owner._id,
+        fullName: owner.fullName,
+        storeName: owner.storeName,
+        phone: owner.phone,
+        status: owner.status,
+      },
+      store,
+    });
+
+  } catch (err) {
+    console.error("ME ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 });
-
 export default router;
