@@ -12,16 +12,12 @@ import createAdminRoute from "./routes/admin/createAdmin.js";
 import adminLoginRoute from "./routes/admin/adminLogin.js";
 import adminMeRoute from "./routes/admin/me.js";
 import adminLogoutRoute from "./routes/admin/logout.js";
-import adminProductRoutes from "./routes/admin/products/productRoutes.js";
-import extraRoutes from "./routes/admin/products/extraRoutes.js";
-import categoryTagAdminRoutes from "./routes/admin/products/categoryTagAdminRoutes.js";
 import adminUserRoutes from "./routes/admin/adminUserRoutes.js";
-import orderAdminRoutes from "./routes/admin/orderAdminRoutes.js"; // ✅ You missed adding this
-import adminDeliveryRoutes from "./routes/admin/delivery/adminDeliveryRoutes.js"
+// ✅ You missed adding this
+import adminDeliveryRoutes from "./routes/admin/delivery/adminDeliveryRoutes.js";
 
 // --- User & public routes ---
 import orderRoutes from "./routes/order/orderRoutes.js";
-import publicProductRoutes from "./routes/public/products.js";
 import userRoutes from "./routes/user/userRoutes.js";
 import cartRoutes from "./routes/user/cartRoutes.js";
 
@@ -35,8 +31,7 @@ import storeAdminRoutes from "./routes/admin/store/storeAdminRoutes.js";
 import storeProductRoutes from "./routes/Store/storeProducts.js";
 import storeProfileRoutes from "./routes/Store/storeProfile.js";
 import publicStoreRoutes from "./routes/Store/publicStores.js";
-
-
+import publicStoreDetails from "./routes/Store/publicStoreDetails.js";
 
 dotenv.config();
 const app = express();
@@ -69,7 +64,6 @@ app.use(
 app.use("/uploads", express.static(path.join(path.resolve(), "uploads")));
 
 // ✅ Public routes
-app.use("/products", publicProductRoutes);
 
 // ✅ User routes
 app.use("/users", userRoutes);
@@ -81,23 +75,21 @@ app.use("/admin/login", adminLoginRoute);
 app.use("/admin/logout", adminLogoutRoute);
 app.use("/admin/me", adminMeRoute);
 app.use("/admin/create-admin", createAdminRoute);
-app.use("/admin/products", adminProductRoutes);
-app.use("/admin/products/extras", extraRoutes);
-app.use("/admin/products/manage", categoryTagAdminRoutes);
 app.use("/api/admin", adminUserRoutes);
-app.use("/api/admin/orders", orderAdminRoutes); // ✅ now linked correctly
+// ✅ now linked correctly
 app.use("/api/admin/delivery", adminDeliveryRoutes); // all delivery routess for admin
 
 // ✅ Delivery Partner routes
 app.use("/api/delivery", deliveryAuthRoutes); // signup + login + logout + me
 app.use("/api/delivery/orders", deliveryOrderRoutes); // delivery-specific order handling
 
-//store and store owners 
+//store and store owners
 app.use("/store-owner", storeOwnerAuthRoutes);
 app.use("/admin/store", storeAdminRoutes);
 app.use("/store-owner/store-products", storeProductRoutes);
 app.use("/store-owner/store-profile", storeProfileRoutes);
 app.use("/stores", publicStoreRoutes);
+app.use("/store", publicStoreDetails);
 // ✅ MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)

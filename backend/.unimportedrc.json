@@ -1,0 +1,12 @@
+{
+  "entry": ["server.js"],
+  "ignorePatterns": [
+    "node_modules/**",
+    "uploads/**",
+    "scripts/**",
+    "**/*.config.js",
+    "**/*.test.js",
+    "**/*.spec.js",
+    "node:*"
+  ]
+}

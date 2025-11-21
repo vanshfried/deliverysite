@@ -9,11 +9,7 @@ function AdminDashboard() {
   if (loading) return <p className={styles.loadingText}>Loading...</p>;
 
   const dashboardActions = [
-    { title: "Add Product", value: "Create new products", link: "/admin/create-product" },
-    { title: "View Products", value: "All products", link: "/admin/products" },
     { title: "View Users", value: "All Users", link: "/admin/users" },
-    { title: "Pending Orders", value: "Recent Orders", link: "/admin/pending-orders" },
-    { title: "Active Orders", value: "Active Orders", link: "/admin/active-orders" },
     { title: "Delivery Applicants", value: "Delivery Applicants", link: "/admin/delivery-applicants" },
     { title: "All Delivery Boys", value: "All Delivery Boys", link: "/admin/All-delivery-boys" },
     { title: "All Store Applications", value: "All Delivery Boys", link: "/admin/store-applications" }

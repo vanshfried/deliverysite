@@ -36,11 +36,6 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    subCategory: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "SubCategory",
-      required: true,
-    },
     logo: {
       type: String,
       required: true,
@@ -57,12 +52,7 @@ const productSchema = new mongoose.Schema(
       type: Map,
       of: String,
     },
-    tags: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Tag",
-      },
-    ],
+    
     videos: [String],
 
     // ---------------- Reviews & Ratings ----------------

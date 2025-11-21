@@ -84,8 +84,8 @@ export default function StoreOwnerDashboard() {
 
         <div style={styles.card}>
           <h2>Products</h2>
-          <Link to="/store-owner/products" style={styles.productButton}>
-            Manage Products
+          <Link to="/store-owner/products/create" style={styles.productButton}>
+            Create Products
           </Link>
         </div>
       </main>

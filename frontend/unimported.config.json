@@ -1,0 +1,8 @@
+{
+  "ignoreDirectories": ["node_modules", "dist", "build"],
+  "ignorePatterns": [
+    "src/pages/**",
+    "src/App.jsx",
+    "src/main.jsx"
+  ]
+}

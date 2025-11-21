@@ -5,8 +5,6 @@ import "./App.css";
 // 🔹 Public Pages
 import HomePage from "./pages/public/HomePage";
 import UserLogin from "./pages/public/UserLogin";
-import ProductDetails from "./pages/public/ProductDetails";
-import SubCategoryPage from "./pages/public/SubCategoryPage";
 import NotFound from "./components/NotFound";
 
 // 🔹 Private User Pages
@@ -19,12 +17,8 @@ import OrderDetail from "./pages/public/privateuserpages/OrderDetail";
 // 🔹 Admin Pages
 import LoginAdmin from "./pages/admin/pages/LoginAdmin";
 import AdminDashboard from "./pages/admin/pages/AdminDashboard";
-import AdminProductsPage from "./pages/admin/pages/AdminProductsPage";
 import AdminAllUsersPage from "./pages/admin/pages/AllUsersPage";
-import AdminUserDetailsPage from "./pages/admin/pages/AdminUserDetailsPage";
-import CreateProduct from "./pages/admin/pages/CreateProduct";
-import EditProduct from "./pages/admin/pages/EditProduct";
-import PendingOrders from "./pages/admin/pages/PendingOrders"; // ✅ Added here
+
 import ActiveOrders from "./pages/admin/pages/ActiveOrders";
 import DeliveryApplicants from "./pages/admin/deliverydata/pages/DeliveryApplicants";
 import AllDeliveryAgents from "./pages/admin/deliverydata/pages/AllAgents";
@@ -33,7 +27,6 @@ import AdminStoreApplications from "./pages/admin/store/jsx/AdminStoreApplicatio
 // 🔹 Super Admin Pages
 import SuperAdminDashboard from "./pages/admin/superAdmin/pages/SuperAdminDashboard";
 import CreateAdmin from "./pages/admin/superAdmin/pages/CreateAdmin";
-import CreateSuperAdminExtras from "./pages/admin/superAdmin/pages/CreateSuperAdminExtras";
 
 // Deliveryboy pages
 
@@ -55,6 +48,8 @@ import StoreOwnerSignup from "./pages/Store/store-owner/Signup";
 import StoreOwnerLogin from "./pages/Store/store-owner/Login";
 import StoreOwnerProtectedRoute from "./pages/Store/store-owner/StoreOwnerProtectedRoute";
 import StoreProfileEdit from "./pages/Store/store-owner/StoreProfileEdit";
+import StoreCreateProduct from "./pages/Store/store-owner/StoreCreateProduct";
+import StorePage from "./pages/Store/store-owner/StorePage";
 
 function App() {
   return (
@@ -83,25 +78,9 @@ function App() {
               }
             />
 
-            <Route
-              path="/product/:slug"
-              element={
-                <>
-                  <UserOnlyHeader />
-                  <ProductDetails />
-                </>
-              }
-            />
+            
 
-            <Route
-              path="/subcategory/:slug"
-              element={
-                <>
-                  <UserOnlyHeader />
-                  <SubCategoryPage />
-                </>
-              }
-            />
+            
 
             {/* ---------- User Protected Routes ---------- */}
             <Route
@@ -170,48 +149,9 @@ function App() {
             />
 
             {/* ✅ Recent Orders page for live updates */}
-            <Route
-              path="/admin/pending-orders"
-              element={
-                <ProtectedRoute>
-                  <DynamicAdminLayout>
-                    <PendingOrders />
-                  </DynamicAdminLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/active-orders"
-              element={
-                <ProtectedRoute>
-                  <DynamicAdminLayout>
-                    <ActiveOrders />
-                  </DynamicAdminLayout>
-                </ProtectedRoute>
-              }
-            />
+            
+            
 
-            <Route
-              path="/admin/create-product"
-              element={
-                <ProtectedRoute>
-                  <DynamicAdminLayout>
-                    <CreateProduct />
-                  </DynamicAdminLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/admin/products"
-              element={
-                <ProtectedRoute>
-                  <DynamicAdminLayout>
-                    <AdminProductsPage />
-                  </DynamicAdminLayout>
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/admin/users"
@@ -224,27 +164,8 @@ function App() {
               }
             />
 
-            <Route
-              path="/admin/user/:id"
-              element={
-                <ProtectedRoute>
-                  <DynamicAdminLayout>
-                    <AdminUserDetailsPage />
-                  </DynamicAdminLayout>
-                </ProtectedRoute>
-              }
-            />
+            
 
-            <Route
-              path="/admin/edit-product/:id"
-              element={
-                <ProtectedRoute>
-                  <DynamicAdminLayout>
-                    <EditProduct />
-                  </DynamicAdminLayout>
-                </ProtectedRoute>
-              }
-            />
             <Route
               path="/admin/delivery-applicants"
               element={
@@ -299,16 +220,7 @@ function App() {
               }
             />
 
-            <Route
-              path="/admin/superadmin-extras"
-              element={
-                <ProtectedRoute requireSuper>
-                  <DynamicAdminLayout>
-                    <CreateSuperAdminExtras />
-                  </DynamicAdminLayout>
-                </ProtectedRoute>
-              }
-            />
+            
 
             {/* Delivery pages */}
             <Route path="/delivery/signup" element={<DeliverySignUp />} />
@@ -335,6 +247,23 @@ function App() {
                 <StoreOwnerProtectedRoute>
                   <StoreProfileEdit />
                 </StoreOwnerProtectedRoute>
+              }
+            />
+            <Route
+              path="/store-owner/products/create"
+              element={
+                <StoreOwnerProtectedRoute>
+                  <StoreCreateProduct />
+                </StoreOwnerProtectedRoute>
+              }
+            />
+            <Route
+              path="/store/:slug"
+              element={
+                <>
+                  <UserOnlyHeader />
+                  <StorePage />
+                </>
               }
             />
 

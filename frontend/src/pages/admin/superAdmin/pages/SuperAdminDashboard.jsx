@@ -6,12 +6,7 @@ import styles from "../css/SuperAdminDashboard.module.css"; // CSS module
 function DashboardContent() {
   const tools = [
     { title: "Create Admins", link: "/admin/create-admin" },
-    { title: "Create Product", link: "/admin/create-product" },
-    { title: "View Products",  link: "/admin/products" },
-    { title: "SuperAdmin Extras",  link: "/admin/superadmin-extras" },
     { title: "View Users",  link: "/admin/users" },
-    { title: "Pending Orders", value: "Recent Orders", link: "/admin/pending-orders" },
-    { title: "Active Orders", value: "Active Orders", link: "/admin/active-orders" },
     { title: "Delivery Applicants", value: "Delivery Applicants", link: "/admin/delivery-applicants" },
     { title: "All Delivery Boys", value: "All Delivery Boys", link: "/admin/All-delivery-boys" },
     { title: "All Store Applications", value: "All Delivery Boys", link: "/admin/store-applications" }

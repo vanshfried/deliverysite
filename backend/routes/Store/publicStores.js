@@ -1,3 +1,4 @@
+// backend\routes\Store\publicStores.js
 import express from "express";
 import Store from "../../models/Store.js";
 
@@ -7,7 +8,7 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const stores = await Store.find({ isActive: true }).select(
-      "storeName storeImage address ownerId"
+      "storeName storeImage address ownerId slug"
     );
 
     res.json({ stores });

@@ -36,7 +36,7 @@ const HomePage = () => {
           <div
             key={store._id}
             className={styles.hpCard}
-            onClick={() => navigate(`/store/${store._id}`)}
+            onClick={() => navigate(`/store/${store.slug}`)}
           >
             <div className={styles.hpImage}>
               <img

@@ -1,0 +1,117 @@
+/* ===== Container ===== */
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ===== Store Header ===== */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+  margin-bottom: 30px;
+}
+
+.header img {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid #eee;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.header p {
+  margin: 4px 0;
+  color: #555;
+  font-size: 16px;
+}
+
+/* ===== Products Section ===== */
+.productsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+/* ===== Product Card ===== */
+.productCard {
+  background: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.productCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.productCard img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.productCard h3 {
+  margin: 10px 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.productCard p {
+  margin: 3px 0;
+  font-size: 15px;
+  color: #333;
+}
+
+/* Discount price style */
+.productCard p:last-child {
+  color: #d9534f;
+  font-weight: 600;
+}
+
+/* ===== Loading & Empty State ===== */
+.loadingText, .notFoundText {
+  text-align: center;
+  padding: 40px 0;
+  font-size: 18px;
+  color: #666;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .header img {
+    width: 120px;
+    height: 120px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+}

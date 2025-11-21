@@ -1,10 +1,22 @@
 import mongoose from "mongoose";
 
 const StoreSchema = new mongoose.Schema({
-  ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "StoreOwner", required: true },
+  ownerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "StoreOwner",
+    required: true,
+  },
 
   storeName: { type: String, required: true },
-  storeImage: { type: String }, 
+
+  slug: {
+    type: String,
+    unique: true,
+    lowercase: true,
+    index: true,
+  },
+
+  storeImage: { type: String },
   address: { type: String },
   description: { type: String },
   phone: { type: String },
@@ -15,6 +27,20 @@ const StoreSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
 
   createdAt: { type: Date, default: Date.now },
+});
+
+/* ------------------------------------------
+   AUTO-GENERATE SLUG WHEN NAME CHANGES
+------------------------------------------- */
+StoreSchema.pre("save", function (next) {
+  if (this.isModified("storeName")) {
+    this.slug = this.storeName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "");
+  }
+  next();
 });
 
 export default mongoose.model("Store", StoreSchema);
