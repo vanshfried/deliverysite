@@ -16,7 +16,7 @@ router.get("/:slug", async (req, res) => {
     if (!store) return res.status(404).json({ message: "Store not found" });
 
     const products = await Product.find({ store: store._id }).select(
-      "name price discountPrice logo inStock"
+      "name price discountPrice logo inStock description"
     );
 
     res.json({

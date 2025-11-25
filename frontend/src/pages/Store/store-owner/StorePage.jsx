@@ -19,6 +19,9 @@ const StorePage = () => {
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [adding, setAdding] = useState(null);
 
+  // 🔥 remove HTML tags
+  const stripHtml = (html) => html.replace(/<[^>]+>/g, "");
+
   useEffect(() => {
     const loadStore = async () => {
       try {
@@ -88,7 +91,6 @@ const StorePage = () => {
     <div className={styles.container}>
       {showLoginPopup && <LoginPrompt />}
 
-      {/* Store Header */}
       <div className={styles.header}>
         <img
           src={store.storeImage}
@@ -112,7 +114,6 @@ const StorePage = () => {
 
           return (
             <div key={p._id} className={styles.productCard}>
-              {/* Product Image */}
               <div className={styles.productImageWrapper}>
                 {!p.inStock && (
                   <span className={styles.outOfStockBadge}>Out of Stock</span>
@@ -124,19 +125,16 @@ const StorePage = () => {
                 />
               </div>
 
-              {/* Title */}
               <h3 className={styles.productTitle}>{p.name}</h3>
 
-              {/* Description */}
               {p.description && (
                 <p className={styles.productDescription}>
-                  {p.description.length > 80
-                    ? p.description.substring(0, 80) + "..."
-                    : p.description}
+                  {stripHtml(p.description).length > 80
+                    ? stripHtml(p.description).substring(0, 80) + "..."
+                    : stripHtml(p.description)}
                 </p>
               )}
 
-              {/* Price */}
               <div className={styles.priceBox}>
                 {p.discountPrice > 0 ? (
                   <>
@@ -156,7 +154,6 @@ const StorePage = () => {
                 )}
               </div>
 
-              {/* Buttons */}
               <div className={styles.actions}>
                 <button
                   onClick={() => handleAddToCart(p)}
