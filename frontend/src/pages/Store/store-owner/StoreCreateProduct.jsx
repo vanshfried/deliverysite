@@ -80,7 +80,7 @@ const StoreCreateProduct = () => {
       });
 
       showMessage("✅ Product created!");
-      setTimeout(() => navigate("/store-owner/products"), 800);
+      setTimeout(() => navigate("/store-owner/dashboard"), 800);
     } catch (err) {
       showMessage(err.response?.data?.message || "❌ Error creating product");
     } finally {
