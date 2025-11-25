@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/api";
 import QuillEditor from "./QuillEditor";
@@ -16,7 +16,6 @@ const StoreCreateProduct = () => {
 
   const [description, setDescription] = useState("");
   const [logo, setLogo] = useState(null);
-  const [images, setImages] = useState([]);
 
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState({});
@@ -29,9 +28,6 @@ const StoreCreateProduct = () => {
     setTimeout(() => setMessage(""), 4000);
   };
 
-  // ------------------------------------------------------------
-  // FORM HANDLERS
-  // ------------------------------------------------------------
   const handleChange = (e) => {
     const { name, type, checked, value } = e.target;
 
@@ -48,13 +44,6 @@ const StoreCreateProduct = () => {
     if (errors.logo) setErrors((prev) => ({ ...prev, logo: "" }));
   };
 
-  const handleImagesChange = (e) => {
-    setImages(Array.from(e.target.files).slice(0, 4));
-  };
-
-  // ------------------------------------------------------------
-  // SUBMIT HANDLER
-  // ------------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -76,12 +65,13 @@ const StoreCreateProduct = () => {
     const data = new FormData();
     data.append("name", formData.name);
     data.append("price", Number(formData.price));
-    data.append("discountPrice", formData.discountPrice ? Number(formData.discountPrice) : 0);
+    data.append(
+      "discountPrice",
+      formData.discountPrice ? Number(formData.discountPrice) : 0
+    );
     data.append("inStock", formData.inStock);
     data.append("description", description);
     data.append("logo", logo);
-
-    images.forEach((img) => data.append("images", img));
 
     try {
       await API.post("/store-owner/store-products/add", data, {
@@ -90,19 +80,14 @@ const StoreCreateProduct = () => {
       });
 
       showMessage("✅ Product created!");
-
       setTimeout(() => navigate("/store-owner/products"), 800);
     } catch (err) {
-      console.error(err.response?.data || err);
       showMessage(err.response?.data?.message || "❌ Error creating product");
     } finally {
       setLoading(false);
     }
   };
 
-  // ------------------------------------------------------------
-  // JSX RETURN
-  // ------------------------------------------------------------
   return (
     <div className={styles.createProductContainer}>
       <h2>Create Product</h2>
@@ -110,7 +95,6 @@ const StoreCreateProduct = () => {
       {message && <p className={styles.message}>{message}</p>}
 
       <form onSubmit={handleSubmit} className={styles.productForm}>
-        {/* Product Info */}
         <div className={styles.formSection}>
           <div className={styles.headingInstock}>
             <h3>Product Details</h3>
@@ -146,7 +130,9 @@ const StoreCreateProduct = () => {
                 onChange={handleChange}
                 className={errors.price ? styles.errorInput : ""}
               />
-              {errors.price && <p className={styles.errorText}>{errors.price}</p>}
+              {errors.price && (
+                <p className={styles.errorText}>{errors.price}</p>
+              )}
             </div>
 
             <input
@@ -160,7 +146,6 @@ const StoreCreateProduct = () => {
           </div>
         </div>
 
-        {/* Description */}
         <div className={styles.formSection}>
           <h3>Product Description</h3>
 
@@ -172,9 +157,8 @@ const StoreCreateProduct = () => {
           />
         </div>
 
-        {/* Images */}
         <div className={styles.formSection}>
-          <h3>Images</h3>
+          <h3>Product Image</h3>
 
           <label>
             Logo (required):
@@ -187,19 +171,8 @@ const StoreCreateProduct = () => {
           </label>
 
           {errors.logo && <p className={styles.errorText}>{errors.logo}</p>}
-
-          <label>
-            Additional Images (max 4):
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImagesChange}
-            />
-          </label>
         </div>
 
-        {/* Submit */}
         <div className={styles.formSection}>
           <button type="submit" disabled={loading} className={styles.submitBtn}>
             {loading ? "Creating product..." : "Create Product"}

@@ -11,6 +11,7 @@ const productSchema = new mongoose.Schema(
       maxlength: 100,
       unique: true,
     },
+
     store: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
@@ -23,36 +24,33 @@ const productSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+
     description: {
       type: String,
       trim: true,
     },
+
     price: {
       type: Number,
       required: true,
       min: 0,
     },
+
     discountPrice: {
       type: Number,
       default: 0,
     },
+
     logo: {
       type: String,
       required: true,
     },
-    images: {
-      type: [String],
-      validate: [(arr) => arr.length <= 4, "Maximum 4 images allowed"],
-    },
+
     inStock: {
       type: Boolean,
       default: true,
     },
-    
-    
-    videos: [String],
 
-    // ---------------- Reviews & Ratings ----------------
     reviews: [
       {
         user: {
@@ -65,6 +63,7 @@ const productSchema = new mongoose.Schema(
         createdAt: { type: Date, default: Date.now },
       },
     ],
+
     averageRating: { type: Number, default: 0 },
     numReviews: { type: Number, default: 0 },
   },
@@ -75,7 +74,6 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-// ---------------- Slug Middleware ----------------
 productSchema.pre("save", function (next) {
   if (this.isModified("name") || !this.slug) {
     this.slug = slugify(this.name, { lower: true, strict: true });
@@ -83,7 +81,6 @@ productSchema.pre("save", function (next) {
   next();
 });
 
-// ---------------- Virtuals ----------------
 productSchema.virtual("finalPrice").get(function () {
   return this.discountPrice > 0 ? this.discountPrice : this.price;
 });
@@ -96,7 +93,6 @@ productSchema.virtual("category", {
   options: { strictPopulate: false },
 });
 
-// ---------------- Instance Method ----------------
 productSchema.methods.calculateAverageRating = async function () {
   if (this.reviews.length === 0) {
     this.averageRating = 0;
@@ -109,10 +105,7 @@ productSchema.methods.calculateAverageRating = async function () {
   await this.save();
 };
 
-// ---------------- Indexes ----------------
 productSchema.index({ name: 1 });
 productSchema.index({ slug: 1 });
-productSchema.index({ subCategory: 1 });
-productSchema.index({ tags: 1 });
 
 export default mongoose.model("Product", productSchema);
