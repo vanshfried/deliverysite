@@ -54,11 +54,14 @@ const StorePage = () => {
   };
 
   const LoginPrompt = () => (
-    <div className={styles.loginPopupBackdrop}>
-      <div className={styles.loginPopup}>
-        <p>You need to log in to perform this action.</p>
-        <div className={styles.popupButtons}>
+    <div className={styles.popupBackdrop}>
+      <div className={styles.popupCard}>
+        <h2>Please Login</h2>
+        <p>You need to login to continue.</p>
+
+        <div className={styles.popupActions}>
           <button
+            className={styles.loginBtn}
             onClick={() => {
               navigate("/login");
               setShowLoginPopup(false);
@@ -66,7 +69,13 @@ const StorePage = () => {
           >
             Login
           </button>
-          <button onClick={() => setShowLoginPopup(false)}>Cancel</button>
+
+          <button
+            className={styles.cancelBtn}
+            onClick={() => setShowLoginPopup(false)}
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -74,7 +83,7 @@ const StorePage = () => {
 
   if (loading) return <p>Loading store...</p>;
   if (!store) return <p>Store not found.</p>;
-  
+
   return (
     <div className={styles.container}>
       {showLoginPopup && <LoginPrompt />}
@@ -94,7 +103,7 @@ const StorePage = () => {
           </p>
         </div>
       </div>
-      
+
       <h2 className={styles.sectionTitle}>Products</h2>
 
       <div className={styles.productsGrid}>

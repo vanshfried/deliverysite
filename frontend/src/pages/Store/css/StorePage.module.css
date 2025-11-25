@@ -143,3 +143,88 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+/* 🔥 Modern Popup Backdrop */
+.popupBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  animation: fadeIn 0.25s ease;
+}
+
+/* 🔥 Smooth popup card */
+.popupCard {
+  background: #fff;
+  padding: 28px;
+  width: 360px;
+  border-radius: 16px;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  animation: scaleIn 0.25s ease;
+}
+
+.popupCard h2 {
+  margin-bottom: 10px;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.popupCard p {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+/* Buttons inside popup */
+.popupActions {
+  display: flex;
+  gap: 12px;
+}
+
+.loginBtn {
+  flex: 1;
+  background: #2a7cff;
+  color: white;
+  padding: 10px 0;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.loginBtn:hover {
+  background: #1b67e1;
+}
+
+.cancelBtn {
+  flex: 1;
+  background: #eaeaea;
+  padding: 10px 0;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.cancelBtn:hover {
+  background: #d2d2d2;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

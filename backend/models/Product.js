@@ -48,10 +48,7 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    specs: {
-      type: Map,
-      of: String,
-    },
+    
     
     videos: [String],
 
