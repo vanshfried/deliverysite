@@ -50,7 +50,7 @@ import StoreOwnerProtectedRoute from "./pages/Store/store-owner/StoreOwnerProtec
 import StoreProfileEdit from "./pages/Store/store-owner/StoreProfileEdit";
 import StoreCreateProduct from "./pages/Store/store-owner/StoreCreateProduct";
 import StorePage from "./pages/Store/store-owner/StorePage";
-
+import StoreEditProduct from "./pages/Store/store-owner/StoreEditProduct";
 function App() {
   return (
     <AuthProvider>
@@ -77,10 +77,6 @@ function App() {
                 </>
               }
             />
-
-            
-
-            
 
             {/* ---------- User Protected Routes ---------- */}
             <Route
@@ -149,9 +145,6 @@ function App() {
             />
 
             {/* ✅ Recent Orders page for live updates */}
-            
-            
-
 
             <Route
               path="/admin/users"
@@ -163,8 +156,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            
 
             <Route
               path="/admin/delivery-applicants"
@@ -220,8 +211,6 @@ function App() {
               }
             />
 
-            
-
             {/* Delivery pages */}
             <Route path="/delivery/signup" element={<DeliverySignUp />} />
             <Route path="/delivery/login" element={<DeliveryLogin />} />
@@ -257,6 +246,15 @@ function App() {
                 </StoreOwnerProtectedRoute>
               }
             />
+            <Route
+              path="/store-owner/products/edit/:id"
+              element={
+                <StoreOwnerProtectedRoute>
+                  <StoreEditProduct />
+                </StoreOwnerProtectedRoute>
+              }
+            />
+
             <Route
               path="/store/:slug"
               element={
