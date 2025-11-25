@@ -80,9 +80,7 @@ export default function Checkout() {
 
   /* Map Picker component using Google Maps tiles */
   const MapPicker = ({ coords, setCoords }) => {
-    const [position, setPosition] = useState(
-      coords || { lat: 28, lon: 78 }
-    );
+    const [position, setPosition] = useState(coords || { lat: 28, lon: 78 });
 
     const LocationMarker = () => {
       useMapEvents({
@@ -271,12 +269,13 @@ export default function Checkout() {
         {items.map((item) => (
           <div key={item.product._id} className={styles.itemRow}>
             <img
-              src={`${API.URL}/${
+              src={
                 item.product.logo ||
                 (item.product.images && item.product.images[0])
-              }`}
+              }
               alt={item.product.name}
             />
+
             <div className={styles.itemInfo}>
               <p className={styles.itemName}>{item.product.name}</p>
               <p className={styles.itemPrice}>

@@ -82,7 +82,7 @@ const Cart = () => {
         {cart.items.map((item) => (
           <div key={item.product._id} className={styles.cartItem}>
             <img
-              src={`${API.URL}/${item.product.logo}`}
+              src={item.product.logo}
               alt={item.product.name}
               className={styles.productImage}
             />
