@@ -32,6 +32,7 @@ import storeProductRoutes from "./routes/Store/storeProducts.js";
 import storeProfileRoutes from "./routes/Store/storeProfile.js";
 import publicStoreRoutes from "./routes/Store/publicStores.js";
 import publicStoreDetails from "./routes/Store/publicStoreDetails.js";
+import storeOrderActions from "./routes/Store/storeOrderActions.js";
 
 dotenv.config();
 const app = express();
@@ -90,6 +91,8 @@ app.use("/store-owner/store-products", storeProductRoutes);
 app.use("/store-owner/store-profile", storeProfileRoutes);
 app.use("/stores", publicStoreRoutes);
 app.use("/store", publicStoreDetails);
+app.use("/store-owner/orders", storeOrderActions);
+
 // ✅ MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)
