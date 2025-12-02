@@ -1,6 +1,7 @@
 import express from "express";
 import Order from "../../models/Order.js";
 import User from "../../models/User.js";
+import Product from "../../models/Product.js";
 import { requireUser } from "../../middleware/requireUser.js";
 
 const router = express.Router();
@@ -12,7 +13,7 @@ router.post("/", requireUser, async (req, res) => {
   try {
     const { addressId, total, items, paymentMethod } = req.body;
 
-    // ✅ Basic validation
+    // ✅ Validate request
     if (!addressId || !Array.isArray(items) || items.length === 0 || !total) {
       return res
         .status(400)
@@ -25,22 +26,43 @@ router.post("/", requireUser, async (req, res) => {
     const address = user.addresses.id(addressId);
     if (!address) return res.status(400).json({ message: "Invalid address" });
 
-    // 🧩 Prepare order items cleanly
-    const formattedItems = items.map((i) => ({
-      name: i.productName || i.name || "Product",
-      quantity: Number(i.quantity) || 1,
-      price: Number(i.price) || 0,
-    }));
+    // 🧩 Format items, fetch product info
+    const formattedItems = [];
+    let storeId = null;
 
-    // 🆔 Generate a short readable order ID
+    for (const item of items) {
+      const product = await Product.findById(item.productId).lean();
+      if (!product)
+        return res
+          .status(404)
+          .json({ message: `Product not found: ${item.productId}` });
+
+      // Check store consistency
+      if (!storeId) storeId = product.store;
+      else if (storeId.toString() !== product.store.toString()) {
+        return res
+          .status(400)
+          .json({ message: "All items must belong to the same store" });
+      }
+
+      formattedItems.push({
+        product: product._id,
+        name: product.name,
+        quantity: Number(item.quantity) || 1,
+        price: Number(item.discountPrice || product.price),
+      });
+    }
+
+    // 🆔 Generate a short order slug
     const slug = `ORD${Math.random()
       .toString(36)
       .substring(2, 8)
       .toUpperCase()}`;
 
-    // 💾 Save to DB
+    // 💾 Save order
     const order = await Order.create({
       user: user._id,
+      store: storeId,
       items: formattedItems,
       totalAmount: total,
       paymentMethod: paymentMethod || "COD",
@@ -72,6 +94,7 @@ router.post("/", requireUser, async (req, res) => {
           price: i.price,
         })),
         totalAmount: total,
+        storeId,
       });
     }
 
@@ -97,6 +120,7 @@ router.get("/my", requireUser, async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id })
       .sort({ createdAt: -1 })
+      .populate("store", "name") // optional: include store name
       .lean();
 
     res.json({ success: true, count: orders.length, orders });
@@ -111,37 +135,28 @@ router.get("/my", requireUser, async (req, res) => {
 /* -------------------------------------------------------------------------- */
 router.get("/:slug", requireUser, async (req, res) => {
   try {
-    // Fetch order and populate deliveryBoy basic info
     const order = await Order.findOne({
       slug: req.params.slug,
       user: req.user._id,
     })
-      .populate("deliveryBoy", "name phone location") // populate live location too
+      .populate("deliveryBoy", "name phone location")
+      .populate("store", "name")
       .lean();
 
-    if (!order) {
+    if (!order)
       return res
         .status(404)
         .json({ success: false, message: "Order not found" });
-    }
 
-    // Extract delivery boy coordinates in a frontend-friendly format
     let deliveryBoyLocation = null;
     if (order.deliveryBoy && order.deliveryBoy.location) {
       const coords = order.deliveryBoy.location.coordinates;
-      deliveryBoyLocation = {
-        lat: coords[1], // latitude
-        lon: coords[0], // longitude
-      };
+      deliveryBoyLocation = { lat: coords[1], lon: coords[0] };
     }
 
-    // Add location separately to the response for convenience
     res.json({
       success: true,
-      order: {
-        ...order,
-        deliveryBoyLocation,
-      },
+      order: { ...order, deliveryBoyLocation },
     });
   } catch (err) {
     console.error("FETCH ORDER BY SLUG ERROR:", err);
@@ -152,4 +167,5 @@ router.get("/:slug", requireUser, async (req, res) => {
     });
   }
 });
+
 export default router;

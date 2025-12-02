@@ -202,6 +202,7 @@ export default function Checkout() {
     setEditForm({});
   };
 
+  // Only changed / important parts are highlighted below
   const handlePlaceOrder = async () => {
     if (!selectedAddress) return setError("Please select an address ❌");
     const addr = addresses.find((a) => a._id === selectedAddress);
@@ -211,12 +212,13 @@ export default function Checkout() {
     setPlacingOrder(true);
     setError("");
     try {
+      // Ensure each item has product ID
       const orderData = {
         addressId: selectedAddress,
         total,
         paymentMethod: "COD",
         items: items.map((i) => ({
-          productName: i.product.name,
+          productId: i.product._id, // <-- mandatory for backend store link
           quantity: i.quantity,
           price:
             i.product.discountPrice > 0
@@ -225,7 +227,7 @@ export default function Checkout() {
         })),
       };
 
-      await API.post("/orders", orderData);
+      const res = await API.post("/orders", orderData);
       if (!buyNowProduct) clearCart();
       setSuccess("Order placed successfully ✅");
       setTimeout(() => navigate("/orders"), 1500);
