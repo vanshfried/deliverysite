@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { updateStoreProfile,storeOwnerMe } from "../api/storeOwner";
-
+import { updateStoreProfile, storeOwnerMe } from "../api/storeOwner";
+import { useNavigate } from "react-router-dom";
 
 export default function StoreProfileEdit() {
   const [store, setStore] = useState(null);
@@ -15,7 +15,8 @@ export default function StoreProfileEdit() {
     storeImage: null,
   });
 
-  // Fetch current store data
+  const navigate = useNavigate();
+
   useEffect(() => {
     const loadData = async () => {
       const res = await storeOwnerMe();
@@ -40,7 +41,6 @@ export default function StoreProfileEdit() {
 
   if (!store) return <p>Loading store profile...</p>;
 
-  // Handle text inputs
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -48,14 +48,12 @@ export default function StoreProfileEdit() {
     });
   };
 
-  // Handle image upload
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     setForm({ ...form, storeImage: file });
     if (file) setImagePreview(URL.createObjectURL(file));
   };
 
-  // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -65,13 +63,12 @@ export default function StoreProfileEdit() {
     fd.append("phone", form.phone);
     fd.append("openingTime", form.openingTime);
     fd.append("closingTime", form.closingTime);
-
     if (form.storeImage) fd.append("storeImage", form.storeImage);
 
     const res = await updateStoreProfile(fd);
 
     if (res) {
-      alert("Store profile updated!");
+      navigate("/store-owner/dashboard");
     }
   };
 
@@ -80,7 +77,6 @@ export default function StoreProfileEdit() {
       <h2>Edit Store Profile</h2>
 
       <form onSubmit={handleSubmit} style={styles.form}>
-        {/* Image upload */}
         <label style={styles.label}>Store Image</label>
         {imagePreview ? (
           <img
