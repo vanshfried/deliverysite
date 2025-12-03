@@ -42,7 +42,7 @@ export default function StoreOwnerHeader() {
             Store Profile
           </Link>
           <Link to="/store-owner/products" className={styles.navLink}>
-            Products
+            All Products
           </Link>
           <Link to="/store-owner/orders" className={styles.navLink}>
             Orders

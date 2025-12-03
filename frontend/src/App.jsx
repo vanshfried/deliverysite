@@ -52,6 +52,7 @@ import StoreCreateProduct from "./pages/Store/store-owner/StoreCreateProduct";
 import StorePage from "./pages/Store/store-owner/StorePage";
 import StoreEditProduct from "./pages/Store/store-owner/StoreEditProduct";
 import StoreOrders from "./pages/Store/store-owner/StoreOrders";
+import StoreProductsPage from "./pages/Store/store-owner/StoreProductsPage";
 function App() {
   return (
     <AuthProvider>
@@ -260,6 +261,14 @@ function App() {
               element={
                 <StoreOwnerProtectedRoute>
                   <StoreOrders />
+                </StoreOwnerProtectedRoute>
+              }
+            />
+            <Route
+              path="/store-owner/products"
+              element={
+                <StoreOwnerProtectedRoute>
+                  <StoreProductsPage />
                 </StoreOwnerProtectedRoute>
               }
             />
