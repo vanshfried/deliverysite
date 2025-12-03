@@ -1,0 +1,312 @@
+/* ================================
+   Layout
+================================ */
+.container {
+  display: flex;
+  min-height: 100vh;
+  background: #f6f7fb;
+}
+
+/* ================================
+   Sidebar
+================================ */
+.sidebar {
+  width: 230px;
+  background: #1e1e1e;
+  color: #fff;
+  padding: 25px 20px;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 25px;
+}
+
+.link {
+  color: #e2e2e2;
+  text-decoration: none;
+  padding: 10px 0;
+  font-size: 16px;
+  transition: 0.2s;
+}
+
+.link:hover {
+  color: #fff;
+  padding-left: 5px;
+}
+
+.logoutLink {
+  margin-top: auto;
+  color: #ff4d4d;
+  text-decoration: none;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.logoutLink:hover {
+  padding-left: 5px;
+}
+
+/* ================================
+   Main Content
+================================ */
+.main {
+  flex: 1;
+  padding: 35px;
+}
+
+/* ================================
+   Card Styling
+================================ */
+.card {
+  background: #fff;
+  padding: 22px;
+  border-radius: 10px;
+  margin-bottom: 25px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+/* ================================
+   Store Image
+================================ */
+.storeImage {
+  width: 130px;
+  height: 130px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 18px;
+  border: 2px solid #ddd;
+}
+
+/* ================================
+   Buttons
+================================ */
+.editButton {
+  display: inline-block;
+  padding: 8px 14px;
+  background: #0066ff;
+  color: #fff;
+  margin-top: 10px;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.editButton:hover {
+  background: #0050cc;
+}
+
+.productButton {
+  padding: 10px 16px;
+  background: #0b8a2f;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.productButton:hover {
+  background: #066b23;
+}
+
+/* ================================
+   Product List
+================================ */
+.productsContainer {
+  margin-top: 20px;
+}
+
+.productItem {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  background: #fafafa;
+  transition: 0.2s;
+}
+
+.productItem:hover {
+  background: #f1f1f1;
+  border-color: #ccc;
+}
+
+.productImage {
+  width: 65px;
+  height: 65px;
+  border-radius: 6px;
+  object-fit: cover;
+  margin-right: 14px;
+  border: 1px solid #bbb;
+}
+
+.noImageBox {
+  width: 65px;
+  height: 65px;
+  background: #e9e9e9;
+  border-radius: 6px;
+  margin-right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #bbb;
+  font-size: 12px;
+  color: #777;
+}
+
+.productInfo h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.productDesc {
+  color: gray;
+  margin-top: 5px;
+  font-size: 14px;
+}
+
+.productActions {
+  display: flex;
+  gap: 10px;
+}
+
+.editButtonSmall {
+  padding: 7px 12px;
+  background: #0066ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.editButtonSmall:hover {
+  background: #0050cc;
+}
+
+.deleteButton {
+  padding: 7px 12px;
+  background: #d60000;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.deleteButton:hover {
+  background: #b80000;
+}
+
+/* ================================
+   Orders
+================================ */
+.orderItem {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.orderButtons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Buttons */
+.acceptButton {
+  padding: 6px 12px;
+  background: #198754;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.acceptButton:hover {
+  background: #146c43;
+}
+
+.rejectButton {
+  padding: 6px 12px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.rejectButton:hover {
+  background: #b02a37;
+}
+
+/* ================================
+   Status Badges (Optional)
+================================ */
+.statusBadge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: 5px;
+}
+
+.statusPending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.statusAccepted {
+  background: #d4edda;
+  color: #155724;
+}
+
+.statusRejected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* ================================
+   Responsive
+================================ */
+@media (max-width: 900px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    height: auto;
+  }
+
+  .sidebar a {
+    margin-right: 20px;
+  }
+
+  .main {
+    padding: 20px;
+  }
+
+  .productItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .productActions {
+    margin-top: 10px;
+  }
+}

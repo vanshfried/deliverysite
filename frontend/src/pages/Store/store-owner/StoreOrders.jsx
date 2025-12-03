@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import API from "../../../api/api";
+import API from "../api/api";
 import styles from "../css/StoreOrders.module.css";
 
 const StoreOrders = () => {
