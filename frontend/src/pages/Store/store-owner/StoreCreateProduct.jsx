@@ -1,26 +1,24 @@
+// StoreCreateProduct.jsx
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/api";
 import QuillEditor from "./QuillEditor";
+import StoreOwnerLayout from "../components/StoreOwnerLayout"; // <-- use layout
 import styles from "../css/CreateProduct.module.css";
 
 const StoreCreateProduct = () => {
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
     name: "",
     price: "",
     discountPrice: "",
     inStock: true,
   });
-
   const [description, setDescription] = useState("");
   const [logo, setLogo] = useState(null);
-
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-
   const quillRef = useRef(null);
 
   const showMessage = (msg) => {
@@ -30,12 +28,10 @@ const StoreCreateProduct = () => {
 
   const handleChange = (e) => {
     const { name, type, checked, value } = e.target;
-
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -48,13 +44,11 @@ const StoreCreateProduct = () => {
     e.preventDefault();
 
     let newErrors = {};
-
     if (!formData.name.trim()) newErrors.name = "Product name is required";
     if (!formData.price) newErrors.price = "Price is required";
     if (!logo) newErrors.logo = "Product logo is required";
 
     setErrors(newErrors);
-
     if (Object.keys(newErrors).length > 0) {
       showMessage("❌ Fix highlighted fields");
       return;
@@ -89,97 +83,95 @@ const StoreCreateProduct = () => {
   };
 
   return (
-    <div className={styles.createProductContainer}>
-      <h2>Create Product</h2>
+    <StoreOwnerLayout>
+      <div className={styles.createProductContainer}>
+        <h2>Create Product</h2>
+        {message && <p className={styles.message}>{message}</p>}
 
-      {message && <p className={styles.message}>{message}</p>}
-
-      <form onSubmit={handleSubmit} className={styles.productForm}>
-        <div className={styles.formSection}>
-          <div className={styles.headingInstock}>
-            <h3>Product Details</h3>
-
-            <label className={styles.instockLabel}>
-              <input
-                type="checkbox"
-                name="inStock"
-                checked={formData.inStock}
-                onChange={handleChange}
-              />
-              In Stock
-            </label>
-          </div>
-
-          <input
-            type="text"
-            name="name"
-            placeholder="Product Name"
-            value={formData.name}
-            onChange={handleChange}
-            className={errors.name ? styles.errorInput : ""}
-          />
-          {errors.name && <p className={styles.errorText}>{errors.name}</p>}
-
-          <div className={styles.priceFields}>
-            <div>
-              <input
-                type="number"
-                name="price"
-                placeholder="Price"
-                value={formData.price}
-                onChange={handleChange}
-                className={errors.price ? styles.errorInput : ""}
-              />
-              {errors.price && (
-                <p className={styles.errorText}>{errors.price}</p>
-              )}
+        <form onSubmit={handleSubmit} className={styles.productForm}>
+          {/* Product Details */}
+          <div className={styles.formSection}>
+            <div className={styles.headingInstock}>
+              <h3>Product Details</h3>
+              <label className={styles.instockLabel}>
+                <input
+                  type="checkbox"
+                  name="inStock"
+                  checked={formData.inStock}
+                  onChange={handleChange}
+                />
+                In Stock
+              </label>
             </div>
 
             <input
-              type="number"
-              name="discountPrice"
-              placeholder="Discount Price (optional)"
-              value={formData.discountPrice}
+              type="text"
+              name="name"
+              placeholder="Product Name"
+              value={formData.name}
               onChange={handleChange}
-              min="1"
+              className={errors.name ? styles.errorInput : ""}
+            />
+            {errors.name && <p className={styles.errorText}>{errors.name}</p>}
+
+            <div className={styles.priceFields}>
+              <div>
+                <input
+                  type="number"
+                  name="price"
+                  placeholder="Price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  className={errors.price ? styles.errorInput : ""}
+                />
+                {errors.price && <p className={styles.errorText}>{errors.price}</p>}
+              </div>
+
+              <input
+                type="number"
+                name="discountPrice"
+                placeholder="Discount Price (optional)"
+                value={formData.discountPrice}
+                onChange={handleChange}
+                min="1"
+              />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className={styles.formSection}>
+            <h3>Product Description</h3>
+            <QuillEditor
+              ref={quillRef}
+              value={description}
+              onChange={setDescription}
+              placeholder="Write a detailed product description..."
             />
           </div>
-        </div>
 
-        <div className={styles.formSection}>
-          <h3>Product Description</h3>
+          {/* Logo */}
+          <div className={styles.formSection}>
+            <h3>Product Image</h3>
+            <label>
+              Logo (required):
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                className={errors.logo ? styles.errorInput : ""}
+              />
+            </label>
+            {errors.logo && <p className={styles.errorText}>{errors.logo}</p>}
+          </div>
 
-          <QuillEditor
-            ref={quillRef}
-            value={description}
-            onChange={setDescription}
-            placeholder="Write a detailed product description..."
-          />
-        </div>
-
-        <div className={styles.formSection}>
-          <h3>Product Image</h3>
-
-          <label>
-            Logo (required):
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleLogoChange}
-              className={errors.logo ? styles.errorInput : ""}
-            />
-          </label>
-
-          {errors.logo && <p className={styles.errorText}>{errors.logo}</p>}
-        </div>
-
-        <div className={styles.formSection}>
-          <button type="submit" disabled={loading} className={styles.submitBtn}>
-            {loading ? "Creating product..." : "Create Product"}
-          </button>
-        </div>
-      </form>
-    </div>
+          <div className={styles.formSection}>
+            <button type="submit" disabled={loading} className={styles.submitBtn}>
+              {loading ? "Creating product..." : "Create Product"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </StoreOwnerLayout>
   );
 };
 

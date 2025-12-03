@@ -1,8 +1,10 @@
+// StoreOwnerDashboard.jsx
 import React, { useEffect, useState } from "react";
 import { storeOwnerMe } from "../api/storeOwner";
-import { Link, useNavigate } from "react-router-dom";
-import API from "../api/api";
 import { getStoreProducts, deleteProduct } from "../api/storeProducts";
+import API from "../api/api";
+import { Link, useNavigate } from "react-router-dom";
+import StoreOwnerLayout from "../components/StoreOwnerLayout"; // use layout now
 import styles from "../css/StoreOwnerDashboard.module.css";
 
 export default function StoreOwnerDashboard() {
@@ -10,7 +12,6 @@ export default function StoreOwnerDashboard() {
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
-
   const navigate = useNavigate();
   const stripHtml = (html) => html.replace(/<[^>]+>/g, "");
 
@@ -28,9 +29,7 @@ export default function StoreOwnerDashboard() {
   useEffect(() => {
     const loadProducts = async () => {
       const res = await getStoreProducts();
-      if (res?.data?.products) {
-        setProducts(res.data.products);
-      }
+      if (res?.data?.products) setProducts(res.data.products);
     };
     loadProducts();
   }, []);
@@ -39,9 +38,7 @@ export default function StoreOwnerDashboard() {
     const loadOrders = async () => {
       try {
         const res = await API.get("/store-owner/orders/list");
-        if (res?.data?.orders) {
-          setRecentOrders(res.data.orders.slice(0, 10));
-        }
+        if (res?.data?.orders) setRecentOrders(res.data.orders.slice(0, 10));
       } catch (err) {
         console.error(err);
       }
@@ -80,199 +77,163 @@ export default function StoreOwnerDashboard() {
     if (!ok) return;
 
     const res = await deleteProduct(id);
-    if (res?.data?.message) {
-      setProducts(products.filter((p) => p._id !== id));
-    }
+    if (res?.data?.message) setProducts(products.filter((p) => p._id !== id));
   };
 
   if (!owner) return <p>Loading...</p>;
 
   return (
-    <div className={styles.container}>
-      {/* Sidebar */}
-      <aside className={styles.sidebar}>
-        <h2 className={styles.title}>Store Panel</h2>
+    <StoreOwnerLayout>
+      {/* Dashboard content */}
+      <div className={styles.pageHeader}>
+        <h1 className={styles.ownerName}>Welcome, {owner.fullName}</h1>
+        <p className={styles.ownerInfo}>Phone: {owner.phone}</p>
+      </div>
 
-        <Link to="/store-owner/store-profile" className={styles.link}>
-          Store Profile Edit
-        </Link>
-        <Link to="/store-owner/products" className={styles.link}>
-          Store Products Manager
-        </Link>
-        <Link to="/store-owner/orders" className={styles.link}>
-          Store Orders
-        </Link>
-
-        <Link to="/store-owner/logout" className={styles.logoutLink}>
-          Logout
-        </Link>
-      </aside>
-
-      {/* Main Content */}
-      <main className={styles.main}>
-        <div className={styles.pageHeader}>
-          <div>
-            <h1 className={styles.ownerName}>Welcome, {owner.fullName}</h1>
-            <p className={styles.ownerInfo}>Phone: {owner.phone}</p>
-          </div>
+      {/* Store Info */}
+      <div className={`${styles.card} ${styles.smallStoreCard}`}>
+        <div className={styles.sectionHeader}>
+          <h2>Your Store</h2>
         </div>
-
-        {/* Store Card */}
-        <div className={`${styles.card} ${styles.smallStoreCard}`}>
-          <div className={styles.sectionHeader}>
-            <h2>Your Store</h2>
-          </div>
-
-          {store ? (
-            <div className={styles.storeRow}>
-              {store.storeImage ? (
-                <img
-                  src={store.storeImage}
-                  alt="Store"
-                  className={styles.storeImageSmall}
-                />
-              ) : (
-                <div className={styles.noStoreImage}>No image</div>
-              )}
-
-              <div className={styles.storeDetails}>
-                <p>
-                  <strong>Name:</strong> {store.storeName}
-                </p>
-                <p>
-                  <strong>Address:</strong> {store.address || "Not set"}
-                </p>
-                <p>
-                  <strong>Timing:</strong>{" "}
-                  {store.openingTime && store.closingTime
-                    ? `${store.openingTime} - ${store.closingTime}`
-                    : "Not set"}
-                </p>
-
-                <Link
-                  to="/store-owner/store-profile"
-                  className={styles.editButton}
-                >
-                  Edit Store Profile
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <p>No store found.</p>
-          )}
-        </div>
-
-        {/* Recent Orders */}
-        <div className={styles.card}>
-          <div className={styles.sectionHeader}>
-            <h2>Recent Orders</h2>
-            <Link to="/store-owner/orders" className={styles.viewAll}>
-              View All
-            </Link>
-          </div>
-
-          {recentOrders.length === 0 ? (
-            <p>No orders yet.</p>
-          ) : (
-            recentOrders.map((order) => (
-              <div key={order._id} className={styles.orderItem}>
-                <h3>Order #{order.slug}</h3>
-                <p>
-                  <strong>Total:</strong> ₹{order.totalAmount}
-                </p>
-                <p>
-                  <strong>Status:</strong> {order.status}
-                </p>
-
-                {order.status === "PENDING" && (
-                  <div className={styles.orderButtons}>
-                    <button
-                      onClick={() => acceptOrder(order._id)}
-                      className={styles.acceptButton}
-                    >
-                      Accept
-                    </button>
-                    <button
-                      onClick={() => rejectOrder(order._id)}
-                      className={styles.rejectButton}
-                    >
-                      Reject
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Products */}
-        <div className={styles.card}>
-          <div className={styles.sectionHeader}>
-            <h2>Products</h2>
-
-            <Link
-              to="/store-owner/products/create"
-              className={styles.productButton}
-            >
-              Create Product
-            </Link>
-          </div>
-
-          <div className={styles.productsContainer}>
-            {products.length === 0 ? (
-              <p>No products yet.</p>
+        {store ? (
+          <div className={styles.storeRow}>
+            {store.storeImage ? (
+              <img
+                src={store.storeImage}
+                alt="Store"
+                className={styles.storeImageSmall}
+              />
             ) : (
-              products.map((product) => {
-                const cleanDesc = stripHtml(product.description).trim();
-                const preview =
-                  cleanDesc.length > 80
-                    ? cleanDesc.slice(0, 80) + "..."
-                    : cleanDesc;
-
-                return (
-                  <div key={product._id} className={styles.productItem}>
-                    {product.logo ? (
-                      <img
-                        src={product.logo}
-                        alt={product.name}
-                        className={styles.productImage}
-                      />
-                    ) : (
-                      <div className={styles.noImageBox}>No Image</div>
-                    )}
-
-                    <div className={styles.productInfo}>
-                      <h3>{product.name}</h3>
-                      <p>₹{product.price}</p>
-                      {cleanDesc && (
-                        <p className={styles.productDesc}>{preview}</p>
-                      )}
-                    </div>
-
-                    <div className={styles.productActions}>
-                      <button
-                        onClick={() =>
-                          navigate(`/store-owner/products/edit/${product._id}`)
-                        }
-                        className={styles.editButtonSmall}
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={() => handleDelete(product._id)}
-                        className={styles.deleteButton}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
+              <div className={styles.noStoreImage}>No image</div>
             )}
+            <div className={styles.storeDetails}>
+              <p>
+                <strong>Name:</strong> {store.storeName}
+              </p>
+              <p>
+                <strong>Address:</strong> {store.address || "Not set"}
+              </p>
+              <p>
+                <strong>Timing:</strong>{" "}
+                {store.openingTime && store.closingTime
+                  ? `${store.openingTime} - ${store.closingTime}`
+                  : "Not set"}
+              </p>
+              <Link
+                to="/store-owner/store-profile"
+                className={styles.editButton}
+              >
+                Edit Store Profile
+              </Link>
+            </div>
           </div>
+        ) : (
+          <p>No store found.</p>
+        )}
+      </div>
+
+      {/* Recent Orders */}
+      <div className={styles.card}>
+        <div className={styles.sectionHeader}>
+          <h2>Recent Orders</h2>
+          <Link to="/store-owner/orders" className={styles.viewAll}>
+            View All
+          </Link>
         </div>
-      </main>
-    </div>
+        {recentOrders.length === 0 ? (
+          <p>No orders yet.</p>
+        ) : (
+          recentOrders.map((order) => (
+            <div key={order._id} className={styles.orderItem}>
+              <h3>Order #{order.slug}</h3>
+              <p>
+                <strong>Total:</strong> ₹{order.totalAmount}
+              </p>
+              <p>
+                <strong>Status:</strong> {order.status}
+              </p>
+              {order.status === "PENDING" && (
+                <div className={styles.orderButtons}>
+                  <button
+                    onClick={() => acceptOrder(order._id)}
+                    className={styles.acceptButton}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => rejectOrder(order._id)}
+                    className={styles.rejectButton}
+                  >
+                    Reject
+                  </button>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Products */}
+      <div className={styles.card}>
+        <div className={styles.sectionHeader}>
+          <h2>Products</h2>
+          <Link
+            to="/store-owner/products/create"
+            className={styles.productButton}
+          >
+            Create Product
+          </Link>
+        </div>
+        <div className={styles.productsContainer}>
+          {products.length === 0 ? (
+            <p>No products yet.</p>
+          ) : (
+            products.map((product) => {
+              const cleanDesc = stripHtml(product.description).trim();
+              const preview =
+                cleanDesc.length > 80
+                  ? cleanDesc.slice(0, 80) + "..."
+                  : cleanDesc;
+              return (
+                <div key={product._id} className={styles.productItem}>
+                  {product.logo ? (
+                    <img
+                      src={product.logo}
+                      alt={product.name}
+                      className={styles.productImage}
+                    />
+                  ) : (
+                    <div className={styles.noImageBox}>No Image</div>
+                  )}
+                  <div className={styles.productInfo}>
+                    <h3>{product.name}</h3>
+                    <p>₹{product.price}</p>
+                    {cleanDesc && (
+                      <p className={styles.productDesc}>{preview}</p>
+                    )}
+                  </div>
+                  <div className={styles.productActions}>
+                    <button
+                      onClick={() =>
+                        navigate(`/store-owner/products/edit/${product._id}`)
+                      }
+                      className={styles.editButtonSmall}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(product._id)}
+                      className={styles.deleteButton}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </StoreOwnerLayout>
   );
 }

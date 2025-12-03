@@ -1,6 +1,8 @@
+// StoreProfileEdit.jsx
 import React, { useEffect, useState } from "react";
 import { updateStoreProfile, storeOwnerMe } from "../api/storeOwner";
 import { useNavigate } from "react-router-dom";
+import StoreOwnerLayout from "../components/StoreOwnerLayout"; // wrap page
 
 export default function StoreProfileEdit() {
   const [store, setStore] = useState(null);
@@ -42,10 +44,7 @@ export default function StoreProfileEdit() {
   if (!store) return <p>Loading store profile...</p>;
 
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleFileChange = (e) => {
@@ -56,7 +55,6 @@ export default function StoreProfileEdit() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const fd = new FormData();
     fd.append("address", form.address);
     fd.append("description", form.description);
@@ -66,134 +64,101 @@ export default function StoreProfileEdit() {
     if (form.storeImage) fd.append("storeImage", form.storeImage);
 
     const res = await updateStoreProfile(fd);
-
-    if (res) {
-      navigate("/store-owner/dashboard");
-    }
+    if (res) navigate("/store-owner/dashboard");
   };
 
   return (
-    <div style={styles.container}>
-      <h2>Edit Store Profile</h2>
+    <StoreOwnerLayout>
+      <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+        <h2>Edit Store Profile</h2>
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+        >
+          <label>Store Image</label>
+          {imagePreview ? (
+            <img
+              src={imagePreview}
+              alt="Store"
+              style={{
+                width: "120px",
+                height: "120px",
+                objectFit: "cover",
+                borderRadius: "8px",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: "120px",
+                height: "120px",
+                background: "#eee",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              No Image
+            </div>
+          )}
+          <input type="file" accept="image/*" onChange={handleFileChange} />
 
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <label style={styles.label}>Store Image</label>
-        {imagePreview ? (
-          <img
-            src={imagePreview}
-            alt="Store"
-            style={styles.image}
+          <label>Address</label>
+          <input
+            type="text"
+            name="address"
+            value={form.address}
+            onChange={handleChange}
           />
-        ) : (
-          <div style={styles.noImage}>No Image</div>
-        )}
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          style={styles.input}
-        />
+          <label>Phone</label>
+          <input
+            type="text"
+            name="phone"
+            value={form.phone}
+            onChange={handleChange}
+          />
 
-        <label style={styles.label}>Address</label>
-        <input
-          type="text"
-          name="address"
-          value={form.address}
-          onChange={handleChange}
-          style={styles.input}
-        />
+          <label>Description</label>
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            style={{ height: "120px" }}
+          />
 
-        <label style={styles.label}>Phone</label>
-        <input
-          type="text"
-          name="phone"
-          value={form.phone}
-          onChange={handleChange}
-          style={styles.input}
-        />
+          <label>Opening Time</label>
+          <input
+            type="time"
+            name="openingTime"
+            value={form.openingTime}
+            onChange={handleChange}
+          />
 
-        <label style={styles.label}>Description</label>
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-          style={styles.textarea}
-        />
+          <label>Closing Time</label>
+          <input
+            type="time"
+            name="closingTime"
+            value={form.closingTime}
+            onChange={handleChange}
+          />
 
-        <label style={styles.label}>Opening Time</label>
-        <input
-          type="time"
-          name="openingTime"
-          value={form.openingTime}
-          onChange={handleChange}
-          style={styles.input}
-        />
-
-        <label style={styles.label}>Closing Time</label>
-        <input
-          type="time"
-          name="closingTime"
-          value={form.closingTime}
-          onChange={handleChange}
-          style={styles.input}
-        />
-
-        <button type="submit" style={styles.button}>
-          Save Changes
-        </button>
-      </form>
-    </div>
+          <button
+            type="submit"
+            style={{
+              padding: "12px",
+              background: "#007bff",
+              color: "#fff",
+              border: "none",
+              borderRadius: "6px",
+              fontSize: "16px",
+            }}
+          >
+            Save Changes
+          </button>
+        </form>
+      </div>
+    </StoreOwnerLayout>
   );
 }
-
-const styles = {
-  container: { padding: "30px", maxWidth: "600px", margin: "0 auto" },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "15px",
-    background: "#fff",
-    padding: "20px",
-    borderRadius: "8px",
-    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-  },
-  label: { fontWeight: 600 },
-  input: {
-    padding: "10px",
-    border: "1px solid #ddd",
-    borderRadius: "6px",
-  },
-  textarea: {
-    padding: "10px",
-    height: "120px",
-    border: "1px solid #ddd",
-    borderRadius: "6px",
-  },
-  image: {
-    width: "120px",
-    height: "120px",
-    objectFit: "cover",
-    borderRadius: "8px",
-    marginBottom: "10px",
-  },
-  noImage: {
-    width: "120px",
-    height: "120px",
-    background: "#eee",
-    borderRadius: "8px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: "10px",
-  },
-  button: {
-    padding: "12px",
-    background: "#007bff",
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    fontSize: "16px",
-    cursor: "pointer",
-  },
-};
