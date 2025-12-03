@@ -39,7 +39,7 @@ export default function StoreOwnerHeader() {
 
         <nav className={`${styles.nav} ${menuOpen ? styles.navOpen : ""}`}>
           <Link to="/store-owner/store-profile" className={styles.navLink}>
-            Store Profile
+            Store Profile Edit
           </Link>
           <Link to="/store-owner/products" className={styles.navLink}>
             All Products
