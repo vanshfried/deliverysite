@@ -66,6 +66,9 @@ export default function StoreOwnerDashboard() {
         <Link to="/store-owner/products" style={styles.link}>
           Store Products
         </Link>
+        <Link to="/store-owner/orders" style={styles.link}>
+          Store Orders
+        </Link>
 
         <Link to="/store-owner/logout" style={styles.logoutLink}>
           Logout
