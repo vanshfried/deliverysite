@@ -74,6 +74,7 @@ export default function DeliveryDashboard() {
   // NEW STATE FOR ROUTE
   const [route, setRoute] = useState([]);
   const [routeLoading, setRouteLoading] = useState(false);
+  const [storeRoute, setStoreRoute] = useState([]);
 
   const msgTimeoutRef = useRef(null);
   const mountedRef = useRef(true);
@@ -95,39 +96,28 @@ export default function DeliveryDashboard() {
   };
 
   // ------------------------ ROUTE FETCHER (REAL ROAD ROUTING) ------------------------
-  const fetchRoute = async (from, to) => {
+  const fetchRoute = async (from, to, setRouteFn) => {
     if (!from || !to) return;
 
     const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
 
     try {
-      setRouteLoading(true);
       const res = await fetch(url);
       const json = await res.json();
 
       if (!json.routes || !json.routes[0]) {
-        setRoute([]);
-        setDistanceKm(null);
+        setRouteFn([]);
         return;
       }
 
-      const routeData = json.routes[0];
-
-      // extract distance in km
-      const km = routeData.distance / 1000;
-      setDistanceKm(km.toFixed(2));
-
-      // convert geometry
-      const coordinates = routeData.geometry.coordinates;
-      const formatted = coordinates.map((c) => [c[1], c[0]]);
-
-      setRoute(formatted);
+      const coordinates = json.routes[0].geometry.coordinates.map((c) => [
+        c[1],
+        c[0],
+      ]);
+      setRouteFn(coordinates);
     } catch (err) {
       console.error("Route fetch failed:", err);
-      setRoute([]);
-      setDistanceKm(null);
-    } finally {
-      setRouteLoading(false);
+      setRouteFn([]);
     }
   };
 
@@ -154,8 +144,16 @@ export default function DeliveryDashboard() {
           setLiveCoords(coords);
           updateLiveLocation(coords);
 
+          if (currentOrder?.store?.location) {
+            fetchRoute(liveCoords, currentOrder.store.location, setStoreRoute);
+          }
+
           if (currentOrder?.deliveryAddress?.coords) {
-            fetchRoute(coords, currentOrder.deliveryAddress.coords);
+            fetchRoute(
+              currentOrder.store.location,
+              currentOrder.deliveryAddress.coords,
+              setRoute
+            );
           }
 
           if (accuracy > 100)
@@ -339,24 +337,50 @@ export default function DeliveryDashboard() {
       <MapContainer
         center={[coords.lat, coords.lon]}
         zoom={15}
-        className={`${styles.mapContainer} ${mapShrink ? styles.shrink : ""}`}
+        className={styles.mapContainer}
       >
         <TileLayer
           url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
           subdomains={["mt0", "mt1", "mt2", "mt3"]}
         />
 
-        <Marker position={[coords.lat, coords.lon]}>
-          <Popup>Delivery Location</Popup>
-        </Marker>
-
+        {/* Live Location */}
         <Marker position={[liveCoords.lat, liveCoords.lon]}>
           <Popup>My Live Location</Popup>
         </Marker>
 
-        {/* REAL ROUTE HERE */}
+        {/* Store */}
+        {currentOrder?.store?.location && (
+          <Marker
+            position={[
+              currentOrder.store.location.lat,
+              currentOrder.store.location.lon,
+            ]}
+          >
+            <Popup>Pickup: {currentOrder.store.storeName}</Popup>
+          </Marker>
+        )}
+
+        {/* Customer */}
+        {currentOrder?.deliveryAddress?.coords && (
+          <Marker
+            position={[
+              currentOrder.deliveryAddress.coords.lat,
+              currentOrder.deliveryAddress.coords.lon,
+            ]}
+          >
+            <Popup>Delivery Location</Popup>
+          </Marker>
+        )}
+
+        {/* Route: store → customer */}
         {!routeLoading && route.length > 0 && (
           <Polyline positions={route} color="#1976d2" weight={5} />
+        )}
+
+        {/* Route: delivery boy → store */}
+        {!routeLoading && storeRoute.length > 0 && (
+          <Polyline positions={storeRoute} color="#f39c12" weight={5} />
         )}
       </MapContainer>
     );

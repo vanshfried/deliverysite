@@ -1,4 +1,3 @@
-// backend\routes\delivery\deliveryRoutes.js
 import express from "express";
 import Order from "../../models/Order.js";
 import DeliveryBoy from "../../models/DeliveryBoy.js";
@@ -11,9 +10,8 @@ const router = express.Router();
 /* -------------------------------------------------------------------------- */
 router.get("/available", requireDeliveryBoy, async (req, res) => {
   try {
-    const deliveryBoy = await DeliveryBoy.findById(req.user._id); // include rejectedOrders
+    const deliveryBoy = await DeliveryBoy.findById(req.user._id);
 
-    // 🛑 Block if delivery boy is inactive
     if (!deliveryBoy.isActive) {
       return res.status(403).json({
         success: false,
@@ -21,7 +19,6 @@ router.get("/available", requireDeliveryBoy, async (req, res) => {
       });
     }
 
-    // 🛑 Block if they already have an ongoing delivery
     if (deliveryBoy.currentOrder) {
       return res.status(403).json({
         success: false,
@@ -29,13 +26,13 @@ router.get("/available", requireDeliveryBoy, async (req, res) => {
       });
     }
 
-    // Fetch orders excluding ones this delivery boy rejected
     const orders = await Order.find({
       status: "PROCESSING",
       deliveryBoy: null,
       _id: { $nin: deliveryBoy.rejectedOrders || [] },
     })
       .populate("user", "name phone")
+      .populate("store", "storeName address location phone") // ✅ STORE LOCATION ADDED
       .sort({ createdAt: -1 })
       .lean();
 
@@ -87,19 +84,27 @@ router.patch("/accept/:id", requireDeliveryBoy, async (req, res) => {
         message: "Order not available for delivery assignment",
       });
 
-    // Assign order
     order.deliveryBoy = deliveryBoy._id;
     order.status = "OUT_FOR_DELIVERY";
     order.timestampsLog.outForDeliveryAt = new Date();
     await order.save();
 
-    // Update delivery boy
     await DeliveryBoy.findByIdAndUpdate(deliveryBoy._id, {
       $inc: { "stats.accepted": 1 },
       $set: { currentOrder: order._id },
     });
 
-    res.json({ success: true, message: "Order accepted", order });
+    // ✅ SEND POPULATED ORDER WITH STORE LOCATION
+    const populatedOrder = await Order.findById(order._id)
+      .populate("user", "name phone")
+      .populate("store", "storeName address location phone")
+      .lean();
+
+    res.json({
+      success: true,
+      message: "Order accepted",
+      order: populatedOrder,
+    });
   } catch (err) {
     console.error("❌ ACCEPT ORDER ERROR:", err);
     res.status(500).json({
@@ -158,6 +163,7 @@ router.get("/my", requireDeliveryBoy, async (req, res) => {
 
     const orders = await Order.find({ deliveryBoy: deliveryBoy._id })
       .populate("user", "name phone")
+      .populate("store", "storeName address location phone") // ✅ STORE LOCATION ADDED
       .sort({ createdAt: -1 })
       .lean();
 
@@ -182,17 +188,14 @@ router.get("/my", requireDeliveryBoy, async (req, res) => {
 router.patch("/reject/:id", requireDeliveryBoy, async (req, res) => {
   try {
     const deliveryBoy = req.user;
-    const orderId = req.params.id;
+    const order = await Order.findById(req.params.id);
 
-    // Make sure the order exists
-    const order = await Order.findById(orderId);
     if (!order) {
       return res
         .status(404)
         .json({ success: false, message: "Order not found" });
     }
 
-    // Only reject if unassigned or assigned to this delivery boy
     if (
       order.deliveryBoy &&
       String(order.deliveryBoy) !== String(deliveryBoy._id)
@@ -203,7 +206,6 @@ router.patch("/reject/:id", requireDeliveryBoy, async (req, res) => {
       });
     }
 
-    // Add order to delivery boy's rejectedOrders and clear currentOrder
     await DeliveryBoy.findByIdAndUpdate(deliveryBoy._id, {
       $addToSet: { rejectedOrders: order._id },
       $set: { currentOrder: null },
@@ -220,8 +222,9 @@ router.patch("/reject/:id", requireDeliveryBoy, async (req, res) => {
     });
   }
 });
+
 /* -------------------------------------------------------------------------- */
-/* 📍 PATCH: Update Delivery Boy Live Location                                  */
+/* 📍 PATCH: Update Delivery Boy Live Location                                */
 /* -------------------------------------------------------------------------- */
 router.patch("/location", requireDeliveryBoy, async (req, res) => {
   try {
@@ -240,7 +243,7 @@ router.patch("/location", requireDeliveryBoy, async (req, res) => {
         $set: {
           location: {
             type: "Point",
-            coordinates: [lon, lat], // GeoJSON [lng, lat]
+            coordinates: [lon, lat],
           },
         },
       },
