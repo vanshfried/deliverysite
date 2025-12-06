@@ -11,16 +11,27 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
+import deliveryBoy from "../../../../Images/deliveryboy.png"
+import locationlogo from "../../../../Images/locationlogo.png"
+import storelogo from "../../../../Images/storelogo.png"
+// ------------------------ Custom Icons ------------------------
+const icons = {
+  deliveryBoy: new L.Icon({
+    iconUrl: deliveryBoy,
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+  }),
+  store: new L.Icon({
+    iconUrl: storelogo,
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+  }),
+  customer: new L.Icon({
+    iconUrl: locationlogo,
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+  }),
+};
 
 // ------------------------ Map Picker ------------------------
 function MapPicker({ coords, setCoords, label, shrink }) {
@@ -36,7 +47,7 @@ function MapPicker({ coords, setCoords, label, shrink }) {
       },
     });
     return position ? (
-      <Marker position={[position.lat, position.lon]}>
+      <Marker position={[position.lat, position.lon]} icon={icons.deliveryBoy}>
         <Popup>{label}</Popup>
       </Marker>
     ) : null;
@@ -69,18 +80,13 @@ export default function DeliveryDashboard() {
   const [mapShrink, setMapShrink] = useState(false);
   const [locationSet, setLocationSet] = useState(false);
   const [locationAllowed, setLocationAllowed] = useState(true);
-  const [distanceKm, setDistanceKm] = useState(null);
-
-  // NEW STATE FOR ROUTE
   const [route, setRoute] = useState([]);
-  const [routeLoading, setRouteLoading] = useState(false);
   const [storeRoute, setStoreRoute] = useState([]);
-
   const msgTimeoutRef = useRef(null);
   const mountedRef = useRef(true);
   const watchIdRef = useRef(null);
 
-  // ------------------------ Helper ------------------------
+  // ------------------------ Helpers ------------------------
   const showMessage = (text, duration = 3000) => {
     setMsg(text);
     if (msgTimeoutRef.current) clearTimeout(msgTimeoutRef.current);
@@ -95,21 +101,13 @@ export default function DeliveryDashboard() {
     }
   };
 
-  // ------------------------ ROUTE FETCHER (REAL ROAD ROUTING) ------------------------
   const fetchRoute = async (from, to, setRouteFn) => {
     if (!from || !to) return;
-
-    const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
-
     try {
+      const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
       const res = await fetch(url);
       const json = await res.json();
-
-      if (!json.routes || !json.routes[0]) {
-        setRouteFn([]);
-        return;
-      }
-
+      if (!json.routes || !json.routes[0]) return setRouteFn([]);
       const coordinates = json.routes[0].geometry.coordinates.map((c) => [
         c[1],
         c[0],
@@ -121,7 +119,6 @@ export default function DeliveryDashboard() {
     }
   };
 
-  // ------------------------ GEO TRACKING ------------------------
   const startTracking = () => {
     if (!navigator.geolocation) {
       setLocationAllowed(false);
@@ -129,7 +126,6 @@ export default function DeliveryDashboard() {
     }
     showMessage("Tracking live location...");
     setLocationAllowed(true);
-
     let bestAccuracy = Infinity;
 
     watchIdRef.current = navigator.geolocation.watchPosition(
@@ -144,22 +140,20 @@ export default function DeliveryDashboard() {
           setLiveCoords(coords);
           updateLiveLocation(coords);
 
-          if (currentOrder?.store?.location) {
-            fetchRoute(liveCoords, currentOrder.store.location, setStoreRoute);
-          }
-
-          if (currentOrder?.deliveryAddress?.coords) {
+          if (currentOrder?.store?.location)
+            fetchRoute(coords, currentOrder.store.location, setStoreRoute);
+          if (currentOrder?.deliveryAddress?.coords)
             fetchRoute(
               currentOrder.store.location,
               currentOrder.deliveryAddress.coords,
               setRoute
             );
-          }
 
-          if (accuracy > 100)
-            showMessage(`GPS accuracy: ±${Math.round(accuracy)}m ⚠️`);
-          else
-            showMessage(`Live location accurate ±${Math.round(accuracy)}m ✅`);
+          showMessage(
+            `GPS accuracy: ±${Math.round(accuracy)}m ${
+              accuracy > 100 ? "⚠️" : "✅"
+            }`
+          );
         }
       },
       (err) => {
@@ -177,7 +171,7 @@ export default function DeliveryDashboard() {
     watchIdRef.current = null;
   };
 
-  // ------------------------ API ------------------------
+  // ------------------------ API Calls ------------------------
   const fetchProfile = async () => {
     try {
       const res = await API.get("/api/delivery/me");
@@ -185,7 +179,6 @@ export default function DeliveryDashboard() {
       if (res?.data?.success) {
         const data = res.data.deliveryBoy;
         setDeliveryBoy(data);
-
         if (data.location?.coordinates) {
           const [lon, lat] = data.location.coordinates;
           setLiveCoords({ lat, lon });
@@ -206,11 +199,8 @@ export default function DeliveryDashboard() {
       if (!mountedRef.current) return;
       const nextOrder = res?.data?.orders?.[0] || null;
       setCurrentOrder(nextOrder);
-
-      if (nextOrder?.deliveryAddress?.coords) {
-        fetchRoute(liveCoords, nextOrder.deliveryAddress.coords);
-      }
-
+      if (nextOrder?.deliveryAddress?.coords)
+        fetchRoute(liveCoords, nextOrder.deliveryAddress.coords, setRoute);
       if (!nextOrder) showMessage("No pending orders");
     } catch (err) {
       showMessage(err.response?.data?.message || "Failed to fetch orders");
@@ -226,10 +216,8 @@ export default function DeliveryDashboard() {
       if (!mountedRef.current) return;
       const activeOrder = res.data.orders.find((o) => o._id === orderId);
       setCurrentOrder(activeOrder || null);
-
-      if (activeOrder?.deliveryAddress?.coords) {
-        fetchRoute(liveCoords, activeOrder.deliveryAddress.coords);
-      }
+      if (activeOrder?.deliveryAddress?.coords)
+        fetchRoute(liveCoords, activeOrder.deliveryAddress.coords, setRoute);
     } catch {
       showMessage("Failed to fetch active order");
       setCurrentOrder(null);
@@ -262,15 +250,9 @@ export default function DeliveryDashboard() {
       const res = await API.patch(endpoint);
       if (res?.data?.success) {
         showMessage(res.data.message);
-
-        // FIXED: After accepting, fetch the profile which includes currentOrder
         await fetchProfile();
-
-        if (decision === "accept") {
-          // If accepted, fetch the current order details
-          fetchCurrentOrder(currentOrder._id);
-        } else {
-          // If rejected, clear and fetch next available order
+        if (decision === "accept") fetchCurrentOrder(currentOrder._id);
+        else {
           setCurrentOrder(null);
           fetchNextOrder();
         }
@@ -295,22 +277,16 @@ export default function DeliveryDashboard() {
   useEffect(() => {
     if (deliveryBoy?.isActive && locationSet) {
       startTracking();
-
-      // FIXED: Check if delivery person has a current order
-      if (deliveryBoy?.currentOrder) {
-        // Fetch the current order they're working on
+      if (deliveryBoy?.currentOrder)
         fetchCurrentOrder(deliveryBoy.currentOrder);
-      } else {
-        // No current order, fetch next available
-        fetchNextOrder();
-      }
+      else fetchNextOrder();
     } else {
       stopTracking();
       setCurrentOrder(null);
     }
   }, [deliveryBoy?.isActive, locationSet, deliveryBoy?.currentOrder]);
 
-  // ------------------------ Helpers ------------------------
+  // ------------------------ Render Helpers ------------------------
   const renderAddress = (a) => {
     if (!a) return <p className={styles.noOrder}>No address</p>;
     const line = [a.label, a.houseNo, a.laneOrSector, a.landmark, a.pincode]
@@ -329,10 +305,8 @@ export default function DeliveryDashboard() {
     );
   };
 
-  // ------------------------ MAP WITH REAL ROUTE ------------------------
   const renderMap = (coords) => {
     if (!coords) return null;
-
     return (
       <MapContainer
         center={[coords.lat, coords.lon]}
@@ -343,50 +317,45 @@ export default function DeliveryDashboard() {
           url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
           subdomains={["mt0", "mt1", "mt2", "mt3"]}
         />
-
-        {/* Live Location */}
-        <Marker position={[liveCoords.lat, liveCoords.lon]}>
+        <Marker
+          position={[liveCoords.lat, liveCoords.lon]}
+          icon={icons.deliveryBoy}
+        >
           <Popup>My Live Location</Popup>
         </Marker>
-
-        {/* Store */}
         {currentOrder?.store?.location && (
           <Marker
             position={[
               currentOrder.store.location.lat,
               currentOrder.store.location.lon,
             ]}
+            icon={icons.store}
           >
             <Popup>Pickup: {currentOrder.store.storeName}</Popup>
           </Marker>
         )}
-
-        {/* Customer */}
         {currentOrder?.deliveryAddress?.coords && (
           <Marker
             position={[
               currentOrder.deliveryAddress.coords.lat,
               currentOrder.deliveryAddress.coords.lon,
             ]}
+            icon={icons.customer}
           >
             <Popup>Delivery Location</Popup>
           </Marker>
         )}
-
-        {/* Route: store → customer */}
-        {!routeLoading && route.length > 0 && (
+        {route.length > 0 && (
           <Polyline positions={route} color="#1976d2" weight={5} />
         )}
-
-        {/* Route: delivery boy → store */}
-        {!routeLoading && storeRoute.length > 0 && (
+        {storeRoute.length > 0 && (
           <Polyline positions={storeRoute} color="#f39c12" weight={5} />
         )}
       </MapContainer>
     );
   };
 
-  // ------------------------ RENDER ------------------------
+  // ------------------------ Main Render ------------------------
   if (loading) return <p className={styles.loading}>Loading...</p>;
   if (!deliveryBoy)
     return <p className={styles.error}>{msg || "No profile found"}</p>;
@@ -397,7 +366,6 @@ export default function DeliveryDashboard() {
   return (
     <div className={styles.dashboard}>
       {msg && <div className={styles.toast}>{msg}</div>}
-
       <header className={styles.header}>
         <h1>Welcome, {deliveryBoy.name}</h1>
         <button
@@ -411,7 +379,6 @@ export default function DeliveryDashboard() {
         </button>
       </header>
 
-      {/* Stats */}
       <section className={styles.stats}>
         {[
           { label: "Accepted", value: stats.accepted, color: "accepted" },
@@ -427,7 +394,6 @@ export default function DeliveryDashboard() {
         ))}
       </section>
 
-      {/* Location Setup */}
       {!locationSet && (
         <section className={styles.locationSetup}>
           <h2>
@@ -473,13 +439,9 @@ export default function DeliveryDashboard() {
                 setLocationSet(true);
                 setMapShrink(true);
                 showMessage("Location saved ✅");
-
-                // Check if there's a current order after setting location
-                if (deliveryBoy?.currentOrder) {
+                if (deliveryBoy?.currentOrder)
                   fetchCurrentOrder(deliveryBoy.currentOrder);
-                } else {
-                  fetchNextOrder();
-                }
+                else fetchNextOrder();
               }}
             >
               Save Location
@@ -488,7 +450,6 @@ export default function DeliveryDashboard() {
         </section>
       )}
 
-      {/* Orders */}
       {locationSet && deliveryBoy.isActive && (
         <section className={styles.currentOrder}>
           <h2>
@@ -516,14 +477,7 @@ export default function DeliveryDashboard() {
               </div>
 
               {renderAddress(currentOrder.deliveryAddress)}
-              {distanceKm && (
-                <p className={styles.distanceInfo}>
-                  <strong>Distance:</strong> {distanceKm} km
-                </p>
-              )}
-
-              {currentOrder.deliveryAddress?.coords &&
-                renderMap(currentOrder.deliveryAddress.coords)}
+              {renderMap(currentOrder.deliveryAddress?.coords)}
 
               <div className={styles.orderButtons}>
                 {!deliveryBoy.currentOrder ? (
@@ -554,7 +508,6 @@ export default function DeliveryDashboard() {
         </section>
       )}
 
-      {/* Collapsible Location */}
       {locationSet && (
         <details className={styles.locationPicker}>
           <summary>Update My Location</summary>
@@ -579,10 +532,12 @@ export default function DeliveryDashboard() {
                     setLiveCoords(coords);
                     updateLiveLocation(coords);
                     showMessage("Live location updated ✅");
-
-                    if (currentOrder?.deliveryAddress?.coords) {
-                      fetchRoute(coords, currentOrder.deliveryAddress.coords);
-                    }
+                    if (currentOrder?.deliveryAddress?.coords)
+                      fetchRoute(
+                        coords,
+                        currentOrder.deliveryAddress.coords,
+                        setRoute
+                      );
                   },
                   () => showMessage("Failed to get live location ❌"),
                   { enableHighAccuracy: true }
@@ -597,10 +552,12 @@ export default function DeliveryDashboard() {
                 updateLiveLocation(liveCoords);
                 showMessage("Location saved ✅");
                 setMapShrink(true);
-
-                if (currentOrder?.deliveryAddress?.coords) {
-                  fetchRoute(liveCoords, currentOrder.deliveryAddress.coords);
-                }
+                if (currentOrder?.deliveryAddress?.coords)
+                  fetchRoute(
+                    liveCoords,
+                    currentOrder.deliveryAddress.coords,
+                    setRoute
+                  );
               }}
             >
               Save Location
