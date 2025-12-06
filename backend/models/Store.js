@@ -17,7 +17,16 @@ const StoreSchema = new mongoose.Schema({
   },
 
   storeImage: { type: String },
-  address: { type: String },
+
+  address: { type: String }, // readable address for display
+
+  // ✅ NEW: MAP LOCATION
+  location: {
+    lat: { type: Number, required: true },
+    lon: { type: Number, required: true },
+    accuracy: { type: Number },
+  },
+
   description: { type: String },
   phone: { type: String },
 

@@ -10,7 +10,7 @@ const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Update store profile
+// ✅ Update store profile + location
 router.put(
   "/update",
   storeOwnerAuth,
@@ -26,6 +26,9 @@ router.put(
         openingTime,
         closingTime,
         phone,
+
+        // ✅ NEW: location will come from frontend
+        location, // expected: { lat, lon, accuracy }
       } = req.body;
 
       const updateData = {
@@ -37,9 +40,36 @@ router.put(
         phone,
       };
 
-      // If image uploaded → convert to base64
+      // ✅ Validate & set location if provided
+      if (location) {
+        let parsedLocation = location;
+
+        // If location is sent as string (FormData), parse it
+        if (typeof location === "string") {
+          parsedLocation = JSON.parse(location);
+        }
+
+        if (
+          typeof parsedLocation.lat === "number" &&
+          typeof parsedLocation.lon === "number"
+        ) {
+          updateData.location = {
+            lat: parsedLocation.lat,
+            lon: parsedLocation.lon,
+            accuracy: parsedLocation.accuracy || null,
+          };
+        } else {
+          return res
+            .status(400)
+            .json({ message: "Invalid store location format" });
+        }
+      }
+
+      // ✅ If image uploaded → convert to base64
       if (req.file) {
-        updateData.storeImage = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+        updateData.storeImage = `data:${req.file.mimetype};base64,${req.file.buffer.toString(
+          "base64"
+        )}`;
       }
 
       const store = await Store.findOneAndUpdate(
