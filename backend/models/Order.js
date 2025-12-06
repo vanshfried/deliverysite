@@ -23,7 +23,7 @@ const OrderSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
           required: true,
-        }, // optional: link to product
+        },
         name: { type: String, required: true },
         quantity: { type: Number, required: true },
         price: { type: Number, required: true },
@@ -56,6 +56,7 @@ const OrderSchema = new mongoose.Schema(
         "PENDING",
         "CANCELLED",
         "PROCESSING",
+        "DRIVER_ASSIGNED",
         "OUT_FOR_DELIVERY",
         "DELIVERED",
       ],
@@ -68,6 +69,8 @@ const OrderSchema = new mongoose.Schema(
     timestampsLog: {
       acceptedAt: { type: Date, default: null },
       cancelledAt: { type: Date, default: null },
+      driverAssignedAt: { type: Date, default: null },
+      awaitingPickupAt: { type: Date, default: null },
       outForDeliveryAt: { type: Date, default: null },
       deliveredAt: { type: Date, default: null },
     },
@@ -78,6 +81,6 @@ const OrderSchema = new mongoose.Schema(
 );
 
 OrderSchema.index({ status: 1, createdAt: -1 });
-OrderSchema.index({ store: 1, createdAt: -1 }); // Useful for filtering orders per store
+OrderSchema.index({ store: 1, createdAt: -1 });
 
 export default mongoose.model("Order", OrderSchema);

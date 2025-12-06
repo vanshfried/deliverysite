@@ -54,6 +54,9 @@ router.get("/available", requireDeliveryBoy, async (req, res) => {
 /* -------------------------------------------------------------------------- */
 /* 🛵 PATCH: Accept an Order                                                  */
 /* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* 🛵 PATCH: Accept an Order                                                  */
+/* -------------------------------------------------------------------------- */
 router.patch("/accept/:id", requireDeliveryBoy, async (req, res) => {
   try {
     const deliveryBoy = req.user;
@@ -84,17 +87,19 @@ router.patch("/accept/:id", requireDeliveryBoy, async (req, res) => {
         message: "Order not available for delivery assignment",
       });
 
+    // Assign the driver and update status to DRIVER_ASSIGNED
     order.deliveryBoy = deliveryBoy._id;
-    order.status = "OUT_FOR_DELIVERY";
-    order.timestampsLog.outForDeliveryAt = new Date();
+    order.status = "DRIVER_ASSIGNED";
+    order.timestampsLog.driverAssignedAt = new Date();
     await order.save();
 
+    // Update delivery boy stats and current order
     await DeliveryBoy.findByIdAndUpdate(deliveryBoy._id, {
       $inc: { "stats.accepted": 1 },
       $set: { currentOrder: order._id },
     });
 
-    // ✅ SEND POPULATED ORDER WITH STORE LOCATION
+    // Populate order for response
     const populatedOrder = await Order.findById(order._id)
       .populate("user", "name phone")
       .populate("store", "storeName address location phone")
@@ -102,7 +107,7 @@ router.patch("/accept/:id", requireDeliveryBoy, async (req, res) => {
 
     res.json({
       success: true,
-      message: "Order accepted",
+      message: "Order accepted and driver assigned",
       order: populatedOrder,
     });
   } catch (err) {
