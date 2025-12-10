@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/api";
 import styles from "./css/HomePage.module.css";
-
+import FloatingCartButton from "../../components/FloatingCartButton";
 const HomePage = () => {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +30,7 @@ const HomePage = () => {
   return (
     <div className={styles.hpContainer}>
       <h1>Stores</h1>
-
+      <FloatingCartButton />
       <div className={styles.hpGrid}>
         {stores.map((store) => (
           <div

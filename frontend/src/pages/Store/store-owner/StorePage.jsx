@@ -4,22 +4,25 @@ import API from "../api/api";
 import styles from "../css/StorePage.module.css";
 import { CartContext } from "../../admin/Context/CartContext";
 import { AuthContext } from "../../admin/Context/AuthContext";
+import FloatingCartButton from "../../../components/FloatingCartButton";
 
 const StorePage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
 
-  const { addToCart, cart } = useContext(CartContext);
+  const { addToCart, cart, clearCart } = useContext(CartContext);
   const { userLoggedIn } = useContext(AuthContext);
 
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [adding, setAdding] = useState(null);
 
-  // 🔥 remove HTML tags
+  // New states for “Clear & Add” modal
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [pendingProduct, setPendingProduct] = useState(null);
+
   const stripHtml = (html) => html.replace(/<[^>]+>/g, "");
 
   useEffect(() => {
@@ -34,21 +37,39 @@ const StorePage = () => {
         setLoading(false);
       }
     };
-
     loadStore();
   }, [slug]);
 
   const handleAddToCart = async (product) => {
     if (!userLoggedIn) return setShowLoginPopup(true);
+
     if (cart.items.some((i) => i.product._id === product._id)) return;
 
     setAdding(product._id);
+
     try {
-      await addToCart(product._id, 1);
+      const result = await addToCart(product._id, 1);
+
+      if (result?.conflict) {
+        // Server said: conflict with another store
+        setPendingProduct(product);
+        setShowConflictModal(true);
+        return;
+      }
+
       navigate("/cart");
     } finally {
       setAdding(null);
     }
+  };
+
+  const confirmClearAndAdd = async () => {
+    if (!pendingProduct) return;
+    setShowConflictModal(false);
+    await clearCart();
+    await addToCart(pendingProduct._id, 1);
+    setPendingProduct(null);
+    navigate("/cart");
   };
 
   const handleBuyNow = (product) => {
@@ -61,7 +82,6 @@ const StorePage = () => {
       <div className={styles.popupCard}>
         <h2>Please Login</h2>
         <p>You need to login to continue.</p>
-
         <div className={styles.popupActions}>
           <button
             className={styles.loginBtn}
@@ -72,10 +92,34 @@ const StorePage = () => {
           >
             Login
           </button>
-
           <button
             className={styles.cancelBtn}
             onClick={() => setShowLoginPopup(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ConflictModal = () => (
+    <div className={styles.popupBackdrop}>
+      <div className={styles.popupCard}>
+        <h2>Different Store Items</h2>
+        <p>
+          Your cart has items from another store. Clear it and add this product?
+        </p>
+        <div className={styles.popupActions}>
+          <button className={styles.loginBtn} onClick={confirmClearAndAdd}>
+            Clear & Add
+          </button>
+          <button
+            className={styles.cancelBtn}
+            onClick={() => {
+              setShowConflictModal(false);
+              setPendingProduct(null);
+            }}
           >
             Cancel
           </button>
@@ -90,6 +134,9 @@ const StorePage = () => {
   return (
     <div className={styles.container}>
       {showLoginPopup && <LoginPrompt />}
+      {showConflictModal && <ConflictModal />}
+
+      <FloatingCartButton />
 
       <div className={styles.header}>
         <img
@@ -107,11 +154,9 @@ const StorePage = () => {
       </div>
 
       <h2 className={styles.sectionTitle}>Products</h2>
-
       <div className={styles.productsGrid}>
         {products.map((p) => {
           const inCart = cart.items.some((item) => item.product._id === p._id);
-
           return (
             <div key={p._id} className={styles.productCard}>
               <div className={styles.productImageWrapper}>
@@ -126,7 +171,6 @@ const StorePage = () => {
               </div>
 
               <h3 className={styles.productTitle}>{p.name}</h3>
-
               {p.description && (
                 <p className={styles.productDescription}>
                   {stripHtml(p.description).length > 80
@@ -165,7 +209,6 @@ const StorePage = () => {
                     ? "Adding..."
                     : "Add to Cart"}
                 </button>
-
                 <button onClick={() => handleBuyNow(p)} disabled={!p.inStock}>
                   Buy Now
                 </button>
