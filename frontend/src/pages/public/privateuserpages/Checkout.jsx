@@ -28,6 +28,7 @@ export default function Checkout() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [accessDenied, setAccessDenied] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("COD");
 
   /* Prevent direct access if not coming from cart or buy now */
   useEffect(() => {
@@ -204,39 +205,61 @@ export default function Checkout() {
 
   // Only changed / important parts are highlighted below
   const handlePlaceOrder = async () => {
-    if (!selectedAddress) return setError("Please select an address ❌");
-    const addr = addresses.find((a) => a._id === selectedAddress);
-    if (!addr || !isValidCoords(addr))
-      return setError("Selected address has no coordinates ❌");
+  if (!selectedAddress) return setError("Please select an address ❌");
 
-    setPlacingOrder(true);
-    setError("");
-    try {
-      // Ensure each item has product ID
-      const orderData = {
+  const addr = addresses.find((a) => a._id === selectedAddress);
+
+  if (!addr || !isValidCoords(addr))
+    return setError("Selected address has no coordinates ❌");
+
+  // If UPI chosen → open payment screen instead of placing order immediately
+  if (paymentMethod === "UPI") {
+    return navigate("/orders/upi-payment", {
+      state: {
+        amount: total,
         addressId: selectedAddress,
-        total,
-        paymentMethod: "COD",
         items: items.map((i) => ({
-          productId: i.product._id, // <-- mandatory for backend store link
+          productId: i.product._id,
           quantity: i.quantity,
           price:
             i.product.discountPrice > 0
               ? i.product.discountPrice
               : i.product.price,
         })),
-      };
+      },
+    });
+  }
 
-      const res = await API.post("/orders", orderData);
-      if (!buyNowProduct) clearCart();
-      setSuccess("Order placed successfully ✅");
-      setTimeout(() => navigate("/orders"), 1500);
-    } catch (err) {
-      setError(err.response?.data?.message || "Order failed ❌");
-    } finally {
-      setPlacingOrder(false);
-    }
-  };
+  // COD flow — same as before
+  setPlacingOrder(true);
+  setError("");
+
+  try {
+    const orderData = {
+      addressId: selectedAddress,
+      total,
+      paymentMethod: "COD",
+      items: items.map((i) => ({
+        productId: i.product._id,
+        quantity: i.quantity,
+        price:
+          i.product.discountPrice > 0
+            ? i.product.discountPrice
+            : i.product.price,
+      })),
+    };
+
+    const res = await API.post("/orders", orderData);
+    clearCart();
+    setSuccess("Order placed successfully ✅");
+    setTimeout(() => navigate("/orders"), 1500);
+  } catch (err) {
+    setError(err.response?.data?.message || "Order failed ❌");
+  } finally {
+    setPlacingOrder(false);
+  }
+};
+
 
   if (accessDenied)
     return (
@@ -513,6 +536,33 @@ export default function Checkout() {
       </div>
 
       {/* Summary */}
+      {/* Payment Method */}
+      <div className={styles.paymentBox}>
+        <h2>Payment Method</h2>
+
+        <label className={styles.paymentOption}>
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="COD"
+            checked={paymentMethod === "COD"}
+            onChange={() => setPaymentMethod("COD")}
+          />
+          Cash on Delivery
+        </label>
+
+        <label className={styles.paymentOption}>
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="UPI"
+            checked={paymentMethod === "UPI"}
+            onChange={() => setPaymentMethod("UPI")}
+          />
+          UPI (Google Pay / PhonePe / Paytm)
+        </label>
+      </div>
+
       <div className={styles.summary}>
         <h3>Total: ₹{total.toFixed(2)}</h3>
         {error && <p className={styles.error}>{error}</p>}

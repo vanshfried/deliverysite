@@ -19,6 +19,9 @@ router.post("/", requireUser, async (req, res) => {
         .status(400)
         .json({ message: "Missing or invalid order details" });
     }
+    if (!["UPI", "COD"].includes(paymentMethod)) {
+      return res.status(400).json({ message: "Invalid payment method" });
+    }
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -65,7 +68,7 @@ router.post("/", requireUser, async (req, res) => {
       store: storeId,
       items: formattedItems,
       totalAmount: total,
-      paymentMethod: paymentMethod || "COD",
+      paymentMethod: paymentMethod,
       paymentStatus: "PENDING",
       slug,
       deliveryAddress: {
