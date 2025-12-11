@@ -37,6 +37,15 @@ const OrderSchema = new mongoose.Schema(
       enum: ["PENDING", "PAID", "FAILED"],
       default: "PENDING",
     },
+    pickupOTP: {
+      type: Number,
+      default: null, // 4-digit OTP
+    },
+
+    pickupOTPExpires: {
+      type: Date,
+      default: null, // Expires after 5 minutes
+    },
 
     deliveryAddress: {
       label: String,

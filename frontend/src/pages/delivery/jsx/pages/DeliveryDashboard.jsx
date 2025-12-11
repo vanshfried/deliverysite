@@ -11,9 +11,9 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import deliveryBoy from "../../../../Images/deliveryboy.png"
-import locationlogo from "../../../../Images/locationlogo.png"
-import storelogo from "../../../../Images/storelogo.png"
+import deliveryBoy from "../../../../Images/deliveryboy.png";
+import locationlogo from "../../../../Images/locationlogo.png";
+import storelogo from "../../../../Images/storelogo.png";
 // ------------------------ Custom Icons ------------------------
 const icons = {
   deliveryBoy: new L.Icon({
@@ -85,6 +85,11 @@ export default function DeliveryDashboard() {
   const msgTimeoutRef = useRef(null);
   const mountedRef = useRef(true);
   const watchIdRef = useRef(null);
+  // OTP states
+  const [pickupOTP, setPickupOTP] = useState(null);
+  const [otpExpiresAt, setOtpExpiresAt] = useState(null);
+  const [otpCountdown, setOtpCountdown] = useState(0);
+  const otpTimerRef = useRef(null);
 
   // ------------------------ Helpers ------------------------
   const showMessage = (text, duration = 3000) => {
@@ -216,6 +221,16 @@ export default function DeliveryDashboard() {
       if (!mountedRef.current) return;
       const activeOrder = res.data.orders.find((o) => o._id === orderId);
       setCurrentOrder(activeOrder || null);
+      if (activeOrder?.pickupOTP && activeOrder?.pickupOTPExpires) {
+        setPickupOTP(activeOrder.pickupOTP);
+        setOtpExpiresAt(activeOrder.pickupOTPExpires);
+        startOtpTimer(activeOrder.pickupOTPExpires);
+      } else {
+        setPickupOTP(null);
+        setOtpExpiresAt(null);
+        setOtpCountdown(0);
+      }
+
       if (activeOrder?.deliveryAddress?.coords)
         fetchRoute(liveCoords, activeOrder.deliveryAddress.coords, setRoute);
     } catch {
@@ -259,6 +274,46 @@ export default function DeliveryDashboard() {
       } else showMessage(res?.data?.message || `Failed to ${decision} order`);
     } catch {
       showMessage("Request failed");
+    }
+  };
+
+  // ------------------------ OTP Countdown Timer ------------------------
+  const startOtpTimer = (expiresAt) => {
+    if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+
+    const tick = () => {
+      const diff = Math.floor((new Date(expiresAt) - new Date()) / 1000);
+      if (diff <= 0) {
+        clearInterval(otpTimerRef.current);
+        setOtpCountdown(0);
+        return;
+      }
+      setOtpCountdown(diff);
+    };
+
+    tick();
+    otpTimerRef.current = setInterval(tick, 1000);
+  };
+
+  const generatePickupOtp = async () => {
+    if (!currentOrder) return;
+
+    try {
+      const res = await API.patch(
+        `/api/delivery/orders/generate-otp/${currentOrder._id}`
+      );
+
+      if (res?.data?.success) {
+        const { otp, expiresAt } = res.data;
+
+        setPickupOTP(otp);
+        setOtpExpiresAt(expiresAt);
+        startOtpTimer(expiresAt);
+
+        showMessage("Pickup OTP generated ✔️");
+      }
+    } catch (err) {
+      showMessage(err.response?.data?.message || "Failed to generate OTP ❌");
     }
   };
 
@@ -500,6 +555,102 @@ export default function DeliveryDashboard() {
                     <p>✓ You are currently working on this order</p>
                   </div>
                 )}
+                {/* -------------------- OTP PICKUP SECTION -------------------- */}
+                <div
+                  style={{
+                    marginTop: "25px",
+                    padding: "18px",
+                    borderRadius: "12px",
+                    background: "#ffffff",
+                    border: "1px solid #e3e3e3",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                  }}
+                >
+                  <h3
+                    style={{
+                      marginBottom: "12px",
+                      fontSize: "1.2rem",
+                      fontWeight: "600",
+                      color: "#333",
+                    }}
+                  >
+                    Pickup OTP
+                  </h3>
+
+                  {pickupOTP ? (
+                    <div style={{ textAlign: "center" }}>
+                      {/* OTP Digits */}
+                      <p
+                        style={{
+                          fontSize: "2.4rem",
+                          fontWeight: "700",
+                          letterSpacing: "4px",
+                          marginBottom: "8px",
+                          color: otpCountdown > 0 ? "#222" : "#b71c1c",
+                        }}
+                      >
+                        {pickupOTP}
+                      </p>
+
+                      {/* Countdown */}
+                      <p
+                        style={{
+                          fontSize: "0.95rem",
+                          marginBottom: "18px",
+                          color: otpCountdown > 0 ? "green" : "red",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {otpCountdown > 0
+                          ? `Expires in ${Math.floor(
+                              otpCountdown / 60
+                            )}:${String(otpCountdown % 60).padStart(2, "0")}`
+                          : "OTP expired"}
+                      </p>
+
+                      <button
+                        onClick={generatePickupOtp}
+                        disabled={otpCountdown > 0}
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          borderRadius: "8px",
+                          background: otpCountdown > 0 ? "#ffb74d" : "#ff9800",
+                          opacity: otpCountdown > 0 ? 0.7 : 1,
+                          color: "white",
+                          fontSize: "1rem",
+                          fontWeight: "600",
+                          border: "none",
+                          cursor: otpCountdown > 0 ? "not-allowed" : "pointer",
+                          transition: "0.2s",
+                        }}
+                      >
+                        {otpCountdown > 0
+                          ? "You can regenerate after expiry"
+                          : "Regenerate OTP"}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={generatePickupOtp}
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        background: "#1976d2",
+                        color: "white",
+                        fontSize: "1rem",
+                        fontWeight: "600",
+                        border: "none",
+                        cursor: "pointer",
+                        transition: "0.2s",
+                      }}
+                    >
+                      Generate Pickup OTP
+                    </button>
+                  )}
+                </div>
+                {/* -------------------- END OTP SECTION -------------------- */}
               </div>
             </div>
           ) : (

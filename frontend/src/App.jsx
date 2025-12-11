@@ -53,6 +53,7 @@ import StorePage from "./pages/Store/store-owner/StorePage";
 import StoreEditProduct from "./pages/Store/store-owner/StoreEditProduct";
 import StoreOrders from "./pages/Store/store-owner/StoreOrders";
 import StoreProductsPage from "./pages/Store/store-owner/StoreProductsPage";
+import VerifyPickUp from "./pages/Store/store-owner/VerifyPickUp";
 function App() {
   return (
     <AuthProvider>
@@ -278,6 +279,14 @@ function App() {
               element={
                 <StoreOwnerProtectedRoute>
                   <StoreProductsPage />
+                </StoreOwnerProtectedRoute>
+              }
+            />
+            <Route
+              path="/store-owner/verify-pickup/orders/:orderId"
+              element={
+                <StoreOwnerProtectedRoute>
+                  <VerifyPickUp />
                 </StoreOwnerProtectedRoute>
               }
             />

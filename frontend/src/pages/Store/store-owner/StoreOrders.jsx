@@ -3,10 +3,12 @@ import React, { useEffect, useState } from "react";
 import API from "../api/api";
 import StoreOwnerLayout from "../components/StoreOwnerLayout"; // <-- wrap page in layout
 import styles from "../css/StoreOrders.module.css";
+import { useNavigate } from "react-router-dom";
 
 const StoreOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchOrders = async () => {
     try {
@@ -69,8 +71,12 @@ const StoreOrders = () => {
                   </span>
                 </div>
 
-                <p><strong>Total:</strong> ₹{order.totalAmount}</p>
-                <p><strong>Customer:</strong> {order.user?.name}</p>
+                <p>
+                  <strong>Total:</strong> ₹{order.totalAmount}
+                </p>
+                <p>
+                  <strong>Customer:</strong> {order.user?.name}
+                </p>
 
                 <h4>Items:</h4>
                 <ul className={styles.itemsList}>
@@ -94,6 +100,18 @@ const StoreOrders = () => {
                       className={`${styles.button} ${styles.reject}`}
                     >
                       Reject
+                    </button>
+                  </div>
+                )}
+                {order.status === "DRIVER_ASSIGNED" && (
+                  <div className={styles.actions}>
+                    <button
+                      onClick={() =>
+                        navigate(`/store-owner/verify-pickup/orders/${order._id}`)
+                      }
+                      className={`${styles.button} ${styles.accept}`}
+                    >
+                      Verify Pickup
                     </button>
                   </div>
                 )}

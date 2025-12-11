@@ -269,5 +269,63 @@ router.patch("/location", requireDeliveryBoy, async (req, res) => {
     });
   }
 });
+/* -------------------------------------------------------------------------- */
+/* 🔐 PATCH: Driver Generates Pickup OTP                                      */
+/* -------------------------------------------------------------------------- */
+router.patch("/generate-otp/:id", requireDeliveryBoy, async (req, res) => {
+  try {
+    const deliveryBoy = req.user;
+    const orderId = req.params.id;
+
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    // Ensure this driver is assigned to this order
+    if (String(order.deliveryBoy) !== String(deliveryBoy._id)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not assigned to this order",
+      });
+    }
+
+    // Ensure order is in correct state
+    if (order.status !== "DRIVER_ASSIGNED") {
+      return res.status(400).json({
+        success: false,
+        message: "Order is not in DRIVER_ASSIGNED state",
+      });
+    }
+
+    // Generate a 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000);
+
+    // Set expiry: 5 minutes
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    order.pickupOTP = otp;
+    order.pickupOTPExpires = expiresAt;
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: "Pickup OTP generated",
+      otp, // driver needs this
+      expiresAt,
+    });
+
+  } catch (err) {
+    console.error("❌ GENERATE OTP ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate OTP",
+      error: err.message,
+    });
+  }
+});
+
 
 export default router;

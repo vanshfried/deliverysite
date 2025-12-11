@@ -106,5 +106,66 @@ router.get("/list", storeOwnerAuth, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+/**
+ * VERIFY PICKUP OTP
+ * Store Owner verifies the OTP given by driver → DRIVER_ASSIGNED ➝ OUT_FOR_DELIVERY
+ */
+router.patch("/verify-pickup/:orderId", storeOwnerAuth, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { otp } = req.body;
+    const ownerId = req.storeOwner._id;
+
+    if (!otp) {
+      return res.status(400).json({ message: "OTP is required" });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    // Validate store ownership
+    const store = await Store.findById(order.store);
+    if (!store || store.ownerId.toString() !== ownerId.toString()) {
+      return res.status(403).json({ message: "Not your store order" });
+    }
+
+    // Order must be in DRIVER_ASSIGNED state
+    if (order.status !== "DRIVER_ASSIGNED") {
+      return res
+        .status(400)
+        .json({ message: "Order is not ready for pickup verification" });
+    }
+
+    // Validate OTP
+    if (order.pickupOTP !== Number(otp)) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    // Check expiry
+    if (!order.pickupOTPExpires || order.pickupOTPExpires < new Date()) {
+      return res
+        .status(400)
+        .json({ message: "OTP has expired, ask the driver to regenerate" });
+    }
+
+    // SUCCESS → Mark order as out for delivery
+    order.status = "OUT_FOR_DELIVERY";
+    order.timestampsLog.outForDeliveryAt = new Date();
+
+    // Clear OTP fields
+    order.pickupOTP = null;
+    order.pickupOTPExpires = null;
+
+    await order.save();
+
+    res.json({
+      message: "Pickup verified, order out for delivery",
+      order,
+    });
+  } catch (err) {
+    console.error("VERIFY PICKUP ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 export default router;
