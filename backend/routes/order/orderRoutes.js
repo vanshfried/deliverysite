@@ -7,70 +7,100 @@ import { requireUser } from "../../middleware/requireUser.js";
 const router = express.Router();
 
 /* -------------------------------------------------------------------------- */
+/* 🛒 Helper: Validate payment method                                          */
+/* -------------------------------------------------------------------------- */
+const isValidPayment = (pm) => ["UPI", "COD"].includes(pm);
+
+/* -------------------------------------------------------------------------- */
+/* 🛒 Helper: Generate order slug                                              */
+/* -------------------------------------------------------------------------- */
+const generateSlug = () =>
+  `ORD${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+/* -------------------------------------------------------------------------- */
 /* 📦 Place a new order                                                       */
 /* -------------------------------------------------------------------------- */
 router.post("/", requireUser, async (req, res) => {
   try {
-    const { addressId, total, items, paymentMethod } = req.body;
+    const { addressId, items, paymentMethod } = req.body;
 
-    // ✅ Validate request
-    if (!addressId || !Array.isArray(items) || items.length === 0 || !total) {
+    if (!addressId || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing or invalid order details",
+      });
+    }
+
+    if (!isValidPayment(paymentMethod)) {
       return res
         .status(400)
-        .json({ message: "Missing or invalid order details" });
-    }
-    if (!["UPI", "COD"].includes(paymentMethod)) {
-      return res.status(400).json({ message: "Invalid payment method" });
+        .json({ success: false, message: "Invalid payment method" });
     }
 
     const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
     const address = user.addresses.id(addressId);
-    if (!address) return res.status(400).json({ message: "Invalid address" });
+    if (!address)
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid delivery address" });
 
-    // 🧩 Format items, fetch product info
+    /* --------------------------------------------- */
+    /* 🔍 Fetch & validate all items + same-store rule */
+    /* --------------------------------------------- */
     const formattedItems = [];
     let storeId = null;
 
     for (const item of items) {
       const product = await Product.findById(item.productId).lean();
-      if (!product)
-        return res
-          .status(404)
-          .json({ message: `Product not found: ${item.productId}` });
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: `Product not found: ${item.productId}`,
+        });
+      }
 
-      // Check store consistency
+      // Ensuring all items come from same store
       if (!storeId) storeId = product.store;
       else if (storeId.toString() !== product.store.toString()) {
-        return res
-          .status(400)
-          .json({ message: "All items must belong to the same store" });
+        return res.status(400).json({
+          success: false,
+          message: "All items must belong to the same store",
+        });
       }
 
       formattedItems.push({
         product: product._id,
         name: product.name,
         quantity: Number(item.quantity) || 1,
-        price: Number(item.discountPrice || product.price),
+        price:
+          product.discountPrice > 0 ? product.discountPrice : product.price,
       });
     }
 
-    // 🆔 Generate a short order slug
-    const slug = `ORD${Math.random()
-      .toString(36)
-      .substring(2, 8)
-      .toUpperCase()}`;
+    /* --------------------------------------------- */
+    /* 💰 Calculate total                             */
+    /* --------------------------------------------- */
+    const totalAmount = formattedItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
 
-    // 💾 Save order
+    /* --------------------------------------------- */
+    /* 📝 Create order                                 */
+    /* --------------------------------------------- */
     const order = await Order.create({
       user: user._id,
       store: storeId,
       items: formattedItems,
-      totalAmount: total,
-      paymentMethod: paymentMethod,
+      totalAmount,
+      paymentMethod,
       paymentStatus: "PENDING",
-      slug,
+      slug: generateSlug(),
       deliveryAddress: {
         label: address.label,
         houseNo: address.houseNo,
@@ -81,7 +111,9 @@ router.post("/", requireUser, async (req, res) => {
       },
     });
 
-    // 🔔 Emit admin notification via Socket.IO
+    /* --------------------------------------------- */
+    /* 🔔 Notify admin via socket.io                  */
+    /* --------------------------------------------- */
     const io = req.app.get("io");
     if (io) {
       io.emit("new-order", {
@@ -91,24 +123,20 @@ router.post("/", requireUser, async (req, res) => {
         userName: user.name || "User",
         phone: user.phone,
         pincode: address.pincode,
-        items: formattedItems.map((i) => ({
-          name: i.name,
-          quantity: i.quantity,
-          price: i.price,
-        })),
-        totalAmount: total,
+        items: formattedItems,
+        totalAmount,
         storeId,
       });
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Order placed successfully",
       order,
     });
   } catch (err) {
     console.error("ORDER CREATE ERROR:", err);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Order creation failed",
       error: err.message,
@@ -117,24 +145,32 @@ router.post("/", requireUser, async (req, res) => {
 });
 
 /* -------------------------------------------------------------------------- */
-/* 📋 Get all orders of logged-in user                                        */
+/* 📋 Get all user orders                                                     */
 /* -------------------------------------------------------------------------- */
 router.get("/my", requireUser, async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id })
       .sort({ createdAt: -1 })
-      .populate("store", "name") // optional: include store name
+      .populate("store", "name")
       .lean();
 
-    res.json({ success: true, count: orders.length, orders });
+    return res.json({
+      success: true,
+      count: orders.length,
+      orders,
+    });
   } catch (err) {
     console.error("FETCH ORDERS ERROR:", err);
-    res.status(500).json({ success: false, message: "Failed to fetch orders" });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch orders",
+      error: err.message,
+    });
   }
 });
 
 /* -------------------------------------------------------------------------- */
-/* 📄 Get single order by slug (for order details page)                       */
+/* 📄 Get single order by slug                                                */
 /* -------------------------------------------------------------------------- */
 router.get("/:slug", requireUser, async (req, res) => {
   try {
@@ -151,19 +187,20 @@ router.get("/:slug", requireUser, async (req, res) => {
         .status(404)
         .json({ success: false, message: "Order not found" });
 
+    // Ensure safe deliveryBoy location
     let deliveryBoyLocation = null;
-    if (order.deliveryBoy && order.deliveryBoy.location) {
-      const coords = order.deliveryBoy.location.coordinates;
-      deliveryBoyLocation = { lat: coords[1], lon: coords[0] };
+    if (order.deliveryBoy?.location?.coordinates) {
+      const [lon, lat] = order.deliveryBoy.location.coordinates;
+      deliveryBoyLocation = { lat, lon };
     }
 
-    res.json({
+    return res.json({
       success: true,
       order: { ...order, deliveryBoyLocation },
     });
   } catch (err) {
     console.error("FETCH ORDER BY SLUG ERROR:", err);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch order details",
       error: err.message,

@@ -11,8 +11,9 @@ import {
   Polyline,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+
 export default function OrderDetail() {
-  const { slug } = useParams(); // ✅ using slug now
+  const { slug } = useParams();
   const { userLoggedIn } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -21,12 +22,13 @@ export default function OrderDetail() {
   const [error, setError] = useState("");
   const [route, setRoute] = useState([]);
 
+  /* ------------------------------ Fetch Order ------------------------------ */
   useEffect(() => {
     if (!userLoggedIn) return navigate("/login");
 
     const fetchOrder = async () => {
       try {
-        const res = await API.get(`/orders/${slug}`); // ✅ fetch by slug
+        const res = await API.get(`/orders/${slug}`);
         setOrder(res.data.order);
       } catch {
         setError("Failed to load order details");
@@ -37,18 +39,21 @@ export default function OrderDetail() {
 
     fetchOrder();
   }, [slug, userLoggedIn, navigate]);
-  useEffect(() => {
-    const fetchRoute = async () => {
-      if (!order?.deliveryBoyLocation || !order?.deliveryAddress?.coords)
-        return;
 
-      const from = order.deliveryBoyLocation;
-      const to = order.deliveryAddress.coords;
-      const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
+  /* ------------------------------ Fetch Route ------------------------------ */
+  useEffect(() => {
+    if (!order?.deliveryBoyLocation || !order?.deliveryAddress?.coords) return;
+
+    const fetchRoute = async () => {
+      const { lat: fromLat, lon: fromLon } = order.deliveryBoyLocation;
+      const { lat: toLat, lon: toLon } = order.deliveryAddress.coords;
+
+      const url = `https://router.project-osrm.org/route/v1/driving/${fromLon},${fromLat};${toLon},${toLat}?overview=full&geometries=geojson`;
 
       try {
         const res = await fetch(url);
         const json = await res.json();
+
         if (json.routes?.[0]) {
           const coords = json.routes[0].geometry.coordinates.map((c) => [
             c[1],
@@ -64,10 +69,17 @@ export default function OrderDetail() {
     fetchRoute();
   }, [order]);
 
+  /* ------------------------------ Loading/Error ----------------------------- */
   if (loading) return <p className={styles.loading}>Loading order...</p>;
   if (error) return <p className={styles.error}>{error}</p>;
   if (!order) return <p className={styles.error}>Order not found</p>;
 
+  /* ------------------------------ Safe helpers ------------------------------ */
+  const safeStatus = order.status?.replaceAll("_", " ") || "Unknown";
+
+  /* -------------------------------------------------------------------------- */
+  /*                                   Render                                   */
+  /* -------------------------------------------------------------------------- */
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header}>
@@ -78,17 +90,17 @@ export default function OrderDetail() {
       </div>
 
       <div className={styles.grid}>
-        {/* Order summary */}
+        {/* ----------------------------- ORDER SUMMARY ---------------------------- */}
         <div className={styles.card}>
           <h3>Order Summary</h3>
           <p>
             <strong>Status:</strong>{" "}
             <span
               className={`${styles.status} ${
-                styles[order.status.toLowerCase()]
+                styles[order.status?.toLowerCase()] || ""
               }`}
             >
-              {order.status.replaceAll("_", " ")}
+              {safeStatus}
             </span>
           </p>
           <p>
@@ -100,7 +112,7 @@ export default function OrderDetail() {
           </p>
         </div>
 
-        {/* Payment info */}
+        {/* ----------------------------- PAYMENT INFO ----------------------------- */}
         <div className={styles.card}>
           <h3>Payment Info</h3>
           <p>
@@ -111,7 +123,7 @@ export default function OrderDetail() {
           </p>
         </div>
 
-        {/* Delivery address */}
+        {/* --------------------------- DELIVERY ADDRESS --------------------------- */}
         <div className={styles.card}>
           <h3>Delivery Address :-</h3>
           <p>
@@ -124,7 +136,7 @@ export default function OrderDetail() {
           <p>Pincode: {order.deliveryAddress.pincode}</p>
         </div>
 
-        {/* Items */}
+        {/* ------------------------------- ITEMS --------------------------------- */}
         <div className={`${styles.card} ${styles.itemsCard}`}>
           <h3>Items</h3>
           {order.items.map((item, i) => (
@@ -132,7 +144,7 @@ export default function OrderDetail() {
               <div className={styles.itemLeft}>
                 <p className={styles.itemName}>{item.name}</p>
                 <p className={styles.itemQty}>
-                  Qty: {item.quantity} × ₹{item.price}
+                  Qty: {item.quantity} × ₹{Number(item.price).toFixed(2)}
                 </p>
               </div>
               <p className={styles.itemPrice}>
@@ -142,7 +154,7 @@ export default function OrderDetail() {
           ))}
         </div>
 
-        {/* Timeline */}
+        {/* ------------------------------- TIMELINE ------------------------------- */}
         <ul className={styles.timeline}>
           <li>
             <strong>Created:</strong>{" "}
@@ -152,25 +164,27 @@ export default function OrderDetail() {
           {order.timestampsLog?.acceptedAt && (
             <li>
               <strong>Accepted:</strong>{" "}
-              {new Date(order.timestampsLog.acceptedAt).toLocaleString()}
+              {new Date(order.timestampsLog?.acceptedAt).toLocaleString()}
             </li>
           )}
 
           {order.timestampsLog?.outForDeliveryAt && (
             <li>
               <strong>Out for Delivery:</strong>{" "}
-              {new Date(order.timestampsLog.outForDeliveryAt).toLocaleString()}
+              {new Date(order.timestampsLog?.outForDeliveryAt).toLocaleString()}
             </li>
           )}
 
           {order.timestampsLog?.deliveredAt && (
             <li>
               <strong>Delivered:</strong>{" "}
-              {new Date(order.timestampsLog.deliveredAt).toLocaleString()}
+              {new Date(order.timestampsLog?.deliveredAt).toLocaleString()}
             </li>
           )}
         </ul>
       </div>
+
+      {/* ------------------------------ MAP SECTION ------------------------------ */}
       {(order.deliveryBoyLocation || order.deliveryAddress?.coords) && (
         <div className={styles.card}>
           <h3>Delivery Tracking</h3>
@@ -189,8 +203,8 @@ export default function OrderDetail() {
                   ]
                 : [
                     [
-                      order.deliveryAddress?.coords?.lat || 0,
-                      order.deliveryAddress?.coords?.lon || 0,
+                      order.deliveryAddress?.coords?.lat || 20,
+                      order.deliveryAddress?.coords?.lon || 78,
                     ],
                   ]
             }
@@ -200,6 +214,7 @@ export default function OrderDetail() {
             <TileLayer
               url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
               subdomains={["mt0", "mt1", "mt2", "mt3"]}
+              attribution="&copy; Google Maps"
             />
 
             {/* Delivery Address Marker */}
@@ -229,9 +244,7 @@ export default function OrderDetail() {
             )}
 
             {/* Polyline Route */}
-            {route.length > 0 && (
-              <Polyline positions={route} color="#1e88e5" weight={4} />
-            )}
+            {route.length > 0 && <Polyline positions={route} weight={4} />}
           </MapContainer>
         </div>
       )}

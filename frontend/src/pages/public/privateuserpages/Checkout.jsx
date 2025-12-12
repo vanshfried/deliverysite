@@ -17,20 +17,30 @@ export default function Checkout() {
 
   const buyNowProduct = location.state?.buyNowProduct || null;
 
+  /* ------------------------------------------------------- */
+  /* 🧠 State                                                 */
+  /* ------------------------------------------------------- */
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
+
   const [addForm, setAddForm] = useState({});
   const [addMode, setAddMode] = useState(false);
+
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({});
+
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [accessDenied, setAccessDenied] = useState(false);
+
   const [paymentMethod, setPaymentMethod] = useState("COD");
 
-  /* Prevent direct access if not coming from cart or buy now */
+  /* ------------------------------------------------------- */
+  /* 🚫 Block direct access                                  */
+  /* ------------------------------------------------------- */
   useEffect(() => {
     if (!userLoggedIn) return navigate("/login");
 
@@ -43,7 +53,9 @@ export default function Checkout() {
     }
   }, [userLoggedIn, cart, location, navigate]);
 
-  /* Geolocation helper */
+  /* ------------------------------------------------------- */
+  /* 📍 Safe geolocation helper                              */
+  /* ------------------------------------------------------- */
   const useMyLocation = (targetForm, setTargetForm) => {
     if (!navigator.geolocation) {
       setError("Geolocation not supported ❌");
@@ -51,15 +63,14 @@ export default function Checkout() {
     }
 
     setError("Fetching location...");
-    const tryGetPosition = (retries = 3) => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude, accuracy } = position.coords;
 
-          if (accuracy > 20 && retries > 0) {
-            tryGetPosition(retries - 1);
-            return;
-          }
+    const attempt = (retries = 3) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude, accuracy } = pos.coords;
+
+          // retry if inaccurate
+          if (accuracy > 20 && retries > 0) return attempt(retries - 1);
 
           setTargetForm((prev) => ({
             ...prev,
@@ -69,6 +80,7 @@ export default function Checkout() {
             },
             accuracy,
           }));
+
           setError("");
         },
         () => setError("Failed to get location ❌"),
@@ -76,14 +88,16 @@ export default function Checkout() {
       );
     };
 
-    tryGetPosition();
+    attempt();
   };
 
-  /* Map Picker component using Google Maps tiles */
+  /* ------------------------------------------------------- */
+  /* 🗺️ Map Picker Component                                 */
+  /* ------------------------------------------------------- */
   const MapPicker = ({ coords, setCoords }) => {
     const [position, setPosition] = useState(coords || { lat: 28, lon: 78 });
 
-    const LocationMarker = () => {
+    const MarkerHandler = () => {
       useMapEvents({
         click(e) {
           const { lat, lng } = e.latlng;
@@ -91,9 +105,8 @@ export default function Checkout() {
           setCoords({ lat, lon: lng });
         },
       });
-      return position ? (
-        <Marker position={[position.lat, position.lon]} />
-      ) : null;
+
+      return <Marker position={[position.lat, position.lon]} />;
     };
 
     return (
@@ -102,31 +115,29 @@ export default function Checkout() {
         zoom={15}
         style={{ height: "250px", width: "100%", marginBottom: "1rem" }}
       >
-        {/* Google Maps tiles */}
         <TileLayer
           url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
           subdomains={["mt0", "mt1", "mt2", "mt3"]}
         />
-        <LocationMarker />
+        <MarkerHandler />
       </MapContainer>
     );
   };
 
-  const isValidCoords = (addr) =>
-    addr &&
-    addr.coords &&
-    typeof addr.coords.lat === "number" &&
-    typeof addr.coords.lon === "number";
+  const isValidCoords = (a) =>
+    a?.coords?.lat !== undefined && a?.coords?.lon !== undefined;
 
-  /* Fetch addresses */
+  /* ------------------------------------------------------- */
+  /* 📥 Fetch addresses                                      */
+  /* ------------------------------------------------------- */
   useEffect(() => {
     if (!userLoggedIn) return;
 
-    const fetchAddresses = async () => {
+    const load = async () => {
       try {
         const res = await API.get("/users/me");
-        const uAddresses = res.data.user.addresses || [];
-        setAddresses(uAddresses);
+
+        setAddresses(res.data.user.addresses || []);
         if (res.data.user.defaultAddress)
           setSelectedAddress(res.data.user.defaultAddress);
       } catch (err) {
@@ -136,35 +147,50 @@ export default function Checkout() {
       }
     };
 
-    fetchAddresses();
+    load();
   }, [userLoggedIn]);
 
+  /* ------------------------------------------------------- */
+  /* 🛒 Items (cart + buy now safe handling)                  */
+  /* ------------------------------------------------------- */
+  const safeId = (item) => item.product?._id ?? item.productId;
+
   const items = buyNowProduct
-    ? [{ product: buyNowProduct, quantity: 1 }]
+    ? [
+        {
+          product: buyNowProduct,
+          quantity: 1,
+        },
+      ]
     : cart?.items || [];
-  const total = items.reduce(
-    (sum, item) =>
-      sum +
-      (item.product.discountPrice > 0
-        ? item.product.discountPrice
-        : item.product.price) *
-        item.quantity,
-    0
-  );
 
-  // Add, edit, cancel, place order handlers remain the same, just using MapPicker
+  const total = items.reduce((sum, item) => {
+    const p = item.product;
+    const price = p.discountPrice > 0 ? p.discountPrice : p.price;
+    return sum + price * item.quantity;
+  }, 0);
 
+  /* ------------------------------------------------------- */
+  /* ➕ Add Address                                           */
+  /* ------------------------------------------------------- */
   const handleAddAddress = async () => {
     if (addresses.length >= 3) return;
+
     if (!addForm.houseNo || !addForm.laneOrSector || !addForm.pincode)
       return setError("Missing required fields ❌");
+
+    if (!/^\d{6}$/.test(addForm.pincode))
+      return setError("Pincode must be 6 digits ❌");
+
     if (!isValidCoords(addForm))
       return setError("Please pick your location on the map ❌");
 
     try {
       const res = await API.post("/users/address", addForm);
+
       if (res.data.addresses) setAddresses(res.data.addresses);
       if (res.data.defaultAddress) setSelectedAddress(res.data.defaultAddress);
+
       setAddForm({});
       setAddMode(false);
       setError("");
@@ -173,6 +199,9 @@ export default function Checkout() {
     }
   };
 
+  /* ------------------------------------------------------- */
+  /* ✏️ Edit Address                                          */
+  /* ------------------------------------------------------- */
   const startEdit = (addr) => {
     setEditId(addr._id);
     setEditForm({ ...addr });
@@ -182,14 +211,17 @@ export default function Checkout() {
   const saveEdit = async () => {
     if (!editForm.houseNo || !editForm.laneOrSector || !editForm.pincode)
       return setError("Missing required fields ❌");
+
     if (!/^\d{6}$/.test(editForm.pincode))
       return setError("Pincode must be 6 digits ❌");
+
     if (!isValidCoords(editForm))
       return setError("Please pick your location on the map ❌");
 
     try {
       const res = await API.put(`/users/address/${editId}`, editForm);
       if (res.data.addresses) setAddresses(res.data.addresses);
+
       setEditId(null);
       setEditForm({});
       setError("");
@@ -203,77 +235,64 @@ export default function Checkout() {
     setEditForm({});
   };
 
-  // Only changed / important parts are highlighted below
+  /* ------------------------------------------------------- */
+  /* 📦 Place Order                                           */
+  /* ------------------------------------------------------- */
   const handlePlaceOrder = async () => {
-  if (!selectedAddress) return setError("Please select an address ❌");
+    if (!selectedAddress) return setError("Please select an address ❌");
 
-  const addr = addresses.find((a) => a._id === selectedAddress);
+    const addr = addresses.find((a) => a._id === selectedAddress);
+    if (!addr || !isValidCoords(addr))
+      return setError("Selected address has no coordinates ❌");
 
-  if (!addr || !isValidCoords(addr))
-    return setError("Selected address has no coordinates ❌");
+    const formattedItems = items.map((i) => ({
+      productId: safeId(i),
+      quantity: i.quantity,
+    }));
 
-  // If UPI chosen → open payment screen instead of placing order immediately
-  if (paymentMethod === "UPI") {
-    return navigate("/orders/upi-payment", {
-      state: {
-        amount: total,
+    // 🟣 UPI → go to payment page
+    if (paymentMethod === "UPI") {
+      return navigate("/orders/upi-payment", {
+        state: { addressId: selectedAddress, items: formattedItems },
+      });
+    }
+
+    // 🟢 COD
+    try {
+      setPlacingOrder(true);
+      setError("");
+
+      await API.post("/orders", {
         addressId: selectedAddress,
-        items: items.map((i) => ({
-          productId: i.product._id,
-          quantity: i.quantity,
-          price:
-            i.product.discountPrice > 0
-              ? i.product.discountPrice
-              : i.product.price,
-        })),
-      },
-    });
-  }
+        paymentMethod: "COD",
+        items: formattedItems,
+      });
 
-  // COD flow — same as before
-  setPlacingOrder(true);
-  setError("");
+      clearCart();
+      setSuccess("Order placed successfully ✅");
 
-  try {
-    const orderData = {
-      addressId: selectedAddress,
-      total,
-      paymentMethod: "COD",
-      items: items.map((i) => ({
-        productId: i.product._id,
-        quantity: i.quantity,
-        price:
-          i.product.discountPrice > 0
-            ? i.product.discountPrice
-            : i.product.price,
-      })),
-    };
+      setTimeout(() => navigate("/orders"), 1500);
+    } catch (err) {
+      setError(err.response?.data?.message || "Order failed ❌");
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
 
-    const res = await API.post("/orders", orderData);
-    clearCart();
-    setSuccess("Order placed successfully ✅");
-    setTimeout(() => navigate("/orders"), 1500);
-  } catch (err) {
-    setError(err.response?.data?.message || "Order failed ❌");
-  } finally {
-    setPlacingOrder(false);
-  }
-};
-
-
+  /* ------------------------------------------------------- */
+  /* 🚫 Access Denied Page                                   */
+  /* ------------------------------------------------------- */
   if (accessDenied)
     return (
       <div className={styles.accessDenied}>
         <h2>We're Sorry</h2>
         <p>
-          We're very sorry, but we're having trouble doing what you just asked
-          us to do.
-          <br />
-          Please give us another chance - click the Back button on your browser
-          and try your request again
+          We're having trouble completing your request.<br />
+          Please go back and try again.
         </p>
+
         <button onClick={() => navigate("/")} className={styles.goBackBtn}>
-          Click to return to Homepage
+          Return to Homepage
         </button>
       </div>
     );
@@ -282,9 +301,9 @@ export default function Checkout() {
   if (items.length === 0)
     return <div className={styles.emptyCheckout}>No items to checkout.</div>;
 
-  /* MAIN CHECKOUT UI */
-
-  /* MAIN CHECKOUT UI */
+  /* ------------------------------------------------------- */
+  /* 🖥️ MAIN CHECKOUT UI                                     */
+  /* ------------------------------------------------------- */
   return (
     <div className={styles.checkoutContainer}>
       <h1 className={styles.checkoutTitle}>Checkout</h1>
@@ -292,7 +311,7 @@ export default function Checkout() {
       {/* Items */}
       <div className={styles.itemsSection}>
         {items.map((item) => (
-          <div key={item.product._id} className={styles.itemRow}>
+          <div key={safeId(item)} className={styles.itemRow}>
             <img
               src={
                 item.product.logo ||
@@ -305,10 +324,9 @@ export default function Checkout() {
               <p className={styles.itemName}>{item.product.name}</p>
               <p className={styles.itemPrice}>
                 ₹
-                {item.product.discountPrice > 0
+                {(item.product.discountPrice > 0
                   ? item.product.discountPrice
-                  : item.product.price}{" "}
-                × {item.quantity}
+                  : item.product.price) * item.quantity}
               </p>
             </div>
           </div>
@@ -319,6 +337,7 @@ export default function Checkout() {
       <div className={styles.addressSection}>
         <h2>Delivery Address</h2>
 
+        {/* Existing addresses */}
         {addresses.length > 0 && !addMode && (
           <div className={styles.addressList}>
             {addresses.map((addr) => (
@@ -345,6 +364,7 @@ export default function Checkout() {
                           {!isValidCoords(addr) && "(Location not set)"}
                         </span>
                       </label>
+
                       <button
                         className={styles.editBtn}
                         onClick={() => startEdit(addr)}
@@ -352,6 +372,7 @@ export default function Checkout() {
                         Edit
                       </button>
                     </div>
+
                     <p className={styles.addrLine}>
                       {addr.houseNo}, {addr.laneOrSector}
                       {addr.landmark && `, ${addr.landmark}`}, {addr.pincode}
@@ -408,7 +429,6 @@ export default function Checkout() {
                       }
                     />
 
-                    {/* Map Picker for Edit */}
                     <MapPicker
                       coords={editForm.coords}
                       setCoords={(coords) =>
@@ -416,7 +436,6 @@ export default function Checkout() {
                       }
                     />
 
-                    {/* GPS button fallback */}
                     <button
                       className={styles.useLocationBtn}
                       onClick={() => useMyLocation(editForm, setEditForm)}
@@ -440,6 +459,7 @@ export default function Checkout() {
                 )}
               </div>
             ))}
+
             {addresses.length < 3 && editId === null && (
               <div className={styles.addButtonWrap}>
                 <button
@@ -453,9 +473,11 @@ export default function Checkout() {
           </div>
         )}
 
+        {/* Add new address */}
         {(addresses.length === 0 || addMode) && addresses.length < 3 && (
           <div className={styles.addFormCard}>
             <h4 className={styles.addHeading}>Add New Address</h4>
+
             <input
               className={styles.input}
               placeholder="Label (Home / Office)"
@@ -464,6 +486,7 @@ export default function Checkout() {
                 setAddForm({ ...addForm, label: e.target.value })
               }
             />
+
             <input
               className={styles.input}
               placeholder="House No *"
@@ -472,6 +495,7 @@ export default function Checkout() {
                 setAddForm({ ...addForm, houseNo: e.target.value })
               }
             />
+
             <input
               className={styles.input}
               placeholder="Lane / Sector *"
@@ -480,6 +504,7 @@ export default function Checkout() {
                 setAddForm({ ...addForm, laneOrSector: e.target.value })
               }
             />
+
             <input
               className={styles.input}
               placeholder="Landmark"
@@ -488,6 +513,7 @@ export default function Checkout() {
                 setAddForm({ ...addForm, landmark: e.target.value })
               }
             />
+
             <input
               className={styles.input}
               placeholder="Pincode *"
@@ -502,13 +528,11 @@ export default function Checkout() {
               }
             />
 
-            {/* Map Picker for Add */}
             <MapPicker
               coords={addForm.coords}
               setCoords={(coords) => setAddForm({ ...addForm, coords })}
             />
 
-            {/* GPS button fallback */}
             <button
               className={styles.useLocationBtn}
               onClick={() => useMyLocation(addForm, setAddForm)}
@@ -535,8 +559,7 @@ export default function Checkout() {
         )}
       </div>
 
-      {/* Summary */}
-      {/* Payment Method */}
+      {/* Payment */}
       <div className={styles.paymentBox}>
         <h2>Payment Method</h2>
 
@@ -563,10 +586,12 @@ export default function Checkout() {
         </label>
       </div>
 
+      {/* Summary */}
       <div className={styles.summary}>
         <h3>Total: ₹{total.toFixed(2)}</h3>
         {error && <p className={styles.error}>{error}</p>}
         {success && <p className={styles.success}>{success}</p>}
+
         <button
           className={styles.placeOrderBtn}
           onClick={handlePlaceOrder}
