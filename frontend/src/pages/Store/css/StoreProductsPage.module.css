@@ -94,6 +94,38 @@
   color: #666;
 }
 
+/* -------------------------- */
+/* NEW DISCOUNT PRICE SECTION */
+/* -------------------------- */
+
+.priceBox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 10px 0;
+}
+
+.originalPrice {
+  text-decoration: line-through;
+  color: #888;
+  font-size: 14px;
+}
+
+.discountPrice {
+  font-weight: bold;
+  font-size: 18px;
+  color: #222;
+}
+
+.discountTag {
+  background-color: #e60023;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
 .productActions {
   display: flex;
   justify-content: space-between;
@@ -132,5 +164,18 @@
 @media (max-width: 768px) {
   .productsGrid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+
+  .discountPrice {
+    font-size: 16px;
+  }
+
+  .originalPrice {
+    font-size: 13px;
+  }
+
+  .discountTag {
+    font-size: 11px;
+    padding: 2px 5px;
   }
 }

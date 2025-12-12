@@ -205,13 +205,42 @@ export default function StoreOwnerDashboard() {
                   ) : (
                     <div className={styles.noImageBox}>No Image</div>
                   )}
+
                   <div className={styles.productInfo}>
                     <h3>{product.name}</h3>
-                    <p>₹{product.price}</p>
+
+                    {/* PRICE WITH DISCOUNT LOGIC */}
+                    <div className={styles.priceBox}>
+                      {product.discountPrice > 0 &&
+                      product.discountPrice < product.price ? (
+                        <>
+                          <span className={styles.originalPrice}>
+                            ₹{product.price}
+                          </span>
+                          <span className={styles.discountPrice}>
+                            ₹{product.discountPrice}
+                          </span>
+                          <span className={styles.discountTag}>
+                            {Math.round(
+                              ((product.price - product.discountPrice) /
+                                product.price) *
+                                100
+                            )}
+                            % OFF
+                          </span>
+                        </>
+                      ) : (
+                        <span className={styles.discountPrice}>
+                          ₹{product.price}
+                        </span>
+                      )}
+                    </div>
+
                     {cleanDesc && (
                       <p className={styles.productDesc}>{preview}</p>
                     )}
                   </div>
+
                   <div className={styles.productActions}>
                     <button
                       onClick={() =>

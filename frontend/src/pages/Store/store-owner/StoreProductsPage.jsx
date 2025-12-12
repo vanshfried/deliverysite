@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { getStoreProducts, deleteProduct } from "../api/storeProducts";
 import { useNavigate } from "react-router-dom";
 import styles from "../css/StoreProductsPage.module.css";
-import StoreOwnerLayout from "../components/StoreOwnerLayout"; // use layout now
+import StoreOwnerLayout from "../components/StoreOwnerLayout";
 
 export default function StoreProductsPage() {
   const [products, setProducts] = useState([]);
@@ -24,7 +24,9 @@ export default function StoreProductsPage() {
 
   // Delete a product
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this product?");
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this product?"
+    );
     if (!confirmDelete) return;
 
     try {
@@ -41,48 +43,94 @@ export default function StoreProductsPage() {
 
   return (
     <StoreOwnerLayout>
-    <div className={styles.pageContainer}>
-      
-      {products.length === 0 ? (
-        <p>No products found.</p>
-      ) : (
-        <div className={styles.productsGrid}>
-          {products.map((product) => {
-            const cleanDesc = stripHtml(product.description || "");
-            const preview = cleanDesc.length > 100 ? cleanDesc.slice(0, 100) + "..." : cleanDesc;
+      <div className={styles.pageContainer}>
+        {products.length === 0 ? (
+          <p>No products found.</p>
+        ) : (
+          <div className={styles.productsGrid}>
+            {products.map((product) => {
+              const cleanDesc = stripHtml(product.description || "");
+              const preview =
+                cleanDesc.length > 100
+                  ? cleanDesc.slice(0, 100) + "..."
+                  : cleanDesc;
 
-            return (
-              <div key={product._id} className={styles.productCard}>
-                {product.logo ? (
-                  <img src={product.logo} alt={product.name} className={styles.productImage} />
-                ) : (
-                  <div className={styles.noImage}>No Image</div>
-                )}
-                <div className={styles.productInfo}>
-                  <h3>{product.name}</h3>
-                  <p><strong>Price:</strong> ₹{product.price}</p>
-                  {cleanDesc && <p className={styles.productDesc}>{preview}</p>}
+              const hasDiscount =
+                product.discountPrice > 0 &&
+                product.discountPrice < product.price;
+
+              const discountPercent = hasDiscount
+                ? Math.round(
+                    ((product.price - product.discountPrice) / product.price) *
+                      100
+                  )
+                : 0;
+
+              return (
+                <div key={product._id} className={styles.productCard}>
+                  {product.logo ? (
+                    <img
+                      src={product.logo}
+                      alt={product.name}
+                      className={styles.productImage}
+                    />
+                  ) : (
+                    <div className={styles.noImage}>No Image</div>
+                  )}
+
+                  <div className={styles.productInfo}>
+                    <h3>{product.name}</h3>
+
+                    {/* PRICE BLOCK WITH DISCOUNT */}
+                    <div className={styles.priceBox}>
+                      {hasDiscount ? (
+                        <>
+                          <span className={styles.originalPrice}>
+                            ₹{product.price}
+                          </span>
+                          <span className={styles.discountPrice}>
+                            ₹{product.discountPrice}
+                          </span>
+                          <span className={styles.discountTag}>
+                            {discountPercent}% OFF
+                          </span>
+                        </>
+                      ) : (
+                        <span className={styles.discountPrice}>
+                          ₹{product.price}
+                        </span>
+                      )}
+                    </div>
+
+                    {cleanDesc && (
+                      <p className={styles.productDesc}>{preview}</p>
+                    )}
+                  </div>
+
+                  <div className={styles.productActions}>
+                    <button
+                      onClick={() =>
+                        navigate(
+                          `/store-owner/products/edit/${product._id}`
+                        )
+                      }
+                      className={styles.editButton}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(product._id)}
+                      className={styles.deleteButton}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-                <div className={styles.productActions}>
-                  <button
-                    onClick={() => navigate(`/store-owner/products/edit/${product._id}`)}
-                    className={styles.editButton}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(product._id)}
-                    className={styles.deleteButton}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </StoreOwnerLayout>
   );
 }
