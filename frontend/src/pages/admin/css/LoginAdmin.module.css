@@ -58,9 +58,6 @@
   cursor: not-allowed;
 }
 
-.loginAdminForm button:hover:not(:disabled) {
-  background: #0056b3;
-}
 
 /* Error / info message */
 .loginMessage {

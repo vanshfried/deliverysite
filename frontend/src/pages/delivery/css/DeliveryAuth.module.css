@@ -49,9 +49,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
-button:hover:not(:disabled) {
-  background: #0056b3;
-}
+
 
 .message {
   margin-top: 15px;
