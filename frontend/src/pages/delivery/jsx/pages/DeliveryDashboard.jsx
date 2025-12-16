@@ -126,6 +126,26 @@ export default function DeliveryDashboard() {
     }
   };
 
+  const updateRoutes = (coords, order, isAccepted) => {
+    if (!order) return;
+
+    if (isAccepted) {
+      // Order accepted: show route from driver to delivery location
+      if (order.deliveryAddress?.coords) {
+        fetchRoute(coords, order.deliveryAddress.coords, setRoute);
+      }
+      // Clear store route
+      setStoreRoute([]);
+    } else {
+      // Order not accepted: show route from driver to store
+      if (order.store?.location) {
+        fetchRoute(coords, order.store.location, setStoreRoute);
+      }
+      // Clear delivery route
+      setRoute([]);
+    }
+  };
+
   const startTracking = () => {
     if (!navigator.geolocation) {
       setLocationAllowed(false);
@@ -147,14 +167,9 @@ export default function DeliveryDashboard() {
           setLiveCoords(coords);
           updateLiveLocation(coords);
 
-          if (currentOrder?.store?.location)
-            fetchRoute(coords, currentOrder.store.location, setStoreRoute);
-          if (currentOrder?.deliveryAddress?.coords)
-            fetchRoute(
-              currentOrder.store.location,
-              currentOrder.deliveryAddress.coords,
-              setRoute
-            );
+          // Update routes based on order acceptance status
+          const isAccepted = !!deliveryBoy?.currentOrder;
+          updateRoutes(coords, currentOrder, isAccepted);
 
           showMessage(
             `GPS accuracy: ±${Math.round(accuracy)}m ${
@@ -206,8 +221,13 @@ export default function DeliveryDashboard() {
       if (!mountedRef.current) return;
       const nextOrder = res?.data?.orders?.[0] || null;
       setCurrentOrder(nextOrder);
-      if (nextOrder?.deliveryAddress?.coords)
-        fetchRoute(liveCoords, nextOrder.deliveryAddress.coords, setRoute);
+
+      // Show route to store for unaccepted order
+      if (nextOrder?.store?.location) {
+        fetchRoute(liveCoords, nextOrder.store.location, setStoreRoute);
+        setRoute([]); // Clear delivery route
+      }
+
       if (!nextOrder) showMessage("No pending orders");
     } catch (err) {
       showMessage(err.response?.data?.message || "Failed to fetch orders");
@@ -223,6 +243,7 @@ export default function DeliveryDashboard() {
       if (!mountedRef.current) return;
       const activeOrder = res.data.orders.find((o) => o._id === orderId);
       setCurrentOrder(activeOrder || null);
+
       if (activeOrder?.pickupOTP && activeOrder?.pickupOTPExpires) {
         setPickupOTP(activeOrder.pickupOTP);
         setOtpExpiresAt(activeOrder.pickupOTPExpires);
@@ -233,8 +254,11 @@ export default function DeliveryDashboard() {
         setOtpCountdown(0);
       }
 
-      if (activeOrder?.deliveryAddress?.coords)
+      // Show route to delivery location for accepted order
+      if (activeOrder?.deliveryAddress?.coords) {
         fetchRoute(liveCoords, activeOrder.deliveryAddress.coords, setRoute);
+        setStoreRoute([]); // Clear store route
+      }
     } catch {
       showMessage("Failed to fetch active order");
       setCurrentOrder(null);
@@ -268,9 +292,12 @@ export default function DeliveryDashboard() {
       if (res?.data?.success) {
         showMessage(res.data.message);
         await fetchProfile();
-        if (decision === "accept") fetchCurrentOrder(currentOrder._id);
-        else {
+        if (decision === "accept") {
+          fetchCurrentOrder(currentOrder._id);
+        } else {
           setCurrentOrder(null);
+          setRoute([]);
+          setStoreRoute([]);
           fetchNextOrder();
         }
       } else showMessage(res?.data?.message || `Failed to ${decision} order`);
@@ -347,14 +374,26 @@ export default function DeliveryDashboard() {
   useEffect(() => {
     if (deliveryBoy?.isActive && locationSet) {
       startTracking();
-      if (deliveryBoy?.currentOrder)
+      if (deliveryBoy?.currentOrder) {
         fetchCurrentOrder(deliveryBoy.currentOrder);
-      else fetchNextOrder();
+      } else {
+        fetchNextOrder();
+      }
     } else {
       stopTracking();
       setCurrentOrder(null);
+      setRoute([]);
+      setStoreRoute([]);
     }
   }, [deliveryBoy?.isActive, locationSet, deliveryBoy?.currentOrder]);
+
+  // Update routes when current order changes
+  useEffect(() => {
+    if (currentOrder) {
+      const isAccepted = !!deliveryBoy?.currentOrder;
+      updateRoutes(liveCoords, currentOrder, isAccepted);
+    }
+  }, [currentOrder, deliveryBoy?.currentOrder]);
 
   // ------------------------ Render Helpers ------------------------
   const renderAddress = (a) => {
@@ -377,6 +416,8 @@ export default function DeliveryDashboard() {
 
   const renderMap = (coords) => {
     if (!coords) return null;
+    const isAccepted = !!deliveryBoy?.currentOrder;
+
     return (
       <MapContainer
         center={[coords.lat, coords.lon]}
@@ -415,10 +456,14 @@ export default function DeliveryDashboard() {
             <Popup>Delivery Location</Popup>
           </Marker>
         )}
-        {route.length > 0 && (
+
+        {/* Show route to delivery location if order is accepted */}
+        {isAccepted && route.length > 0 && (
           <Polyline positions={route} color="#1976d2" weight={5} />
         )}
-        {storeRoute.length > 0 && (
+
+        {/* Show route to store if order is NOT accepted */}
+        {!isAccepted && storeRoute.length > 0 && (
           <Polyline positions={storeRoute} color="#f39c12" weight={5} />
         )}
       </MapContainer>
@@ -684,12 +729,10 @@ export default function DeliveryDashboard() {
                     setLiveCoords(coords);
                     updateLiveLocation(coords);
                     showMessage("Live location updated ✅");
-                    if (currentOrder?.deliveryAddress?.coords)
-                      fetchRoute(
-                        coords,
-                        currentOrder.deliveryAddress.coords,
-                        setRoute
-                      );
+
+                    // Update routes based on acceptance status
+                    const isAccepted = !!deliveryBoy?.currentOrder;
+                    updateRoutes(coords, currentOrder, isAccepted);
                   },
                   () => showMessage("Failed to get live location ❌"),
                   { enableHighAccuracy: true }
@@ -704,12 +747,10 @@ export default function DeliveryDashboard() {
                 updateLiveLocation(liveCoords);
                 showMessage("Location saved ✅");
                 setMapShrink(true);
-                if (currentOrder?.deliveryAddress?.coords)
-                  fetchRoute(
-                    liveCoords,
-                    currentOrder.deliveryAddress.coords,
-                    setRoute
-                  );
+
+                // Update routes based on acceptance status
+                const isAccepted = !!deliveryBoy?.currentOrder;
+                updateRoutes(liveCoords, currentOrder, isAccepted);
               }}
             >
               Save Location
