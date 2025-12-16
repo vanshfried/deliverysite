@@ -417,6 +417,18 @@ export default function DeliveryDashboard() {
 
   const { stats } = deliveryBoy;
   const totalOrders = stats.accepted + stats.delivered + stats.ignored;
+  const openGoogleNavigation = (from, to) => {
+    if (!to?.lat || !to?.lon) {
+      showMessage("Destination not available ❌");
+      return;
+    }
+
+    const url = from
+      ? `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lon}&destination=${to.lat},${to.lon}&travelmode=driving`
+      : `https://www.google.com/maps/dir/?api=1&destination=${to.lat},${to.lon}&travelmode=driving`;
+
+    window.open(url, "_blank");
+  };
 
   return (
     <div className={styles.dashboard}>
@@ -537,6 +549,36 @@ export default function DeliveryDashboard() {
               <div className={styles.orderButtons}>
                 {!deliveryBoy.currentOrder ? (
                   <>
+                    {/* ---------- NAVIGATION BUTTONS ---------- */}
+                    {currentOrder?.store?.location && (
+                      <button
+                        className={styles.navigateBtn}
+                        onClick={() =>
+                          openGoogleNavigation(
+                            liveCoords,
+                            currentOrder.store.location
+                          )
+                        }
+                      >
+                        Navigate to Store 🏪
+                      </button>
+                    )}
+
+                    {currentOrder?.deliveryAddress?.coords && (
+                      <button
+                        className={styles.navigateBtn}
+                        style={{ background: "#1976d2" }}
+                        onClick={() =>
+                          openGoogleNavigation(
+                            liveCoords,
+                            currentOrder.deliveryAddress.coords
+                          )
+                        }
+                      >
+                        Navigate to Customer 🏠
+                      </button>
+                    )}
+
                     <button
                       className={styles.acceptBtn}
                       onClick={() => handleOrderDecision("accept")}
