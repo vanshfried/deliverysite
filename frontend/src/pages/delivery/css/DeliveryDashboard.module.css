@@ -1,157 +1,184 @@
-/* ------------------------ General Layout ------------------------ */
+/* ======================== Design Tokens ======================== */
+:root {
+  --bg-main: #f4f6f8;
+  --bg-card: #ffffff;
+  --bg-muted: #f9fafb;
+
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+
+  --primary: #2563eb;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #f59e0b;
+  --purple: #7c3aed;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.08);
+
+  --transition: all 0.25s ease;
+}
+
+/* ======================== Base Layout ======================== */
 .dashboard {
   width: 100%;
-  padding: 12px;
-  font-family: "Inter", sans-serif;
-  color: #333;
-  background-color: #f4f5f7;
   min-height: 100vh;
+  padding: 14px;
+  font-family: "Inter", sans-serif;
+  background: var(--bg-main);
+  color: var(--text-primary);
   box-sizing: border-box;
 }
 
 .loading,
 .error {
   text-align: center;
-  font-size: 1rem;
-  color: #666;
-  margin-top: 50px;
+  margin-top: 60px;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
 }
 
-/* ------------------------ Toast ------------------------ */
+/* ======================== Toast ======================== */
 .toast {
   position: fixed;
-  top: 15px;
+  top: 16px;
   left: 50%;
   transform: translateX(-50%);
-  background: #323232;
+  background: #111827;
   color: #fff;
   padding: 10px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
-  max-width: 90%;
-  text-align: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
+  box-shadow: var(--shadow-md);
   animation: fadeInOut 3s forwards;
+  z-index: 1000;
 }
 
-/* ------------------------ Header ------------------------ */
+/* ======================== Header ======================== */
 .header {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 18px;
-}
-
-.header h1 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  line-height: 1.2;
-  word-break: break-word;
-}
-
-.toggleStatus {
-  padding: 8px 15px;
-  font-size: 0.9rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  background-color: #ccc;
-  transition: all 0.3s ease;
-  width: 100%;
-  text-align: center;
-}
-
-.toggleStatus.active {
-  background-color: #4caf50;
-  color: #fff;
-}
-
-/* ------------------------ Stats ------------------------ */
-.stats {
-  display: flex;
-  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 20px;
 }
 
+.header h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.toggleStatus {
+  padding: 9px 16px;
+  border-radius: var(--radius-lg);
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: #e5e7eb;
+  color: var(--text-primary);
+  transition: var(--transition);
+}
+
+.toggleStatus.active {
+  background: var(--success);
+  color: #fff;
+}
+
+/* ======================== Stats ======================== */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
 .statCard {
   flex: 1 1 48%;
-  padding: 12px;
-  border-radius: 10px;
+  background: var(--bg-card);
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   text-align: center;
-  background: #fff;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s;
+  position: relative;
+  transition: var(--transition);
 }
 
 .statCard:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
 }
 
 .statLabel {
-  font-size: 0.8rem;
-  color: #666;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .statValue {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   font-weight: 600;
+  margin-top: 4px;
 }
 
-/* Stat colors */
-.accepted {
-  border-top: 4px solid #2196f3;
-}
-.delivered {
-  border-top: 4px solid #4caf50;
-}
-.rejected {
-  border-top: 4px solid #f44336;
-}
-.total {
-  border-top: 4px solid #ff9800;
-}
-.rating {
-  border-top: 4px solid #9c27b0;
+/* Accent Bars */
+.statCard::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  border-radius: 14px 14px 0 0;
 }
 
-/* ------------------------ Order Section ------------------------ */
+.accepted::after { background: var(--primary); }
+.delivered::after { background: var(--success); }
+.rejected::after { background: var(--danger); }
+.total::after { background: var(--warning); }
+.rating::after { background: var(--purple); }
+
+/* ======================== Order Card ======================== */
 .currentOrder {
-  margin-top: 15px;
+  margin-top: 18px;
 }
 
 .orderCard {
-  background: #fff;
-  border-radius: 10px;
-  padding: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  margin-bottom: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 22px;
 }
 
 .orderHeader {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
-  font-weight: 500;
   flex-wrap: wrap;
   font-size: 0.9rem;
-  gap: 4px;
+  font-weight: 500;
+  margin-bottom: 10px;
 }
 
 .customerInfo p {
   margin: 3px 0;
   font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
+/* ======================== Address ======================== */
 .addressCard,
 .addressCardCompact {
-  background: #f9f9f9;
-  padding: 8px 10px;
-  border-radius: 8px;
-  margin: 8px 0;
+  background: var(--bg-muted);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
-  color: #555;
+  color: #374151;
+  margin: 8px 0;
 }
 
 .addressCardCompact {
@@ -160,84 +187,81 @@
   text-overflow: ellipsis;
 }
 
+/* ======================== Items ======================== */
 .itemsList h4 {
-  margin-bottom: 4px;
   font-size: 0.95rem;
-  font-weight: 600;
+  margin-bottom: 6px;
 }
 
 .itemsList p {
-  margin: 2px 0;
   font-size: 0.85rem;
+  margin: 2px 0;
+  color: var(--text-secondary);
 }
 
+/* ======================== Footer ======================== */
 .orderFooter {
   display: flex;
   justify-content: space-between;
-  margin-top: 8px;
-  font-weight: 500;
   flex-wrap: wrap;
+  margin-top: 10px;
+  font-weight: 500;
 }
 
-/* ------------------------ Buttons ------------------------ */
-.orderButtons {
+/* ======================== Buttons ======================== */
+.orderButtons,
+.locationButtons {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 10px;
+  margin-top: 12px;
 }
 
-.acceptBtn,
-.rejectBtn,
-.getLiveBtn,
-.saveLocationBtn {
-  padding: 9px;
-  font-size: 0.85rem;
+/* Global button base */
+button {
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.3s;
-  width: 100%;
+  transition: var(--transition);
 }
 
-.acceptBtn {
-  background-color: #4caf50;
-  color: #fff;
-}
-.acceptBtn:hover {
-  background-color: #45a049;
-}
-
+/* Action buttons (COMPACT FIX) */
+.acceptBtn,
 .rejectBtn {
-  background-color: #f44336;
-  color: #fff;
-}
-.rejectBtn:hover {
-  background-color: #e53935;
-}
-
-.getLiveBtn {
-  background-color: #2196f3;
-  color: #fff;
-}
-.getLiveBtn:hover {
-  background-color: #1976d2;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  line-height: 1.1;
+  border-radius: 10px;
 }
 
-.saveLocationBtn {
-  background-color: #ff9800;
-  color: #fff;
-}
-.saveLocationBtn:hover {
-  background-color: #fb8c00;
+.acceptBtn { background: var(--success); color: #fff; }
+.rejectBtn { background: var(--danger); color: #fff; }
+
+.getLiveBtn { background: var(--primary); color: #fff; }
+.saveLocationBtn { background: var(--warning); color: #fff; }
+
+button:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
 }
 
-/* ------------------------ Map Section ------------------------ */
+/* Desktop alignment */
+@media (min-width: 600px) {
+  .orderButtons button {
+    height: 36px;
+    padding: 0 14px;
+  }
+}
+
+/* ======================== Map ======================== */
 .mapContainer {
   width: 100%;
   height: 200px;
-  border-radius: 10px;
-  margin: 8px 0;
+  border-radius: var(--radius-lg);
+  margin: 10px 0;
+  overflow: hidden;
   transition: height 0.3s ease;
 }
 
@@ -245,96 +269,54 @@
   height: 130px;
 }
 
-/* ------------------------ Location Picker ------------------------ */
-.locationPicker {
-  margin-top: 15px;
-}
-
-.locationButtons {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
-}
-
+/* ======================== Location ======================== */
 .distanceInfo {
-  margin: 10px 0;
-  font-size: 15px;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #1976d2;
+  color: var(--primary);
+  margin: 10px 0;
 }
 
-
-/* ------------------------ No Orders ------------------------ */
+/* ======================== Empty State ======================== */
 .noOrder {
   text-align: center;
-  color: #999;
+  color: var(--text-secondary);
   font-style: italic;
   font-size: 0.9rem;
 }
 
-/* ------------------------ Larger Screens ------------------------ */
+/* ======================== Responsive ======================== */
 @media (min-width: 600px) {
   .header {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
   }
+
   .statCard {
     flex: 1 1 30%;
   }
-  .orderButtons {
-    flex-direction: row;
-    gap: 10px;
-  }
+
+  .orderButtons,
   .locationButtons {
     flex-direction: row;
-    gap: 10px;
   }
 }
 
-/* ------------------------ Very Small Devices (max 400px) ------------------------ */
 @media (max-width: 400px) {
   .dashboard {
-    padding: 8px;
+    padding: 10px;
   }
 
   .header h1 {
-    font-size: 1.1rem;
-  }
-
-  .toggleStatus {
-    font-size: 0.8rem;
-    padding: 6px 10px;
+    font-size: 1.15rem;
   }
 
   .statCard {
     flex: 1 1 100%;
-    padding: 10px;
-  }
-
-  .statValue {
-    font-size: 1.1rem;
-  }
-
-  .orderCard {
-    padding: 10px;
-  }
-
-  .acceptBtn,
-  .rejectBtn,
-  .getLiveBtn,
-  .saveLocationBtn {
-    font-size: 0.8rem;
-    padding: 8px;
   }
 
   .mapContainer {
     height: 170px;
-  }
-
-  .toast {
-    font-size: 0.75rem;
-    padding: 8px 12px;
   }
 }
