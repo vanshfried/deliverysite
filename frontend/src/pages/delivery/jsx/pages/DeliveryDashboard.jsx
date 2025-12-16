@@ -319,6 +319,18 @@ export default function DeliveryDashboard() {
     }
   };
 
+  const openGoogleNavigation = (from, to) => {
+    if (!to?.lat || !to?.lon) {
+      showMessage("Destination not available ❌");
+      return;
+    }
+    const url = from
+      ? `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lon}&destination=${to.lat},${to.lon}&travelmode=driving`
+      : `https://www.google.com/maps/dir/?api=1&destination=${to.lat},${to.lon}&travelmode=driving`;
+
+    window.open(url, "_blank");
+  };
+
   // ------------------------ Effects ------------------------
   useEffect(() => {
     mountedRef.current = true;
@@ -327,6 +339,7 @@ export default function DeliveryDashboard() {
     return () => {
       mountedRef.current = false;
       if (msgTimeoutRef.current) clearTimeout(msgTimeoutRef.current);
+      if (otpTimerRef.current) clearInterval(otpTimerRef.current);
       stopTracking();
     };
   }, []);
@@ -419,19 +432,6 @@ export default function DeliveryDashboard() {
 
   const { stats } = deliveryBoy;
   const totalOrders = stats.accepted + stats.delivered + stats.ignored;
-
-  const openGoogleNavigation = (from, to) => {
-    if (!to?.lat || !to?.lon) {
-      showMessage("Destination not available ❌");
-      return;
-    }
-    // Corrected string interpolation
-    const url = from
-      ? `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lon}&destination=${to.lat},${to.lon}&travelmode=driving`
-      : `https://www.google.com/maps/dir/?api=1&destination=${to.lat},${to.lon}&travelmode=driving`;
-
-    window.open(url, "_blank");
-  };
 
   return (
     <div className={styles.dashboard}>
@@ -551,109 +551,106 @@ export default function DeliveryDashboard() {
               {renderMap(currentOrder.deliveryAddress?.coords)}
 
               <div className={styles.orderButtons}>
-                <div className={styles.orderButtons}>
-                  {/* --- Navigation Buttons (Always visible if coords exist) --- */}
-                  {currentOrder?.store?.location && (
+                {/* --- Navigation Buttons --- */}
+                {currentOrder?.store?.location && (
+                  <button
+                    className={styles.navigateBtn}
+                    onClick={() =>
+                      openGoogleNavigation(
+                        liveCoords,
+                        currentOrder.store.location
+                      )
+                    }
+                  >
+                    Navigate to Store 🏪
+                  </button>
+                )}
+
+                {currentOrder?.deliveryAddress?.coords && (
+                  <button
+                    className={styles.navigateBtnBlue}
+                    onClick={() =>
+                      openGoogleNavigation(
+                        liveCoords,
+                        currentOrder.deliveryAddress.coords
+                      )
+                    }
+                  >
+                    Navigate to Customer 🏠
+                  </button>
+                )}
+
+                {/* --- Action Buttons --- */}
+                {!deliveryBoy.currentOrder ? (
+                  <>
                     <button
-                      className={styles.navigateBtn}
-                      onClick={() =>
-                        openGoogleNavigation(
-                          liveCoords,
-                          currentOrder.store.location
-                        )
-                      }
+                      className={styles.acceptBtn}
+                      onClick={() => handleOrderDecision("accept")}
                     >
-                      Navigate to Store 🏪
+                      Accept
                     </button>
-                  )}
-
-                  {currentOrder?.deliveryAddress?.coords && (
                     <button
-                      className={styles.navigateBtnBlue}
-                      onClick={() =>
-                        openGoogleNavigation(
-                          liveCoords,
-                          currentOrder.deliveryAddress.coords
-                        )
-                      }
+                      className={styles.rejectBtn}
+                      onClick={() => handleOrderDecision("reject")}
                     >
-                      Navigate to Customer 🏠
+                      Reject
                     </button>
-                  )}
+                  </>
+                ) : (
+                  <div className={styles.activeOrderNote}>
+                    <p>✓ You are currently working on this order</p>
+                  </div>
+                )}
+              </div>
 
-                  {/* --- Action Buttons (Logic for Accept/Reject vs Active Note) --- */}
-                  {!deliveryBoy.currentOrder ? (
-                    <>
-                      <button
-                        className={styles.acceptBtn}
-                        onClick={() => handleOrderDecision("accept")}
-                      >
-                        Accept
-                      </button>
-                      <button
-                        className={styles.rejectBtn}
-                        onClick={() => handleOrderDecision("reject")}
-                      >
-                        Reject
-                      </button>
-                    </>
-                  ) : (
-                    <div className={styles.activeOrderNote}>
-                      <p>✓ You are currently working on this order</p>
-                    </div>
-                  )}
+              {/* --- OTP Section --- */}
+              <div className={styles.otpSection}>
+                <h3 className={styles.otpTitle}>Pickup OTP</h3>
 
-                  {/* --- OTP Section stays below --- */}
-                </div>
-                {/* -------------------- OTP PICKUP SECTION -------------------- */}
-                <div className={styles.otpSection}>
-                  <h3 className={styles.otpTitle}>Pickup OTP</h3>
+                {pickupOTP ? (
+                  <div className={styles.otpDisplay}>
+                    <p
+                      className={`${styles.otpCode} ${
+                        otpCountdown <= 0 ? styles.otpExpiredText : ""
+                      }`}
+                    >
+                      {pickupOTP}
+                    </p>
 
-                  {pickupOTP ? (
-                    <div className={styles.otpDisplay}>
-                      <p
-                        className={`${styles.otpCode} ${
-                          otpCountdown <= 0 ? styles.otpExpiredText : ""
-                        }`}
-                      >
-                        {pickupOTP}
-                      </p>
+                    <p
+                      className={`${styles.otpTimer} ${
+                        otpCountdown <= 0
+                          ? styles.otpExpiredText
+                          : styles.otpActiveText
+                      }`}
+                    >
+                      {otpCountdown > 0
+                        ? `Expires in ${Math.floor(otpCountdown / 60)}:${String(
+                            otpCountdown % 60
+                          ).padStart(2, "0")}`
+                        : "OTP expired"}
+                    </p>
 
-                      <p
-                        className={`${styles.otpTimer} ${
-                          otpCountdown <= 0
-                            ? styles.otpExpiredText
-                            : styles.otpActiveText
-                        }`}
-                      >
-                        {otpCountdown > 0
-                          ? `Expires in ${Math.floor(
-                              otpCountdown / 60
-                            )}:${String(otpCountdown % 60).padStart(2, "0")}`
-                          : "OTP expired"}
-                      </p>
-
-                      <button
-                        onClick={generatePickupOtp}
-                        disabled={otpCountdown > 0}
-                        className={`${styles.otpRegenBtn} ${
-                          otpCountdown > 0 ? styles.btnDisabled : ""
-                        }`}
-                      >
-                        {otpCountdown > 0
-                          ? "You can regenerate after expiry"
-                          : "Regenerate OTP"}
-                      </button>
-                    </div>
-                  ) : (
                     <button
                       onClick={generatePickupOtp}
-                      className={styles.otpGenerateBtn}
+                      disabled={otpCountdown > 0}
+                      className={`${styles.otpRegenBtn} ${
+                        otpCountdown > 0 ? styles.btnDisabled : ""
+                      }`}
                     >
-                      Generate Pickup OTP
+                      {otpCountdown > 0
+                        ? "You can regenerate after expiry"
+                        : "Regenerate OTP"}
                     </button>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={generatePickupOtp}
+                    className={styles.otpGenerateBtn}
+                  >
+                    Generate Pickup OTP
+                  </button>
+                )}
               </div>
             </div>
           ) : (
