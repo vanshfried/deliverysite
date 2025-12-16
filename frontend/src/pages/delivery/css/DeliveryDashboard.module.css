@@ -136,11 +136,21 @@
   border-radius: 14px 14px 0 0;
 }
 
-.accepted::after { background: var(--primary); }
-.delivered::after { background: var(--success); }
-.rejected::after { background: var(--danger); }
-.total::after { background: var(--warning); }
-.rating::after { background: var(--purple); }
+.accepted::after {
+  background: var(--primary);
+}
+.delivered::after {
+  background: var(--success);
+}
+.rejected::after {
+  background: var(--danger);
+}
+.total::after {
+  background: var(--warning);
+}
+.rating::after {
+  background: var(--purple);
+}
 
 /* ======================== Order Card ======================== */
 .currentOrder {
@@ -236,11 +246,23 @@ button {
   border-radius: 10px;
 }
 
-.acceptBtn { background: var(--success); color: #fff; }
-.rejectBtn { background: var(--danger); color: #fff; }
+.acceptBtn {
+  background: var(--success);
+  color: #fff;
+}
+.rejectBtn {
+  background: var(--danger);
+  color: #fff;
+}
 
-.getLiveBtn { background: var(--primary); color: #fff; }
-.saveLocationBtn { background: var(--warning); color: #fff; }
+.getLiveBtn {
+  background: var(--primary);
+  color: #fff;
+}
+.saveLocationBtn {
+  background: var(--warning);
+  color: #fff;
+}
 
 button:hover {
   transform: translateY(-1px);
@@ -297,6 +319,93 @@ button:hover {
   border: none;
   border-radius: 10px;
   cursor: pointer;
+}
+
+/* ======================== Navigation Button Variants ======================== */
+.navigateBtnBlue {
+  color-scheme: navigateBtn;
+  background: #1976d2 !important; /* Override base navigateBtn */
+  background-color: #1976d2;
+}
+
+/* ======================== Active Order Note ======================== */
+.activeOrderNote {
+  background: #f0fdf4;
+  color: var(--success);
+  padding: 10px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  text-align: center;
+  height: 40px;
+}
+
+/* ======================== OTP Section ======================== */
+.otpSection {
+  margin-top: 25px;
+  padding: 18px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e3e3e3;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.otpTitle {
+  margin-bottom: 12px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.otpDisplay {
+  text-align: center;
+}
+
+.otpCode {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: 4px;
+  margin-bottom: 8px;
+  color: #222;
+}
+
+.otpExpiredText {
+  color: #b71c1c !important;
+}
+
+.otpActiveText {
+  color: var(--success);
+}
+
+.otpTimer {
+  font-size: 0.95rem;
+  margin-bottom: 18px;
+  font-weight: 500;
+}
+
+.otpRegenBtn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background: #ff9800;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.otpGenerateBtn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background: #1976d2;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.btnDisabled {
+  background: #ffb74d;
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 /* ======================== Responsive ======================== */

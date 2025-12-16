@@ -11,13 +11,14 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import deliveryBoy from "../../../../Images/deliveryboy.png";
+import deliveryBoyImg from "../../../../Images/deliveryboy.png";
 import locationlogo from "../../../../Images/locationlogo.png";
 import storelogo from "../../../../Images/storelogo.png";
+
 // ------------------------ Custom Icons ------------------------
 const icons = {
   deliveryBoy: new L.Icon({
-    iconUrl: deliveryBoy,
+    iconUrl: deliveryBoyImg,
     iconSize: [30, 30],
     iconAnchor: [15, 30],
   }),
@@ -34,7 +35,7 @@ const icons = {
 };
 
 // ------------------------ Map Picker ------------------------
-function MapPicker({ coords, setCoords, label, shrink }) {
+function MapPicker({ coords, setCoords, label, shrink, styles }) {
   const [position, setPosition] = useState(coords);
 
   const LocationMarker = () => {
@@ -85,6 +86,7 @@ export default function DeliveryDashboard() {
   const msgTimeoutRef = useRef(null);
   const mountedRef = useRef(true);
   const watchIdRef = useRef(null);
+
   // OTP states
   const [pickupOTP, setPickupOTP] = useState(null);
   const [otpExpiresAt, setOtpExpiresAt] = useState(null);
@@ -417,12 +419,13 @@ export default function DeliveryDashboard() {
 
   const { stats } = deliveryBoy;
   const totalOrders = stats.accepted + stats.delivered + stats.ignored;
+
   const openGoogleNavigation = (from, to) => {
     if (!to?.lat || !to?.lon) {
       showMessage("Destination not available ❌");
       return;
     }
-
+    // Corrected string interpolation
     const url = from
       ? `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lon}&destination=${to.lat},${to.lon}&travelmode=driving`
       : `https://www.google.com/maps/dir/?api=1&destination=${to.lat},${to.lon}&travelmode=driving`;
@@ -473,6 +476,7 @@ export default function DeliveryDashboard() {
             setCoords={setLiveCoords}
             label="My Location"
             shrink={mapShrink}
+            styles={styles}
           />
           <div className={styles.locationButtons}>
             <button
@@ -547,101 +551,80 @@ export default function DeliveryDashboard() {
               {renderMap(currentOrder.deliveryAddress?.coords)}
 
               <div className={styles.orderButtons}>
-                {!deliveryBoy.currentOrder ? (
-                  <>
-                    {/* ---------- NAVIGATION BUTTONS ---------- */}
-                    {currentOrder?.store?.location && (
-                      <button
-                        className={styles.navigateBtn}
-                        onClick={() =>
-                          openGoogleNavigation(
-                            liveCoords,
-                            currentOrder.store.location
-                          )
-                        }
-                      >
-                        Navigate to Store 🏪
-                      </button>
-                    )}
-
-                    {currentOrder?.deliveryAddress?.coords && (
-                      <button
-                        className={styles.navigateBtn}
-                        style={{ background: "#1976d2" }}
-                        onClick={() =>
-                          openGoogleNavigation(
-                            liveCoords,
-                            currentOrder.deliveryAddress.coords
-                          )
-                        }
-                      >
-                        Navigate to Customer 🏠
-                      </button>
-                    )}
-
+                <div className={styles.orderButtons}>
+                  {/* --- Navigation Buttons (Always visible if coords exist) --- */}
+                  {currentOrder?.store?.location && (
                     <button
-                      className={styles.acceptBtn}
-                      onClick={() => handleOrderDecision("accept")}
+                      className={styles.navigateBtn}
+                      onClick={() =>
+                        openGoogleNavigation(
+                          liveCoords,
+                          currentOrder.store.location
+                        )
+                      }
                     >
-                      Accept
+                      Navigate to Store 🏪
                     </button>
+                  )}
+
+                  {currentOrder?.deliveryAddress?.coords && (
                     <button
-                      className={styles.rejectBtn}
-                      onClick={() => handleOrderDecision("reject")}
+                      className={styles.navigateBtnBlue}
+                      onClick={() =>
+                        openGoogleNavigation(
+                          liveCoords,
+                          currentOrder.deliveryAddress.coords
+                        )
+                      }
                     >
-                      Reject
+                      Navigate to Customer 🏠
                     </button>
-                  </>
-                ) : (
-                  <div className={styles.activeOrderNote}>
-                    <p>✓ You are currently working on this order</p>
-                  </div>
-                )}
+                  )}
+
+                  {/* --- Action Buttons (Logic for Accept/Reject vs Active Note) --- */}
+                  {!deliveryBoy.currentOrder ? (
+                    <>
+                      <button
+                        className={styles.acceptBtn}
+                        onClick={() => handleOrderDecision("accept")}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        className={styles.rejectBtn}
+                        onClick={() => handleOrderDecision("reject")}
+                      >
+                        Reject
+                      </button>
+                    </>
+                  ) : (
+                    <div className={styles.activeOrderNote}>
+                      <p>✓ You are currently working on this order</p>
+                    </div>
+                  )}
+
+                  {/* --- OTP Section stays below --- */}
+                </div>
                 {/* -------------------- OTP PICKUP SECTION -------------------- */}
-                <div
-                  style={{
-                    marginTop: "25px",
-                    padding: "18px",
-                    borderRadius: "12px",
-                    background: "#ffffff",
-                    border: "1px solid #e3e3e3",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-                  }}
-                >
-                  <h3
-                    style={{
-                      marginBottom: "12px",
-                      fontSize: "1.2rem",
-                      fontWeight: "600",
-                      color: "#333",
-                    }}
-                  >
-                    Pickup OTP
-                  </h3>
+                <div className={styles.otpSection}>
+                  <h3 className={styles.otpTitle}>Pickup OTP</h3>
 
                   {pickupOTP ? (
-                    <div style={{ textAlign: "center" }}>
-                      {/* OTP Digits */}
+                    <div className={styles.otpDisplay}>
                       <p
-                        style={{
-                          fontSize: "2.4rem",
-                          fontWeight: "700",
-                          letterSpacing: "4px",
-                          marginBottom: "8px",
-                          color: otpCountdown > 0 ? "#222" : "#b71c1c",
-                        }}
+                        className={`${styles.otpCode} ${
+                          otpCountdown <= 0 ? styles.otpExpiredText : ""
+                        }`}
                       >
                         {pickupOTP}
                       </p>
 
-                      {/* Countdown */}
                       <p
-                        style={{
-                          fontSize: "0.95rem",
-                          marginBottom: "18px",
-                          color: otpCountdown > 0 ? "green" : "red",
-                          fontWeight: "500",
-                        }}
+                        className={`${styles.otpTimer} ${
+                          otpCountdown <= 0
+                            ? styles.otpExpiredText
+                            : styles.otpActiveText
+                        }`}
                       >
                         {otpCountdown > 0
                           ? `Expires in ${Math.floor(
@@ -653,19 +636,9 @@ export default function DeliveryDashboard() {
                       <button
                         onClick={generatePickupOtp}
                         disabled={otpCountdown > 0}
-                        style={{
-                          width: "100%",
-                          padding: "12px",
-                          borderRadius: "8px",
-                          background: otpCountdown > 0 ? "#ffb74d" : "#ff9800",
-                          opacity: otpCountdown > 0 ? 0.7 : 1,
-                          color: "white",
-                          fontSize: "1rem",
-                          fontWeight: "600",
-                          border: "none",
-                          cursor: otpCountdown > 0 ? "not-allowed" : "pointer",
-                          transition: "0.2s",
-                        }}
+                        className={`${styles.otpRegenBtn} ${
+                          otpCountdown > 0 ? styles.btnDisabled : ""
+                        }`}
                       >
                         {otpCountdown > 0
                           ? "You can regenerate after expiry"
@@ -675,24 +648,12 @@ export default function DeliveryDashboard() {
                   ) : (
                     <button
                       onClick={generatePickupOtp}
-                      style={{
-                        width: "100%",
-                        padding: "12px",
-                        borderRadius: "8px",
-                        background: "#1976d2",
-                        color: "white",
-                        fontSize: "1rem",
-                        fontWeight: "600",
-                        border: "none",
-                        cursor: "pointer",
-                        transition: "0.2s",
-                      }}
+                      className={styles.otpGenerateBtn}
                     >
                       Generate Pickup OTP
                     </button>
                   )}
                 </div>
-                {/* -------------------- END OTP SECTION -------------------- */}
               </div>
             </div>
           ) : (
@@ -709,6 +670,7 @@ export default function DeliveryDashboard() {
             setCoords={setLiveCoords}
             label="My Location"
             shrink={mapShrink}
+            styles={styles}
           />
           <div className={styles.locationButtons}>
             <button
