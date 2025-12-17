@@ -22,52 +22,123 @@ export default function OrderDetail() {
   const [error, setError] = useState("");
   const [route, setRoute] = useState([]);
 
-  /* ------------------------------ Fetch Order ------------------------------ */
-  useEffect(() => {
-    if (!userLoggedIn) return navigate("/login");
+  const [deliveryOtp, setDeliveryOtp] = useState(null);
+  const [deliveryOtpExpires, setDeliveryOtpExpires] = useState(null);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState("");
 
-    const fetchOrder = async () => {
+  /* ------------------------------ Fetch Order ------------------------------ */
+
+  useEffect(() => {
+    if (!userLoggedIn) {
+      navigate("/login");
+      return;
+    }
+
+    let active = true;
+
+    (async () => {
+      try {
+        const res = await API.get(`/orders/${slug}`);
+        if (active) setOrder(res.data.order);
+      } catch {
+        if (active) setError("Failed to load order details");
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [slug, userLoggedIn, navigate]);
+
+  useEffect(() => {
+    if (
+      order?.deliveryOTP &&
+      order?.deliveryOTPExpires &&
+      new Date(order.deliveryOTPExpires) > new Date() &&
+      !order.deliveryOTPVerified
+    ) {
+      setDeliveryOtp(order.deliveryOTP);
+      setDeliveryOtpExpires(order.deliveryOTPExpires);
+    } else {
+      setDeliveryOtp(null);
+      setDeliveryOtpExpires(null);
+    }
+  }, [
+    order?.deliveryOTP,
+    order?.deliveryOTPExpires,
+    order?.deliveryOTPVerified,
+  ]);
+
+  useEffect(() => {
+    if (!order?.deliveryBoyLocation || !order?.deliveryAddress?.coords) return;
+
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        const { lat: fromLat, lon: fromLon } = order.deliveryBoyLocation;
+        const { lat: toLat, lon: toLon } = order.deliveryAddress.coords;
+
+        const url = `https://router.project-osrm.org/route/v1/driving/${fromLon},${fromLat};${toLon},${toLat}?overview=full&geometries=geojson`;
+
+        const res = await fetch(url, { signal: controller.signal });
+        const json = await res.json();
+
+        if (json.routes?.[0]) {
+          setRoute(
+            json.routes[0].geometry.coordinates.map(([lon, lat]) => [lat, lon])
+          );
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Route fetch failed");
+        }
+      }
+    })();
+
+    return () => controller.abort();
+  }, [
+    order?.deliveryBoyLocation?.lat,
+    order?.deliveryBoyLocation?.lon,
+    order?.deliveryAddress?.coords?.lat,
+    order?.deliveryAddress?.coords?.lon,
+  ]);
+
+  useEffect(() => {
+    if (!deliveryOtpExpires) return;
+
+    const timer = setInterval(() => {
+      if (new Date(deliveryOtpExpires) <= new Date()) {
+        setDeliveryOtp(null);
+        setDeliveryOtpExpires(null);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [deliveryOtpExpires]);
+
+  useEffect(() => {
+    if (
+      !deliveryOtp ||
+      order?.deliveryOTPVerified ||
+      order?.status === "DELIVERED"
+    )
+      return;
+
+    const interval = setInterval(async () => {
       try {
         const res = await API.get(`/orders/${slug}`);
         setOrder(res.data.order);
       } catch {
-        setError("Failed to load order details");
-      } finally {
-        setLoading(false);
+        console.error("Auto refresh failed");
       }
-    };
+    }, 5000);
 
-    fetchOrder();
-  }, [slug, userLoggedIn, navigate]);
-
-  /* ------------------------------ Fetch Route ------------------------------ */
-  useEffect(() => {
-    if (!order?.deliveryBoyLocation || !order?.deliveryAddress?.coords) return;
-
-    const fetchRoute = async () => {
-      const { lat: fromLat, lon: fromLon } = order.deliveryBoyLocation;
-      const { lat: toLat, lon: toLon } = order.deliveryAddress.coords;
-
-      const url = `https://router.project-osrm.org/route/v1/driving/${fromLon},${fromLat};${toLon},${toLat}?overview=full&geometries=geojson`;
-
-      try {
-        const res = await fetch(url);
-        const json = await res.json();
-
-        if (json.routes?.[0]) {
-          const coords = json.routes[0].geometry.coordinates.map((c) => [
-            c[1],
-            c[0],
-          ]);
-          setRoute(coords);
-        }
-      } catch (err) {
-        console.error("Route fetch failed:", err);
-      }
-    };
-
-    fetchRoute();
-  }, [order]);
+    return () => clearInterval(interval);
+  }, [deliveryOtp, order?.deliveryOTPVerified, order?.status, slug]);
 
   /* ------------------------------ Loading/Error ----------------------------- */
   if (loading)
@@ -112,6 +183,23 @@ export default function OrderDetail() {
     if (statusLower === "pending") return styles.statusPending;
     if (statusLower === "cancelled") return styles.statusCancelled;
     return styles.statusDefault;
+  };
+  const handleGenerateDeliveryOTP = async () => {
+    try {
+      setOtpLoading(true);
+      setOtpError("");
+
+      const res = await API.post(`/orders/${order.slug}/generate-delivery-otp`);
+
+      setDeliveryOtp(res.data.otp);
+      setDeliveryOtpExpires(res.data.expiresAt);
+    } catch (err) {
+      setOtpError(
+        err.response?.data?.message || "Failed to generate delivery OTP"
+      );
+    } finally {
+      setOtpLoading(false);
+    }
   };
 
   /* -------------------------------------------------------------------------- */
@@ -317,6 +405,63 @@ export default function OrderDetail() {
 
         {/* Right Column */}
         <div className={styles.rightColumn}>
+          {/* 🔐 DELIVERY OTP CARD */}
+          {order.status === "OUT_FOR_DELIVERY" &&
+            !order.deliveryOTPVerified && (
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2>Delivery Confirmation</h2>
+                </div>
+
+                {!deliveryOtp ? (
+                  <button
+                    onClick={handleGenerateDeliveryOTP}
+                    disabled={otpLoading}
+                    className={styles.retryBtn}
+                    style={{ width: "100%" }}
+                  >
+                    {otpLoading ? "Generating OTP..." : "Generate Delivery OTP"}
+                  </button>
+                ) : (
+                  <div style={{ textAlign: "center" }}>
+                    <p style={{ fontSize: "14px", color: "#555" }}>
+                      Share this OTP with the delivery partner
+                    </p>
+                    <div
+                      style={{
+                        fontSize: "32px",
+                        fontWeight: "700",
+                        letterSpacing: "6px",
+                        margin: "12px 0",
+                        color: "#16a34a",
+                      }}
+                    >
+                      {deliveryOtp}
+                    </div>
+
+                    {deliveryOtpExpires && (
+                      <p style={{ fontSize: "12px", color: "#777" }}>
+                        Expires at{" "}
+                        {new Date(deliveryOtpExpires).toLocaleTimeString()}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {otpError && (
+                  <p
+                    style={{
+                      color: "red",
+                      marginTop: "10px",
+                      fontSize: "13px",
+                    }}
+                  >
+                    {otpError}
+                  </p>
+                )}
+              </div>
+            )}
+
           {/* Timeline Card */}
           <div className={styles.card}>
             <div className={styles.cardHeader}>

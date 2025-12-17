@@ -46,6 +46,20 @@ const OrderSchema = new mongoose.Schema(
       type: Date,
       default: null, // Expires after 5 minutes
     },
+    deliveryOTP: {
+      type: Number,
+      required: null,
+    },
+
+    deliveryOTPExpires: {
+      type: Date,
+      required: null,
+    },
+
+    deliveryOTPVerified: {
+      type: Boolean,
+      default: false,
+    },
 
     deliveryAddress: {
       label: String,

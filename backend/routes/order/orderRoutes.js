@@ -207,5 +207,64 @@ router.get("/:slug", requireUser, async (req, res) => {
     });
   }
 });
+/* -------------------------------------------------------------------------- */
+/* 🔐 Generate delivery OTP (USER)                                            */
+/* -------------------------------------------------------------------------- */
+router.post("/:slug/generate-delivery-otp", requireUser, async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      slug: req.params.slug,
+      user: req.user._id,
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (order.status !== "OUT_FOR_DELIVERY") {
+      return res.status(400).json({
+        success: false,
+        message: "OTP can only be generated when order is out for delivery",
+      });
+    }
+
+    // 🔒 Prevent regeneration if OTP still valid
+    if (
+      order.deliveryOTP &&
+      order.deliveryOTPExpires &&
+      order.deliveryOTPExpires > Date.now()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP already generated and still valid",
+      });
+    }
+
+    // Generate 4 digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000);
+
+    order.deliveryOTP = otp;
+    order.deliveryOTPExpires = new Date(Date.now() + 10 * 60 * 1000);
+    order.deliveryOTPVerified = false;
+
+    await order.save();
+
+    return res.json({
+      success: true,
+      message: "Delivery OTP generated",
+      otp, // only visible to customer
+      expiresAt: order.deliveryOTPExpires,
+    });
+  } catch (err) {
+    console.error("GENERATE DELIVERY OTP ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate OTP",
+    });
+  }
+});
 
 export default router;

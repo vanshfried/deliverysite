@@ -93,6 +93,11 @@ export default function DeliveryDashboard() {
   const [otpCountdown, setOtpCountdown] = useState(0);
   const otpTimerRef = useRef(null);
 
+  // Delivery OTP verification
+  const [deliveryOtpInput, setDeliveryOtpInput] = useState("");
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [deliveryOtpError, setDeliveryOtpError] = useState("");
+
   // ------------------------ Helpers ------------------------
   const showMessage = (text, duration = 3000) => {
     setMsg(text);
@@ -356,6 +361,42 @@ export default function DeliveryDashboard() {
       : `https://www.google.com/maps/dir/?api=1&destination=${to.lat},${to.lon}&travelmode=driving`;
 
     window.open(url, "_blank");
+  };
+
+  const verifyDeliveryOtp = async () => {
+    if (!deliveryOtpInput || deliveryOtpInput.length !== 4) {
+      return setDeliveryOtpError("Enter a valid 4-digit OTP");
+    }
+
+    try {
+      setVerifyingOtp(true);
+      setDeliveryOtpError("");
+
+      const res = await API.patch(
+        `/api/delivery/orders/verify-delivery-otp/${currentOrder._id}`,
+        { otp: deliveryOtpInput }
+      );
+
+      if (res.data.success) {
+        showMessage("Order delivered successfully 🎉");
+
+        // Reset states
+        setCurrentOrder(null);
+        setDeliveryOtpInput("");
+        setRoute([]);
+        setStoreRoute([]);
+
+        // Refresh profile & orders
+        await fetchProfile();
+        fetchNextOrder();
+      }
+    } catch (err) {
+      setDeliveryOtpError(
+        err.response?.data?.message || "Invalid or expired OTP"
+      );
+    } finally {
+      setVerifyingOtp(false);
+    }
   };
 
   // ------------------------ Effects ------------------------
@@ -696,6 +737,37 @@ export default function DeliveryDashboard() {
                     Generate Pickup OTP
                   </button>
                 )}
+
+                {/* --- DELIVERY OTP VERIFICATION --- */}
+                {deliveryBoy.currentOrder &&
+                  currentOrder.status === "OUT_FOR_DELIVERY" && (
+                    <div className={styles.otpSection}>
+                      <h3 className={styles.otpTitle}>Delivery OTP</h3>
+
+                      <input
+                        type="text"
+                        maxLength="4"
+                        value={deliveryOtpInput}
+                        onChange={(e) =>
+                          setDeliveryOtpInput(e.target.value.replace(/\D/g, ""))
+                        }
+                        placeholder="Enter customer OTP"
+                        className={styles.otpInput}
+                      />
+
+                      {deliveryOtpError && (
+                        <p className={styles.otpError}>{deliveryOtpError}</p>
+                      )}
+
+                      <button
+                        onClick={verifyDeliveryOtp}
+                        disabled={verifyingOtp}
+                        className={styles.otpVerifyBtn}
+                      >
+                        {verifyingOtp ? "Verifying..." : "Confirm Delivery"}
+                      </button>
+                    </div>
+                  )}
               </div>
             </div>
           ) : (

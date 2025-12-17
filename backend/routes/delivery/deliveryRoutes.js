@@ -123,41 +123,41 @@ router.patch("/accept/:id", requireDeliveryBoy, async (req, res) => {
 /* -------------------------------------------------------------------------- */
 /* 📦 PATCH: Mark Order as Delivered                                          */
 /* -------------------------------------------------------------------------- */
-router.patch("/delivered/:id", requireDeliveryBoy, async (req, res) => {
-  try {
-    const deliveryBoy = req.user;
+// router.patch("/delivered/:id", requireDeliveryBoy, async (req, res) => {
+//   try {
+//     const deliveryBoy = req.user;
 
-    const order = await Order.findById(req.params.id);
-    if (!order)
-      return res
-        .status(404)
-        .json({ success: false, message: "Order not found" });
+//     const order = await Order.findById(req.params.id);
+//     if (!order)
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Order not found" });
 
-    if (String(order.deliveryBoy) !== String(deliveryBoy._id))
-      return res.status(403).json({
-        success: false,
-        message: "You are not assigned to this order",
-      });
+//     if (String(order.deliveryBoy) !== String(deliveryBoy._id))
+//       return res.status(403).json({
+//         success: false,
+//         message: "You are not assigned to this order",
+//       });
 
-    order.status = "DELIVERED";
-    order.timestampsLog.deliveredAt = new Date();
-    await order.save();
+//     order.status = "DELIVERED";
+//     order.timestampsLog.deliveredAt = new Date();
+//     await order.save();
 
-    await DeliveryBoy.findByIdAndUpdate(deliveryBoy._id, {
-      $inc: { "stats.delivered": 1 },
-      $set: { currentOrder: null },
-    });
+//     await DeliveryBoy.findByIdAndUpdate(deliveryBoy._id, {
+//       $inc: { "stats.delivered": 1 },
+//       $set: { currentOrder: null },
+//     });
 
-    res.json({ success: true, message: "Order marked as delivered", order });
-  } catch (err) {
-    console.error("❌ DELIVER ORDER ERROR:", err);
-    res.status(500).json({
-      success: false,
-      message: "Failed to mark order as delivered",
-      error: err.message,
-    });
-  }
-});
+//     res.json({ success: true, message: "Order marked as delivered", order });
+//   } catch (err) {
+//     console.error("❌ DELIVER ORDER ERROR:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to mark order as delivered",
+//       error: err.message,
+//     });
+//   }
+// });
 
 /* -------------------------------------------------------------------------- */
 /* 📋 GET: All Orders Assigned to Current Delivery Partner                    */
@@ -280,7 +280,9 @@ router.patch("/generate-otp/:id", requireDeliveryBoy, async (req, res) => {
     const order = await Order.findById(orderId);
 
     if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
     // Ensure this driver is assigned to this order
@@ -316,7 +318,6 @@ router.patch("/generate-otp/:id", requireDeliveryBoy, async (req, res) => {
       otp, // driver needs this
       expiresAt,
     });
-
   } catch (err) {
     console.error("❌ GENERATE OTP ERROR:", err);
     res.status(500).json({
@@ -326,6 +327,173 @@ router.patch("/generate-otp/:id", requireDeliveryBoy, async (req, res) => {
     });
   }
 });
+/* -------------------------------------------------------------------------- */
+/* 🚚 PATCH: Mark Out For Delivery                                            */
+/* -------------------------------------------------------------------------- */
+router.patch(
+  "/out-for-delivery/:id",
+  requireDeliveryBoy,
+  async (req, res) => {
+    try {
+      const order = await Order.findById(req.params.id);
 
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found",
+        });
+      }
+
+      // 🔒 Ensure correct driver
+      if (String(order.deliveryBoy) !== String(req.user._id)) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not assigned to this order",
+        });
+      }
+
+      // 🚦 Ensure correct status
+      if (order.status !== "DRIVER_ASSIGNED") {
+        return res.status(400).json({
+          success: false,
+          message: "Order cannot be marked out for delivery",
+        });
+      }
+
+      // 🔁 Prevent duplicate update
+      if (order.timestampsLog?.outForDeliveryAt) {
+        return res.status(400).json({
+          success: false,
+          message: "Order already marked out for delivery",
+        });
+      }
+
+      // ✅ UPDATE STATUS
+      order.status = "OUT_FOR_DELIVERY";
+      order.timestampsLog.outForDeliveryAt = new Date();
+
+      await order.save();
+
+      return res.json({
+        success: true,
+        message: "Order marked as out for delivery",
+      });
+
+    } catch (err) {
+      console.error("❌ OUT FOR DELIVERY ERROR:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+);
+
+
+/* -------------------------------------------------------------------------- */
+/* 🔐 PATCH: Verify Delivery OTP (FINAL DELIVERY)                             */
+/* -------------------------------------------------------------------------- */
+router.patch(
+  "/verify-delivery-otp/:id",
+  requireDeliveryBoy,
+  async (req, res) => {
+    try {
+      const { otp } = req.body;
+
+      if (!otp) {
+        return res.status(400).json({
+          success: false,
+          message: "OTP is required",
+        });
+      }
+
+      const order = await Order.findById(req.params.id);
+
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found",
+        });
+      }
+
+      // 🔒 Ensure correct driver
+      if (String(order.deliveryBoy) !== String(req.user._id)) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not assigned to this order",
+        });
+      }
+
+      // 🚦 Correct order state
+      if (order.status !== "OUT_FOR_DELIVERY") {
+        return res.status(400).json({
+          success: false,
+          message: "Order is not out for delivery",
+        });
+      }
+
+      // 🔁 Prevent OTP reuse
+      if (order.deliveryOTPVerified) {
+        return res.status(400).json({
+          success: false,
+          message: "Delivery already confirmed",
+        });
+      }
+
+      // 🔐 OTP existence
+      if (!order.deliveryOTP || !order.deliveryOTPExpires) {
+        return res.status(400).json({
+          success: false,
+          message: "Delivery OTP not generated",
+        });
+      }
+
+      // ⏰ OTP expiry check
+      if (order.deliveryOTPExpires < Date.now()) {
+        order.deliveryOTP = null;
+        order.deliveryOTPExpires = null;
+        await order.save();
+
+        return res.status(400).json({
+          success: false,
+          message: "OTP expired",
+        });
+      }
+
+      // ❌ Invalid OTP
+      if (Number(otp) !== order.deliveryOTP) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid OTP",
+        });
+      }
+
+      // ✅ DELIVERY CONFIRMED
+      order.status = "DELIVERED";
+      order.deliveryOTPVerified = true;
+      order.deliveryOTP = null;
+      order.deliveryOTPExpires = null;
+      order.timestampsLog.deliveredAt = new Date();
+
+      await order.save();
+
+      await DeliveryBoy.findByIdAndUpdate(req.user._id, {
+        $inc: { "stats.delivered": 1 },
+        $set: { currentOrder: null },
+      });
+
+      return res.json({
+        success: true,
+        message: "Order delivered successfully",
+      });
+    } catch (err) {
+      console.error("❌ VERIFY DELIVERY OTP ERROR:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+);
 
 export default router;
