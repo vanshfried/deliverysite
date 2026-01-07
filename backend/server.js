@@ -18,6 +18,7 @@ import adminDeliveryRoutes from "./routes/admin/delivery/adminDeliveryRoutes.js"
 
 // --- User & public routes ---
 import orderRoutes from "./routes/order/orderRoutes.js";
+import orderChatRoutes from "./routes/order/orderChat.js";
 import userRoutes from "./routes/user/userRoutes.js";
 import cartRoutes from "./routes/user/cartRoutes.js";
 
@@ -70,6 +71,8 @@ app.use("/uploads", express.static(path.join(path.resolve(), "uploads")));
 app.use("/users", userRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/orders", orderRoutes);
+// ✅ Order Chat AI route
+app.use("/api/order-chat", orderChatRoutes);
 
 // ✅ Admin routes
 app.use("/admin/login", adminLoginRoute);

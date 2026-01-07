@@ -13,6 +13,7 @@ import Checkout from "./pages/public/privateuserpages/Checkout";
 import Settings from "./pages/public/privateuserpages/Settings";
 import OrdersPage from "./pages/public/privateuserpages/Orders";
 import OrderDetail from "./pages/public/privateuserpages/OrderDetail";
+import OrderChatBot from "./pages/public/privateuserpages/OrderChatBot.jsx";
 import UPIPayment from "./pages/public/privateuserpages/UPIPayment";
 // 🔹 Admin Pages
 import LoginAdmin from "./pages/admin/pages/LoginAdmin";
@@ -127,6 +128,15 @@ function App() {
                 <UserProtectedRoute>
                   <UserOnlyHeader />
                   <OrderDetail />
+                </UserProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders/:slug/chatbot"
+              element={
+                <UserProtectedRoute>
+                  <UserOnlyHeader />
+                  <OrderChatBot />
                 </UserProtectedRoute>
               }
             />

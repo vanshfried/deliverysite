@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../../../api/api";
+import OrderChatBot from "./OrderChatBot.jsx";
 import { AuthContext } from "../../admin/Context/AuthContext";
 import styles from "./css/OrderDetail.module.css";
 import {
@@ -519,6 +520,12 @@ export default function OrderDetail() {
                   </div>
                 </div>
               )}
+            </div>
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h2>Need Help?</h2>
+              </div>
+              <OrderChatBot order={order} />
             </div>
           </div>
         </div>
