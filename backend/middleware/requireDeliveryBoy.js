@@ -17,15 +17,13 @@ export async function requireDeliveryBoy(req, res, next) {
     } catch {
       res.clearCookie("deliveryToken", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: true, // ✅ MUST be true on HTTPS (Render)
+        sameSite: "none",
       });
-      return res
-        .status(401)
-        .json({
-          success: false,
-          error: "Session expired, please log in again",
-        });
+      return res.status(401).json({
+        success: false,
+        error: "Session expired, please log in again",
+      });
     }
 
     if (!payload?.id) {
@@ -35,7 +33,7 @@ export async function requireDeliveryBoy(req, res, next) {
     }
 
     const deliveryBoy = await DeliveryBoy.findById(payload.id).select(
-      "-passwordHash"
+      "-passwordHash",
     );
     if (!deliveryBoy) {
       return res
@@ -44,12 +42,10 @@ export async function requireDeliveryBoy(req, res, next) {
     }
 
     if (!deliveryBoy.isApproved) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "Your account is awaiting admin approval",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "Your account is awaiting admin approval",
+      });
     }
 
     // ⚡ Removed isActive check entirely
