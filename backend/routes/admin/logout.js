@@ -5,9 +5,9 @@ const router = express.Router();
 router.post("/", (req, res) => {
   res.clearCookie("adminToken", {
     httpOnly: true,
-    secure: true,     // ✅ production + local w/ HTTPS
-    sameSite: "none", // ✅ cross-site cookie allowed
-    path: "/",        // ✅ important for clearing everywhere
+    secure: true,     
+    sameSite: "none", 
+    path: "/",        
   });
 
   return res.json({
